@@ -1,0 +1,36 @@
+name: Sync Labels
+
+# 레이블 동기화 워크플로우
+# - 목적: .github/labels.yml에 정의한 레이블을 저장소에 자동 생성/업데이트/삭제
+# - 실행: main 브랜치로 labels.yml 변경이 머지되거나 수동 실행(workflow_dispatch)
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - .github/labels.yml
+  workflow_dispatch:
+
+permissions:
+
+  # 최소 권한 원칙
+  contents: read        # 레포 내용을 읽어 labels.yml을 가져오기 위함
+  issues: write         # 저장소 레이블 생성/수정/삭제 권한
+  pull-requests: write  # PR 라벨 작업까지 고려 시 필요(선택)
+
+jobs:
+  labeler:
+    name: Apply labels from config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync labels
+        uses: crazy-max/ghaction-github-labeler@v5
+        with:
+          github-token: ${{ github.token }}          # 기본 제공 토큰(만료/권한 이슈 적음)
+          yaml-file: .github/labels.yml              # 레이블 정의 파일 경로
+          skip-delete: false                         # 정의에 없는 레이블은 삭제(정합성 유지)
+          dry-run: false                             # true로 하면 변경 미적용(리허설)
+          # exclude: |                               # 삭제에서 제외할 레이블이 있다면 정규식/목록으로 지정
+          #   ^(dont-touch|legacy-.*)$
