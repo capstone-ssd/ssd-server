@@ -1,0 +1,60 @@
+name: develop-ci
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'build.gradle'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: set up redis
+        uses: supercharge/redis-github-action@1.7.0
+        with:
+          redis-version: 'latest'
+
+      - name: checkout the code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.8'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build, test and generate JaCoCo report
+        run: |
+          ./gradlew clean build jacocoTestReport -Dspring.profiles.active=test --no-daemon
+
+      - name: Jacoco Report to PR
+        uses: madrapps/jacoco-report@v1.6.1
+        with:
+          title: 📝 Code Coverage
+          paths: ${{ github.workspace }}/build/reports/jacoco/index/jacoco.xml
+          token: ${{ secrets.TOKEN }}
+          min-coverage-overall: 80
+          min-coverage-changed-files: 80
+          update-comment: true
+
+      - name: Upload jacoco HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: ${{ github.workspace }}/build/reports/jacoco/index/html/
