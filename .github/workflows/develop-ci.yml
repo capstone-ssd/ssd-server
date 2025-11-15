@@ -18,28 +18,28 @@ jobs:
 
     steps:
 
-      - name: checkout the code
+      - name: 코드 가져오기
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: JDK 17 설치하기
         uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: 'temurin'
 
-      - name: Set up Gradle
+      - name: Gradle 설치
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.8'
 
-      - name: Grant execute permission for gradlew
+      - name: gradlew 권한 설장
         run: chmod +x gradlew
 
-      - name: Build, test and generate JaCoCo report
+      - name: 빌드 및 자코코 실행
         run: |
           ./gradlew clean build jacocoTestReport -Dspring.profiles.active=test --no-daemon
 
-      - name: Jacoco Report to PR
+      - name: 자코코 리포트 출력
         uses: madrapps/jacoco-report@v1.6.1
         with:
           title: 📝 Code Coverage
@@ -49,7 +49,7 @@ jobs:
           min-coverage-changed-files: 80
           update-comment: true
 
-      - name: Upload jacoco HTML report
+      - name: 자코코 파일 업로드
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-html-report
