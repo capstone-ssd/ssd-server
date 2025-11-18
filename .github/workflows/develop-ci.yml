@@ -9,7 +9,7 @@ on:
       - 'build.gradle'
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,7 +39,7 @@ jobs:
         run: |
           ./gradlew clean build jacocoTestReport -Dspring.profiles.active=test --no-daemon
 
-      - name: 자코코 리포트 출력
+      - name: JACOCO 리포트 출력
         uses: madrapps/jacoco-report@v1.6.1
         with:
           title: 📝 Code Coverage
@@ -49,13 +49,13 @@ jobs:
           min-coverage-changed-files: 80
           update-comment: true
 
-      - name: 자코코 파일 업로드
+      - name: JACOCO 파일 업로드
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-html-report
           path: ${{ github.workspace }}/build/reports/jacoco/index/html/
 
-      - name: 슬랙 알림보내기
+      - name: SLACK 알림보내기
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
