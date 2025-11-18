@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'or.hyu'
@@ -62,4 +63,34 @@ sourceSets {
 }
 clean {
     delete file(querydslDir)
+}
+
+
+
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(true)
+        html.destination file("${project.layout.buildDirectory.get().asFile}/reports/jacoco/index/html")
+        xml.destination file("${project.layout.buildDirectory.get().asFile}/reports/jacoco/index/jacoco.xml")
+        csv.destination file("${project.layout.buildDirectory.get().asFile}/reports/jacoco/index/jacoco.csv")
+    }
+
+    // 필요 시 제외 대상 조정
+    afterEvaluate {
+        classDirectories.setFrom(
+                files(classDirectories.files.collect {
+                    fileTree(dir: it, excludes: [
+                            "**/Q*.class" // QueryDSL 생성 클래스 제외 패턴 예시
+                    ])
+                })
+        )
+    }
 }

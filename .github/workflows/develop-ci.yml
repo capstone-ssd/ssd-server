@@ -1,0 +1,71 @@
+name: develop-ci
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'build.gradle'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설치하기
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Gradle 설치
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.8'
+
+      - name: gradlew 권한 설장
+        run: chmod +x gradlew
+
+      - name: 빌드 및 자코코 실행
+        run: |
+          ./gradlew clean build jacocoTestReport -Dspring.profiles.active=test --no-daemon
+
+      - name: JACOCO 리포트 출력
+        uses: madrapps/jacoco-report@v1.6.1
+        with:
+          title: 📝 Code Coverage
+          paths: ${{ github.workspace }}/build/reports/jacoco/index/jacoco.xml
+          token: ${{ secrets.TOKEN }}
+          min-coverage-overall: 80
+          min-coverage-changed-files: 80
+          update-comment: true
+
+      - name: JACOCO 파일 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: ${{ github.workspace }}/build/reports/jacoco/index/html/
+
+      - name: SLACK 알림보내기
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: Sloth Backend - dev
+          text: ":rocket: CI 파이프라인이 모두 완료되었습니다. <${{ github.event.pull_request.html_url }}|PR 바로가기>를 확인하고 리뷰를 진행해 주세요. (상태: ${{ job.status }})"
+          fields: repo,commit,message,author,workflow,job,took
+          username: "CI Bot"
+          icon_emoji: ":rocket:"
+          mention: here
+          if_mention: failure,cancelled
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
