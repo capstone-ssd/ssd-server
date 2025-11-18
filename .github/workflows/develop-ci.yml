@@ -60,7 +60,10 @@ jobs:
         with:
           status: ${{ job.status }}
           author_name: Sloth Backend - dev
-          fields: repo,commit,message,author
+          text: ":rocket: CI 파이프라인이 모두 완료되었습니다. <${{ github.event.pull_request.html_url }}|PR 바로가기>를 확인하고 리뷰를 진행해 주세요. (상태: ${{ job.status }})"
+          fields: repo,commit,message,author,workflow,job,took
+          username: "CI Bot"
+          icon_emoji: ":rocket:"
           mention: here
           if_mention: failure,cancelled
         env:
