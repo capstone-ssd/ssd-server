@@ -24,7 +24,7 @@ public class Document extends BaseEntity {
 
     @Comment("사업계획서 즐겨찾기 여부")
     @Column(name = "bookmark", nullable = false)
-    private Boolean bookmark;
+    private boolean bookmark;
 
     @Comment("ai가 생성한 사업계획서 세 줄 요약")
     @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
