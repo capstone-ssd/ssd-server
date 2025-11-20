@@ -14,14 +14,32 @@ public enum ErrorCode {
      * 도메인을 이용하여 에러코드를 분리해주세요
      * */
 
-    // 서버 예외
-    SERVER_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR,"SERVER50001","서버에서 예외가 발생하였습니다. 개발자에게 문의해주세요");
 
 
     // 회원 예외
-
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEMBER40101" ,"회원을 찾지 못했습니다" ),
+    MEMBER_ROLE_EXCEPTION(HttpStatus.BAD_REQUEST,"MEMBER40001","존재하지 않는 인가 권한입니다"),
+    KAKAO_AUTH_CODE_INVALID(HttpStatus.UNAUTHORIZED,"MEMBER40301" ,"카카오 인가코드가 올바르지 않습니다" ),
+    KAKAO_ACCESSTOKEN_INVALID(HttpStatus.UNAUTHORIZED,"MEMBER40302" ,"카카오 액세스 토큰이 올바르지 않습니다" ),
 
     // 문서 예외
+
+
+    // 토큰 예외
+    TOKEN_SECRET_IS_NULL(HttpStatus.INTERNAL_SERVER_ERROR, "TOKEN50001","JWT SECRET KEY가 주입되지 않았습니다"),
+    ACCESS_INVALID_TYPE(HttpStatus.UNAUTHORIZED,"TOKEN40301" ,"ACCESS 토큰이 헤더가 올바르지 않습니다" ),
+    ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED,"TOKEN40302" ,"ACCESS 토큰이 만료되었습니다" ),
+    ROLE_INVALID_TYPE(HttpStatus.BAD_REQUEST,"TOKEN40001","존재하지 않는 인가 권한입니다"),
+    COOKIE_NULL(HttpStatus.UNAUTHORIZED,"TOKEN40303" ,"쿠키가 비어있습니다" ),
+    REFRESH_TOKEN_NULL(HttpStatus.UNAUTHORIZED,"TOKEN40304" ,"리프레시 토큰이 비어있습니다" ),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED,"TOKEN40305" ,"리프레시 토큰이 만료되었습니다"),
+    INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED,"TOKEN40306" ,"JWT 시그니처가 위조되었습니다" ),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED,"TOKEN40307" ,"유효하지 않은 토큰입니다"),
+
+
+
+    // 서버 예외
+    SERVER_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR,"SERVER50001","서버에서 예외가 발생하였습니다. 개발자에게 문의해주세요");
 
 
     private final HttpStatus status;

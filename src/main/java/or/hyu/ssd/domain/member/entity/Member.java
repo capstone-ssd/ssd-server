@@ -30,7 +30,7 @@ public class Member extends BaseEntity {
     private String profileImageUrl;
 
     @Comment("회원의 프로필 이미지 Key")
-    @Column(name = "profile_image_key", nullable = false)
+    @Column(name = "profile_image_key", nullable = true)
     private String profileImageKey;
 
     @Comment("회원의 인가 권한")
