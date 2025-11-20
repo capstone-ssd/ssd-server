@@ -2,6 +2,7 @@ package or.hyu.ssd.global.config;
 
 import feign.Request;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.global.config.properties.FeignProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
