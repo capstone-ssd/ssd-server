@@ -1,7 +1,7 @@
 package or.hyu.ssd.domain.member.client;
 
 
-import or.hyu.ssd.domain.member.client.dto.KaKaoUserInfoResponse;
+import or.hyu.ssd.domain.member.controller.dto.kakao.KaKaoUserInfoResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;

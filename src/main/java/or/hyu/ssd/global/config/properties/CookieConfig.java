@@ -1,5 +1,5 @@
 
-package or.hyu.ssd.global.config;
+package or.hyu.ssd.global.config.properties;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

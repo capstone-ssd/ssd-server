@@ -11,7 +11,7 @@ import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.domain.member.service.CustomUserDetailsService;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.config.JWTConfig;
+import or.hyu.ssd.global.config.properties.JWTConfig;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

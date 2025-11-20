@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.member.controller;
+package or.hyu.ssd.global.jwt.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
-import or.hyu.ssd.domain.member.service.JWTService;
+import or.hyu.ssd.global.jwt.service.JWTService;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

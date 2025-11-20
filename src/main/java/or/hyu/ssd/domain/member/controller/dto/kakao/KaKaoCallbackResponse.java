@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.member.client.dto;
+package or.hyu.ssd.domain.member.controller.dto.kakao;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

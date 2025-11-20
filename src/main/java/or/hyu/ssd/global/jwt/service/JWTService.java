@@ -1,16 +1,16 @@
-package or.hyu.ssd.domain.member.service;
+package or.hyu.ssd.global.jwt.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
-import or.hyu.ssd.domain.member.repository.RefreshTokenRepository;
+import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
 import or.hyu.ssd.domain.member.valid.RefreshTokenValidator;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
-import or.hyu.ssd.global.config.CookieConfig;
-import or.hyu.ssd.global.config.JWTConfig;
+import or.hyu.ssd.global.config.properties.CookieConfig;
+import or.hyu.ssd.global.config.properties.JWTConfig;
 import or.hyu.ssd.global.jwt.JWTUtil;
 import or.hyu.ssd.global.util.CookieUtil;
 import org.slf4j.Logger;

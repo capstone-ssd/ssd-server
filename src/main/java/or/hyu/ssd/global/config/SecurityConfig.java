@@ -2,6 +2,7 @@ package or.hyu.ssd.global.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.global.config.properties.WhiteListConfig;
 import or.hyu.ssd.global.jwt.JWTFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

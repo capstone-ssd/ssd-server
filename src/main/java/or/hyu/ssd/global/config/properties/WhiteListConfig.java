@@ -1,4 +1,4 @@
-package or.hyu.ssd.global.config;
+package or.hyu.ssd.global.config.properties;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

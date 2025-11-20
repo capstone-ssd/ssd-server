@@ -1,4 +1,4 @@
-package or.hyu.ssd.global.config;
+package or.hyu.ssd.global.config.properties;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

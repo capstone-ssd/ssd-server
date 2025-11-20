@@ -2,8 +2,8 @@ package or.hyu.ssd.domain.member.client;
 
 
 
-import or.hyu.ssd.domain.member.client.dto.KaKaoCallbackResponse;
-import or.hyu.ssd.domain.member.client.dto.KaKaoOAuthTokenDTO;
+import or.hyu.ssd.domain.member.controller.dto.kakao.KaKaoCallbackResponse;
+import or.hyu.ssd.domain.member.controller.dto.kakao.KaKaoOAuthTokenDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

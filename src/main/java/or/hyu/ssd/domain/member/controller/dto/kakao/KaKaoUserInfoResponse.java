@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.member.client.dto;
+package or.hyu.ssd.domain.member.controller.dto.kakao;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

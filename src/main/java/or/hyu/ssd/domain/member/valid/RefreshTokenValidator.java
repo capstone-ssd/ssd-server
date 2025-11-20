@@ -5,7 +5,7 @@ import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.member.repository.RefreshTokenRepository;
+import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.TokenHandler;
 import or.hyu.ssd.global.jwt.JWTUtil;

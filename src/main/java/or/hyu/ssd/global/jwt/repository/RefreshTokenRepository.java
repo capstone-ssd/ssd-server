@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.member.repository;
+package or.hyu.ssd.global.jwt.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
