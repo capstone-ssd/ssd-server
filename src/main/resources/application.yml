@@ -20,6 +20,10 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         show_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
   jwt:
     header: Authorization
@@ -52,3 +56,9 @@ feign:
       default:
         connectTimeout: 2000
         readTimeout: 3000
+
+app:
+  cookie:
+    domain: ""
+    same-site: Lax
+    secure: false

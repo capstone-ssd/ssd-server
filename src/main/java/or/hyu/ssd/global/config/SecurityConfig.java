@@ -57,6 +57,7 @@ public class SecurityConfig {
                          * 다양한 메서드에 대해 CORS 정책을 허용합니다
                          * */
                         configuration.setAllowedOrigins(Arrays.asList(
+                                "http://localhost:3000",
                                 "http://localhost:5173",
                                 "http://localhost:5174"
                         ));
