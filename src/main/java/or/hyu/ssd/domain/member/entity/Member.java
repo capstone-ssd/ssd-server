@@ -22,7 +22,7 @@ public class Member extends BaseEntity {
     private String name;
 
     @Comment("회원의 이메일 주소")
-    @Column(name = "email", unique = true)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @Comment("회원의 프로필 이미지 url")
