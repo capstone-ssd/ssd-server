@@ -24,4 +24,8 @@ public class CheckList extends BaseEntity {
     @Comment("체크리스트 체크 여부")
     @Column(name = "checked", nullable = false)
     private Boolean checked;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_id")
+    private Document document;
 }
