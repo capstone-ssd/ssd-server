@@ -91,7 +91,7 @@ public class OAuthService {
 
         // 사용자 핵심 정보 파싱 및 검증
         Long kakaoId = userInfo.getId();
-        String email = (userInfo.getKakaoAccount() != null) ? userInfo.getKakaoAccount().getEmail() : "이메일이 비어있습니다";
+        String email = (userInfo.getKakaoAccount() != null) ? userInfo.getKakaoAccount().getEmail() : null;
         String nickname = null;
 
         if (userInfo.getKakaoAccount() != null && userInfo.getKakaoAccount().getProfile() != null) {
