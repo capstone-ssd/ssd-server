@@ -2,6 +2,7 @@ package or.hyu.ssd.global.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.global.jwt.JWTFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,7 @@ import java.util.Collections;
 public class SecurityConfig {
 
 
+    private final JWTFilter jwtFilter;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder(){
@@ -97,6 +99,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.logout(AbstractHttpConfigurer::disable);
+
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
