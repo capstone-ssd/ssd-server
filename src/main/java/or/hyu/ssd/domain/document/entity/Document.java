@@ -19,7 +19,7 @@ public class Document extends BaseEntity {
     private Long id;
 
     @Comment("사업계획서 본문")
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Comment("사업계획서 즐겨찾기 여부")
@@ -27,11 +27,11 @@ public class Document extends BaseEntity {
     private Boolean bookmark;
 
     @Comment("ai가 생성한 사업계획서 세 줄 요약")
-    @Column(name = "summary", nullable = true)
+    @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
     private String summary;
 
     @Comment("ai가 생성한 사업계획서 상세 요약")
-    @Column(name = "details", nullable = true)
+    @Column(name = "details", nullable = true, columnDefinition = "TEXT")
     private String details;
 
     @ManyToOne(fetch = FetchType.LAZY)
