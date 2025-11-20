@@ -2,6 +2,7 @@ package or.hyu.ssd.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import or.hyu.ssd.global.entity.BaseEntity;
 import org.hibernate.annotations.Comment;
 
 @Entity
@@ -10,7 +11,7 @@ import org.hibernate.annotations.Comment;
 @Getter
 @Builder
 @Table(name = "members")
-public class Member {
+public class Member extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
