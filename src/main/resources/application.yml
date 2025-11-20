@@ -21,6 +21,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         show_sql: true
 
+  jwt:
+    header: Authorization
+    secret: sdvjnfdjnkdvsfjvnjvdksfdljnkvfljovnkf
+    access-token-validity-in-seconds: 3600
+    refresh-token-validity-in-seconds: 2592000
+
 
   security:
     oauth2:
