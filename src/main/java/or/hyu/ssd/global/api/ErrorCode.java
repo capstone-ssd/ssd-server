@@ -30,6 +30,14 @@ public enum ErrorCode {
     ACCESS_INVALID_TYPE(HttpStatus.UNAUTHORIZED,"TOKEN40301" ,"ACCESS 토큰이 헤더가 올바르지 않습니다" ),
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED,"TOKEN40302" ,"ACCESS 토큰이 만료되었습니다" ),
     ROLE_INVALID_TYPE(HttpStatus.BAD_REQUEST,"TOKEN40001","존재하지 않는 인가 권한입니다"),
+    COOKIE_NULL(HttpStatus.UNAUTHORIZED,"TOKEN40303" ,"쿠키가 비어있습니다" ),
+    REFRESH_TOKEN_NULL(HttpStatus.UNAUTHORIZED,"TOKEN40304" ,"리프레시 토큰이 비어있습니다" ),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED,"TOKEN40305" ,"리프레시 토큰이 만료되었습니다"),
+    INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED,"TOKEN40306" ,"JWT 시그니처가 위조되었습니다" ),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED,"TOKEN40307" ,"유효하지 않은 토큰입니다"),
+
+
+
     // 서버 예외
     SERVER_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR,"SERVER50001","서버에서 예외가 발생하였습니다. 개발자에게 문의해주세요");
 

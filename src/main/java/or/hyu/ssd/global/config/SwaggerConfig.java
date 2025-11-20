@@ -1,9 +1,12 @@
 package or.hyu.ssd.global.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
@@ -13,24 +16,29 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI SSD_API(){
+        Info info=new Info()
+                .title("SSD_API")
+                .description("신사임당 API 입니다")
+                .version("1.0");
+
+        String jwtSchemeName="JWTToken";
+
+        SecurityRequirement securityRequirement=new SecurityRequirement().addList(jwtSchemeName);
+
+        Components components=new Components()
+                .addSecuritySchemes(jwtSchemeName,new SecurityScheme()
+                        .name(jwtSchemeName)
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT"));
+
         return new OpenAPI()
-                .info(new Info()
-                        .title("SSD API")
-                        .description("SSD API 명세서 입니다")
-                        .version("v1")
-                        .contact(new Contact().name("SSD Team"))
-                        .license(new License().name("Apache 2.0")))
-                .addServersItem(new Server().url("/").description("Default"));
+                .addServersItem(new Server().url("/"))
+                .info(info)
+                .addSecurityItem(securityRequirement)
+                .components(components);
+
     }
 
-    @Bean
-    public GroupedOpenApi publicApi() {
-        return GroupedOpenApi.builder()
-                .group("public")
-                .packagesToScan("or.hyu.ssd")
-                .pathsToMatch("/**")
-                .build();
-    }
 }
-
