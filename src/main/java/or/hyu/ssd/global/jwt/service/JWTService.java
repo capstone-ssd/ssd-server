@@ -72,8 +72,6 @@ public class JWTService {
 
         response.setHeader("access-token", access);
 
-        log.info("new refresh: {}", newRefresh);
-
         CookieUtil.addSameSiteCookie(
                 response,
                 "refresh-token",
