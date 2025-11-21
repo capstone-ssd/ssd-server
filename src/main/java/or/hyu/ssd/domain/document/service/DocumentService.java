@@ -5,6 +5,9 @@ import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
+import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,23 @@ public class DocumentService {
 
         Document saved = documentRepository.save(doc);
         return saved.getId();
+    }
+
+    // 문서 수정 API
+    public Long updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
+        Document doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+
+        if (doc.getMember() == null || user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!doc.getMember().getId().equals(user.getMember().getId())) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+
+        doc.updateIfPresent(req.content(), req.summary(), req.details(), req.bookmark());
+
+        return doc.getId();
     }
 
 

@@ -4,15 +4,19 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.service.DocumentService;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api")
@@ -28,5 +32,15 @@ public class DocumentController {
     ) {
         Long id = documentService.createDocument(user, request);
         return ResponseEntity.ok(ApiResponse.ok(new CreateDocumentResponse(id), "문서가 저장되었습니다"));
+    }
+
+    @PutMapping("/v1/documents/{id}")
+    public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
+            @PathVariable("id") Long id,
+            @RequestBody UpdateDocumentRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long updatedId = documentService.updateDocument(id, user, request);
+        return ResponseEntity.ok(ApiResponse.ok(new UpdateDocumentResponse(updatedId), "문서가 수정되었습니다"));
     }
 }

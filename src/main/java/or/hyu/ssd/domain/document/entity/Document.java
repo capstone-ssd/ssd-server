@@ -54,4 +54,12 @@ public class Document extends BaseEntity {
                 .bookmark(bookmark)
                 .build();
     }
+
+    // 부분/전체 수정 편의 메서드
+    public void updateIfPresent(String content, String summary, String details, Boolean bookmark) {
+        if (content != null) this.content = content;
+        if (summary != null) this.summary = summary;
+        if (details != null) this.details = details;
+        if (bookmark != null) this.bookmark = bookmark;
+    }
 }
