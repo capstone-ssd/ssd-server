@@ -19,7 +19,6 @@ public enum ErrorCode {
     // 회원 예외
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEMBER40101" ,"회원을 찾지 못했습니다" ),
     MEMBER_ROLE_EXCEPTION(HttpStatus.BAD_REQUEST,"MEMBER40001","존재하지 않는 인가 권한입니다"),
-    OAUTH_STATE_INVALID(HttpStatus.BAD_REQUEST,"MEMBER40002","OAuth state가 유효하지 않습니다"),
     KAKAO_AUTH_CODE_INVALID(HttpStatus.UNAUTHORIZED,"MEMBER40301" ,"카카오 인가코드가 올바르지 않습니다" ),
     KAKAO_ACCESSTOKEN_INVALID(HttpStatus.UNAUTHORIZED,"MEMBER40302" ,"카카오 액세스 토큰이 올바르지 않습니다" ),
 

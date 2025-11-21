@@ -38,8 +38,7 @@ public class OAuthController {
         /**
          * 동적 리다이렉트 방식
          * - 요청의 Origin을 기반으로 redirect_uri를 계산하고
-         * - state(난수)를 발급/저장하여 CSRF/재사용을 방지한 뒤
-         * - 카카오 인증 서버로 302 리다이렉트 합니다.
+         * - 카카오 인증 서버로 302 리다이렉트 합니다. (state 미사용)
          * */
         String redirectAddress = oAuthService.requestRedirect(request);
         response.sendRedirect(redirectAddress);
@@ -47,30 +46,28 @@ public class OAuthController {
 
 
     @Operation(summary = "카카오 인증서버 토큰 검증 API",
-    description = "프론트 콜백에서 받은 code/state를 서버로 전달하면 서버가 토큰 교환/회원처리/JWT발급을 완료합니다.<br>"
+    description = "프론트 콜백에서 받은 code를 서버로 전달하면 서버가 토큰 교환/회원처리/JWT발급을 완료합니다.<br>"
             + "액세스 토큰은 헤더에, 리프레시 토큰은 쿠키에 담아 반환합니다.")
     @PostMapping("/oauth/kakao/callback")
     public ResponseEntity<ApiResponse<Boolean>> kakaoLoginCallback(
             @RequestParam("code") String accessCode,
-            @RequestParam("state") String state,
             HttpServletRequest request,
             HttpServletResponse response) {
 
-        Boolean result = oAuthService.kakaoLoginWithState(accessCode, state, request, response);
+        Boolean result = oAuthService.kakaoLoginNoState(accessCode, request, response);
         return ResponseEntity.ok(ApiResponse.ok(result, "성공적으로 로그인이 완료되었습니다"));
     }
 
 
     @Operation(summary = "카카오 콜백(GET) 지원",
-            description = "카카오가 서버로 직접 리다이렉트하는 경우를 위한 GET 콜백입니다. 내부적으로 state를 검증하고 로그인 처리를 수행합니다.")
+            description = "카카오/프론트가 서버로 리다이렉트 또는 전달하는 경우를 위한 GET 콜백입니다. code만으로 로그인 처리를 수행합니다.")
     @GetMapping("/oauth/kakao/callback")
     public ResponseEntity<ApiResponse<Boolean>> kakaoLoginCallbackGet(
             @RequestParam("code") String accessCode,
-            @RequestParam("state") String state,
             HttpServletRequest request,
             HttpServletResponse response) {
 
-        Boolean result = oAuthService.kakaoLoginWithState(accessCode, state, request, response);
+        Boolean result = oAuthService.kakaoLoginNoState(accessCode, request, response);
         return ResponseEntity.ok(ApiResponse.ok(result, "성공적으로 로그인이 완료되었습니다"));
     }
 
@@ -86,15 +83,14 @@ public class OAuthController {
     }
 
 
-    @Operation(summary = "카카오 서버 콜백", description = "카카오가 서버로 직접 리다이렉트하는 콜백 엔드포인트입니다.")
+    @Operation(summary = "카카오 서버 콜백", description = "카카오가 서버로 직접 리다이렉트하는 콜백 엔드포인트입니다. state 없이 code만으로 처리합니다.")
     @GetMapping("/oauth/kakao/server/callback")
     public ResponseEntity<ApiResponse<Boolean>> kakaoOAuthServerCallback(
             @RequestParam("code") String code,
-            @RequestParam("state") String state,
             HttpServletRequest request,
             HttpServletResponse response) {
 
-        Boolean result = oAuthService.kakaoLoginServer(code, state, request, response);
+        Boolean result = oAuthService.kakaoLoginServer(code, request, response);
         return ResponseEntity.ok(ApiResponse.ok(result, "성공적으로 로그인이 완료되었습니다"));
     }
 }

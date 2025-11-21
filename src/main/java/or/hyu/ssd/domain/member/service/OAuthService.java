@@ -13,7 +13,6 @@ import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
 import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
-import or.hyu.ssd.global.jwt.repository.OAuthStateRepository;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.CookieConfig;
@@ -42,14 +41,10 @@ public class OAuthService {
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final OAuthStateRepository oAuthStateRepository;
 
     private final KaKaoConfig kaKaoConfig;
     private final CookieConfig cookieConfig;
     private final OAuthProperties oAuthProperties;
-
-    // state TTL(초) — 5분
-    private static final long STATE_TTL_SECONDS = 300L;
 
 
 
@@ -96,16 +91,13 @@ public class OAuthService {
 
         String redirectUri = redirectBase + "/oauth/kakao/callback";
 
-        // CSRF/재사용 방지용 state 발급/저장(1회성)
-        String state = java.util.UUID.randomUUID().toString();
-        oAuthStateRepository.store(state, redirectUri, STATE_TTL_SECONDS);
-
         String encodedRedirect = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedScope = URLEncoder.encode(kaKaoConfig.getScope(), StandardCharsets.UTF_8);
 
+        // state 파라미터 제거(요청 사항에 따라 CSRF 관련 로직 제거)
         return String.format(
-                "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent&state=%s",
-                kaKaoConfig.getClientId(), encodedRedirect, encodedScope, state
+                "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent",
+                kaKaoConfig.getClientId(), encodedRedirect, encodedScope
         );
     }
 
@@ -113,19 +105,37 @@ public class OAuthService {
      * 프론트에서 받은 code/state를 검증하고, state에 저장된 redirect_uri로 토큰 교환을 수행합니다.
      * 이후 사용자 저장/조회 및 JWT 발급까지 처리합니다.
      */
-    public Boolean kakaoLoginWithState(String accessCode, String state, HttpServletRequest request, HttpServletResponse response) {
+    public Boolean kakaoLoginNoState(String accessCode, HttpServletRequest request, HttpServletResponse response) {
 
         Boolean isNewUser = false;
 
-        if (!StringUtils.hasText(accessCode) || !StringUtils.hasText(state)) {
+        if (!StringUtils.hasText(accessCode)) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        // state 검증 및 redirect_uri 복원(1회성 소비)
-        String redirectUri = oAuthStateRepository.consume(state);
-        if (!StringUtils.hasText(redirectUri)) {
-            throw new UserExceptionHandler(ErrorCode.OAUTH_STATE_INVALID);
+        // state 없이 redirect_uri를 재구성합니다.
+        // 프론트 콜백 플로우에서는 요청의 Origin을 이용하여 최초 authorize 단계와 동일한 redirect_uri를 산출합니다.
+        String redirectBase;
+        String origin = request.getHeader("Origin");
+        if (StringUtils.hasText(origin)) {
+            List<String> allowed = oAuthProperties.getAllowedOrigins();
+            if (allowed != null && !allowed.isEmpty() && !allowed.contains(origin)) {
+                throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
+            }
+            redirectBase = origin;
+        } else {
+            String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
+            String forwardedHost = request.getHeader("X-Forwarded-Host");
+            if (StringUtils.hasText(forwardedHost)) {
+                redirectBase = scheme + "://" + forwardedHost;
+            } else {
+                String host = request.getServerName();
+                int port = request.getServerPort();
+                boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) || ("https".equalsIgnoreCase(scheme) && port == 443);
+                redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
+            }
         }
+        String redirectUri = redirectBase + "/oauth/kakao/callback";
 
         // 액세스 토큰 발급
         KaKaoOAuthTokenDTO authorizationCode;
@@ -217,10 +227,9 @@ public class OAuthService {
 
 
     /**
-     * 항상 서버 콜백 방식 - 시작 단계
-     * - Origin 유무와 무관하게 서버의 스킴/호스트/포트를 기준으로 redirect_uri를 계산합니다.
+     * 항상 서버 콜백 방식 - 시작 단계 (CSRF state 미사용)
+     * - 서버의 스킴/호스트/포트를 기준으로 redirect_uri를 계산합니다.
      * - 계산된 redirect_uri는 "/oauth/kakao/server/callback"으로 고정됩니다.
-     * - 발급한 state와 redirect_uri를 1회성으로 저장 후, 카카오 authorize URL을 반환합니다.
      */
     public String requestRedirectServer(HttpServletRequest request) {
         String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
@@ -240,15 +249,12 @@ public class OAuthService {
         // 서버 콜백 고정 경로
         String redirectUri = redirectBase + "/oauth/kakao/server/callback";
 
-        String state = java.util.UUID.randomUUID().toString();
-        oAuthStateRepository.store(state, redirectUri, STATE_TTL_SECONDS);
-
         String encodedRedirect = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedScope = URLEncoder.encode(kaKaoConfig.getScope(), StandardCharsets.UTF_8);
 
         return String.format(
-                "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent&state=%s",
-                kaKaoConfig.getClientId(), encodedRedirect, encodedScope, state
+                "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent",
+                kaKaoConfig.getClientId(), encodedRedirect, encodedScope
         );
     }
 
@@ -257,17 +263,26 @@ public class OAuthService {
      * - state로 저장된 redirect_uri를 복원하여 토큰 교환을 수행합니다.
      * - 이후 사용자 저장/조회 및 JWT 발급까지 처리합니다.
      */
-    public Boolean kakaoLoginServer(String accessCode, String state, HttpServletRequest request, HttpServletResponse response) {
+    public Boolean kakaoLoginServer(String accessCode, HttpServletRequest request, HttpServletResponse response) {
         Boolean isNewUser = false;
 
-        if (!StringUtils.hasText(accessCode) || !StringUtils.hasText(state)) {
+        if (!StringUtils.hasText(accessCode)) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        String redirectUri = oAuthStateRepository.consume(state);
-        if (!StringUtils.hasText(redirectUri)) {
-            throw new UserExceptionHandler(ErrorCode.OAUTH_STATE_INVALID);
+
+        String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String redirectBase;
+        if (StringUtils.hasText(forwardedHost)) {
+            redirectBase = scheme + "://" + forwardedHost;
+        } else {
+            String host = request.getServerName();
+            int port = request.getServerPort();
+            boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) || ("https".equalsIgnoreCase(scheme) && port == 443);
+            redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
         }
+        String redirectUri = redirectBase + "/oauth/kakao/server/callback";
 
         KaKaoOAuthTokenDTO authorizationCode;
         try {
