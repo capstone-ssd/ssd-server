@@ -10,10 +10,16 @@ import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
+import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -69,7 +75,7 @@ public class DocumentService {
         documentRepository.delete(doc);
     }
 
-    // 문서 단일 조회 API
+
     @Transactional(readOnly = true)
     public GetDocumentResponse getDocument(Long documentId, CustomUserDetails user) {
         Document doc = documentRepository.findById(documentId)
@@ -83,6 +89,26 @@ public class DocumentService {
         }
 
         return GetDocumentResponse.of(doc);
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<DocumentListItemResponse> listDocuments(CustomUserDetails user, DocumentSort sortOption) {
+        if (user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        Sort sort = switch (sortOption) {
+            case LATEST -> Sort.by(Sort.Order.desc("createdAt"));
+            case OLDEST -> Sort.by(Sort.Order.asc("createdAt"));
+            case NAME -> Sort.by(Sort.Order.asc("summary")); // 이름이 없으므로 summary 기준으로 정렬
+            case MODIFIED -> Sort.by(Sort.Order.desc("updatedAt"));
+        };
+
+        return documentRepository.findAllByMember_Id(user.getMember().getId(), sort)
+                .stream()
+                .map(DocumentListItemResponse::of)
+                .collect(Collectors.toList());
     }
 
 

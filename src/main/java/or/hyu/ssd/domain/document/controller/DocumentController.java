@@ -20,6 +20,10 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
+import or.hyu.ssd.domain.document.service.support.DocumentSort;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -66,5 +70,15 @@ public class DocumentController {
     ) {
         GetDocumentResponse dto = documentService.getDocument(id, user);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 조회되었습니다"));
+    }
+
+
+    @GetMapping("/v1/documents")
+    public ResponseEntity<ApiResponse<List<DocumentListItemResponse>>> listDocuments(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(name = "sort", defaultValue = "LATEST") DocumentSort sort
+    ) {
+        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);
+        return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
     }
 }
