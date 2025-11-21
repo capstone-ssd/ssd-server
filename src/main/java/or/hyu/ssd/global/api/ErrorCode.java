@@ -23,6 +23,8 @@ public enum ErrorCode {
     KAKAO_ACCESSTOKEN_INVALID(HttpStatus.UNAUTHORIZED,"MEMBER40302" ,"카카오 액세스 토큰이 올바르지 않습니다" ),
 
     // 문서 예외
+    DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOC40401", "문서를 찾지 못했습니다"),
+    DOCUMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "DOC40301", "해당 문서를 수정할 권한이 없습니다"),
 
 
     // 토큰 예외
