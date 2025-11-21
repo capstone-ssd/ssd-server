@@ -39,7 +39,7 @@ spring:
           kakao:
             client-name: kakao
             client-id: ${KAKAO_CLIENT_ID}
-            redirect-uri: http://localhost:8080/oauth/kakao/callback
+            redirect-uri: http://localhost:8080/oauth/kakao/server/callback
             authorization-grant-type: authorization_code
             scope: profile_nickname,profile_image,account_email
             client-authentication-method: client_secret_post
@@ -60,5 +60,9 @@ feign:
 app:
   cookie:
     domain: ""
-    same-site: Lax
+    same-site: None
     secure: false
+  oauth:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:8080

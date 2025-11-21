@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import or.hyu.ssd.global.entity.BaseEntity;
 import org.hibernate.annotations.Comment;
+import org.springframework.util.StringUtils;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -37,4 +38,17 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
+
+
+
+
+    public static Member join(String name, String email, String profileImageUrl, String profileImageKey, Role role) {
+        return Member.builder()
+                .name(StringUtils.hasText(name) ? name : email)
+                .email(email)
+                .profileImageUrl(StringUtils.hasText(profileImageUrl) ? profileImageUrl : "")
+                .profileImageKey(profileImageKey)
+                .role(role)
+                .build();
+    }
 }
