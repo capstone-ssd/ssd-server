@@ -33,7 +33,7 @@ public class DocumentService {
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
         boolean bookmark = req.bookmark() != null ? req.bookmark() : false;
 
-        Document doc = Document.of(req.content(), req.summary(), req.details(), bookmark,user.getMember());
+        Document doc = Document.of(req.title(), req.content(), req.summary(), req.details(), bookmark, user.getMember());
 
         Document saved = documentRepository.save(doc);
         return CreateDocumentResponse.of(saved.getId());
@@ -51,7 +51,7 @@ public class DocumentService {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
-        doc.updateIfPresent(req.content(), req.summary(), req.details(), req.bookmark());
+        doc.updateIfPresent(req.title(), req.content(), req.summary(), req.details(), req.bookmark());
 
         return UpdateDocumentResponse.of(doc.getId());
     }
@@ -101,7 +101,7 @@ public class DocumentService {
         Sort sort = switch (sortOption) {
             case LATEST -> Sort.by(Sort.Order.desc("createdAt"));
             case OLDEST -> Sort.by(Sort.Order.asc("createdAt"));
-            case NAME -> Sort.by(Sort.Order.asc("summary")); // 이름이 없으므로 summary 기준으로 정렬
+            case NAME -> Sort.by(Sort.Order.asc("title"));
             case MODIFIED -> Sort.by(Sort.Order.desc("updatedAt"));
         };
 

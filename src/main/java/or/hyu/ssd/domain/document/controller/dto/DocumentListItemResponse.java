@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public record DocumentListItemResponse(
         Long id,
+        String title,
         String summary,
         boolean bookmark,
         LocalDateTime createdAt,
@@ -13,6 +14,7 @@ public record DocumentListItemResponse(
     public static DocumentListItemResponse of(Document doc) {
         return new DocumentListItemResponse(
                 doc.getId(),
+                doc.getTitle(),
                 doc.getSummary(),
                 doc.isBookmark(),
                 doc.getCreatedAt(),
@@ -20,4 +22,3 @@ public record DocumentListItemResponse(
         );
     }
 }
-

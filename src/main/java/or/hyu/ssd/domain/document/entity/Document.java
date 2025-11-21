@@ -18,6 +18,10 @@ public class Document extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Comment("사업계획서 제목")
+    @Column(name = "title", nullable = false)
+    private String title;
+
     @Comment("사업계획서 본문")
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -46,8 +50,9 @@ public class Document extends BaseEntity {
 
 
 
-    public static Document of(String content, String summary, String details, boolean bookmark, Member member) {
+    public static Document of(String title, String content, String summary, String details, boolean bookmark, Member member) {
         return Document.builder()
+                .title(title)
                 .content(content)
                 .summary(summary)
                 .details(details)
@@ -57,7 +62,8 @@ public class Document extends BaseEntity {
     }
 
     // 부분/전체 수정 편의 메서드
-    public void updateIfPresent(String content, String summary, String details, Boolean bookmark) {
+    public void updateIfPresent(String title, String content, String summary, String details, Boolean bookmark) {
+        if (title != null) this.title = title;
         if (content != null) this.content = content;
         if (summary != null) this.summary = summary;
         if (details != null) this.details = details;

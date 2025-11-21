@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public record GetDocumentResponse(
         Long id,
+        String title,
         String content,
         String summary,
         String details,
@@ -19,6 +20,7 @@ public record GetDocumentResponse(
         String authorName = doc.getMember() != null ? doc.getMember().getName() : null;
         return new GetDocumentResponse(
                 doc.getId(),
+                doc.getTitle(),
                 doc.getContent(),
                 doc.getSummary(),
                 doc.getDetails(),
