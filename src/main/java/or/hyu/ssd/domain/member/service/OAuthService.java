@@ -20,6 +20,8 @@ import or.hyu.ssd.global.config.properties.JWTConfig;
 import or.hyu.ssd.global.config.KaKaoConfig;
 import or.hyu.ssd.global.config.properties.OAuthProperties;
 import or.hyu.ssd.global.jwt.JWTUtil;
+import or.hyu.ssd.domain.member.service.support.KakaoProfileExtractor;
+import or.hyu.ssd.domain.member.service.support.KakaoProfileExtractor.NormalizedKakaoProfile;
 import or.hyu.ssd.global.util.CookieUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -149,32 +151,22 @@ public class OAuthService {
             throw new UserExceptionHandler(ErrorCode.KAKAO_ACCESSTOKEN_INVALID);
         }
 
-        // 핵심 정보 파싱/검증
-        Long kakaoId = userInfo.getId();
-        String email = (userInfo.getKakaoAccount() != null) ? userInfo.getKakaoAccount().getEmail() : null;
-        String nickname = null;
+        // 캡슐화된 파서로 안전하게 추출
+        NormalizedKakaoProfile p = KakaoProfileExtractor.extract(userInfo);
 
-        if (userInfo.getKakaoAccount() != null && userInfo.getKakaoAccount().getProfile() != null) {
-            nickname = userInfo.getKakaoAccount().getProfile().getNickname();
-        }
-        if (!StringUtils.hasText(nickname) && userInfo.getProperties() != null) {
-            nickname = userInfo.getProperties().getNickname();
-        }
-        String profileImageUrl = (userInfo.getProperties() != null) ? userInfo.getProperties().getProfileImage() : null;
-
-        if (!StringUtils.hasText(email)) {
+        if (!StringUtils.hasText(p.email())) {
             log.warn("카카오 로그인 실패: 이메일 동의가 없어 회원 이메일을 확인할 수 없습니다");
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
         // 신규 회원 생성
-        Boolean userExist = userRepository.existsByEmail(email);
+        Boolean userExist = userRepository.existsByEmail(p.email());
 
         if (userExist == Boolean.FALSE) {
 
-            String profileImageKey = "kakao:" + (kakaoId != null ? kakaoId : java.util.UUID.randomUUID());
+            String profileImageKey = "kakao:" + (p.kakaoId() != null ? p.kakaoId() : java.util.UUID.randomUUID());
 
-            Member newMember = Member.join(nickname, email, profileImageUrl, profileImageKey, Role.ROLE_AUTHOR);
+            Member newMember = Member.join(p.nickname(), p.email(), p.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
 
             userRepository.save(newMember);
 
@@ -182,7 +174,7 @@ public class OAuthService {
         }
 
         // 그리고 회원 정보를 기반으로 액세스토큰을 발급하여 헤더에 넣습니다
-        Member byEmail = userRepository.findByEmail(email)
+        Member byEmail = userRepository.findByEmail(p.email())
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
 
         String access = jwtUtil.createJwt("access", byEmail.getId(), byEmail.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
@@ -259,33 +251,25 @@ public class OAuthService {
             throw new UserExceptionHandler(ErrorCode.KAKAO_ACCESSTOKEN_INVALID);
         }
 
-        Long kakaoId = userInfo.getId();
-        String email = (userInfo.getKakaoAccount() != null) ? userInfo.getKakaoAccount().getEmail() : null;
-        String nickname = null;
-        if (userInfo.getKakaoAccount() != null && userInfo.getKakaoAccount().getProfile() != null) {
-            nickname = userInfo.getKakaoAccount().getProfile().getNickname();
-        }
-        if (!StringUtils.hasText(nickname) && userInfo.getProperties() != null) {
-            nickname = userInfo.getProperties().getNickname();
-        }
-        String profileImageUrl = (userInfo.getProperties() != null) ? userInfo.getProperties().getProfileImage() : null;
+        // 캡슐화된 파서로 안전하게 추출
+        NormalizedKakaoProfile extractedUserInfo = KakaoProfileExtractor.extract(userInfo);
 
-        if (!StringUtils.hasText(email)) {
+        if (!StringUtils.hasText(extractedUserInfo.email())) {
             log.warn("카카오 로그인 실패: 이메일 동의가 없어 회원 이메일을 확인할 수 없습니다");
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        Boolean userExist = userRepository.existsByEmail(email);
+        Boolean userExist = userRepository.existsByEmail(extractedUserInfo.email());
         if (userExist == Boolean.FALSE) {
-            String profileImageKey = "kakao:" + (kakaoId != null ? kakaoId : java.util.UUID.randomUUID());
+            String profileImageKey = "kakao:" + (extractedUserInfo.kakaoId() != null ? extractedUserInfo.kakaoId() : java.util.UUID.randomUUID());
 
-            Member newMember = Member.join(nickname, email, profileImageUrl, profileImageKey, Role.ROLE_AUTHOR);
+            Member newMember = Member.join(extractedUserInfo.nickname(), extractedUserInfo.email(), extractedUserInfo.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
 
             userRepository.save(newMember);
             isNewUser = true;
         }
 
-        Member byEmail = userRepository.findByEmail(email)
+        Member byEmail = userRepository.findByEmail(extractedUserInfo.email())
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
 
         String access = jwtUtil.createJwt("access", byEmail.getId(), byEmail.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
