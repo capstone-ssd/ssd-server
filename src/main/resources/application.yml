@@ -62,3 +62,7 @@ app:
     domain: ""
     same-site: Lax
     secure: false
+  oauth:
+    allowed-origins:
+      - http://localhost:1573
+      - https://domain.com
