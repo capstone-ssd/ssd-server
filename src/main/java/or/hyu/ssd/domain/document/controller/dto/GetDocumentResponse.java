@@ -11,9 +11,7 @@ public record GetDocumentResponse(
         String details,
         boolean bookmark,
         Long authorId,
-        String authorName,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String authorName
 ) {
     public static GetDocumentResponse of(Document doc) {
         Long authorId = doc.getMember() != null ? doc.getMember().getId() : null;
@@ -26,9 +24,7 @@ public record GetDocumentResponse(
                 doc.getDetails(),
                 doc.isBookmark(),
                 authorId,
-                authorName,
-                doc.getCreatedAt(),
-                doc.getUpdatedAt()
+                authorName
         );
     }
 }

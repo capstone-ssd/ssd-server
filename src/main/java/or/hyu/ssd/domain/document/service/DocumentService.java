@@ -41,8 +41,7 @@ public class DocumentService {
 
 
     public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
-        Document doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+        Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
@@ -58,8 +57,7 @@ public class DocumentService {
 
 
     public void deleteDocument(Long documentId, CustomUserDetails user) {
-        Document doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+        Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
@@ -78,8 +76,7 @@ public class DocumentService {
 
     @Transactional(readOnly = true)
     public GetDocumentResponse getDocument(Long documentId, CustomUserDetails user) {
-        Document doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+        Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
@@ -110,4 +107,13 @@ public class DocumentService {
                 .map(DocumentListItemResponse::of)
                 .collect(Collectors.toList());
     }
+
+
+
+
+    private Document getDocument(Long documentId) {
+        return documentRepository.findById(documentId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+    }
 }
+
