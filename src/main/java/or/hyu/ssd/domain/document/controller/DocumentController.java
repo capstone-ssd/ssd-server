@@ -38,7 +38,7 @@ public class DocumentController {
     private final DocumentService documentService;
 
     @PostMapping("/v1/documents")
-    @Operation(summary = "문서 생성", description = "새 문서를 생성합니다. title, content는 필수이며 summary, details, bookmark는 선택입니다.")
+    @Operation(summary = "문서 생성", description = "새 문서를 생성합니다. title, content는 필수입니다.")
     public ResponseEntity<ApiResponse<CreateDocumentResponse>> createDocument(
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user

@@ -6,18 +6,12 @@ import java.time.LocalDateTime;
 public record DocumentListItemResponse(
         Long id,
         String title,
-        String summary,
-        boolean bookmark,
-        LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
     public static DocumentListItemResponse of(Document doc) {
         return new DocumentListItemResponse(
                 doc.getId(),
                 doc.getTitle(),
-                doc.getSummary(),
-                doc.isBookmark(),
-                doc.getCreatedAt(),
                 doc.getUpdatedAt()
         );
     }
