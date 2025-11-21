@@ -29,17 +29,15 @@ public class OAuthController {
 
 
     @GetMapping("/oauth/kakao")
-    @Operation(summary = "카카오 소셜로그인 API",
-            description = "카카오로 로그인 요청을 전송합니다. <br><br>" +
-                    "카카오 인증서버로 요청을 보내고 그 후에 **리다이렉트 주소**로 리다이렉트 됩니다. <br><br>" +
-                    "리다이렉트 주소에 포함되어 있는 인가코드를 밑의 API의 파라미터에 넣어주세요")
+    @Operation(summary = "카카오 소셜로그인 API(동적 콜백)",
+            description = "카카오로 로그인 요청을 전송합니다. 클라이언트 Origin 또는 요청 서버 주소를 기반으로 동적 콜백으로 리다이렉트됩니다.")
     public void kakaoOAuthCallback(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         /**
          * 동적 리다이렉트 방식
-         * - 요청의 Origin을 기반으로 redirect_uri를 계산하고
-         * - 카카오 인증 서버로 302 리다이렉트 합니다. (state 미사용)
-         * */
+         * - Origin(있으면 화이트리스트 검증) 또는 요청의 스킴/호스트/포트를 기반으로
+         *   {base}/oauth/kakao/callback 콜백 URL을 계산해 카카오로 302 리다이렉트 합니다.
+         */
         String redirectAddress = oAuthService.requestRedirect(request);
         response.sendRedirect(redirectAddress);
     }
@@ -73,11 +71,11 @@ public class OAuthController {
 
 
     @Operation(summary = "카카오 로그인 시작 - 서버에서 모든 로직을 처리",
-            description = "항상 서버 콜백으로 처리하는 시작 엔드포인트입니다. 서버가 자체 콜백 URL을 계산하고 state를 발급하여 카카오로 리다이렉트합니다.")
+            description = "항상 서버 콜백으로 처리하는 시작 엔드포인트입니다. 설정된 서버 콜백 redirect_uri로 카카오에 리다이렉트합니다.")
     @GetMapping("/oauth/kakao/server")
     public void kakaoOAuthServerStart(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // 서버 콜백 전용 시작점
-        // - 클라이언트 Origin 여부와 상관없이 서버의 스킴/호스트/포트를 기준으로 redirect_uri를 산출합니다
+        // - yml에 설정된 서버 콜백 redirect_uri를 사용합니다
         String redirectAddress = oAuthService.requestRedirectServer(request);
         response.sendRedirect(redirectAddress);
     }

@@ -17,8 +17,8 @@ import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.CookieConfig;
 import or.hyu.ssd.global.config.properties.JWTConfig;
-import or.hyu.ssd.global.config.properties.OAuthProperties;
 import or.hyu.ssd.global.config.KaKaoConfig;
+import or.hyu.ssd.global.config.properties.OAuthProperties;
 import or.hyu.ssd.global.jwt.JWTUtil;
 import or.hyu.ssd.global.util.CookieUtil;
 import org.springframework.stereotype.Service;
@@ -49,42 +49,32 @@ public class OAuthService {
 
 
     /**
-     * 동적 리다이렉트: 요청 Origin을 기반으로 redirect_uri를 계산하고 state를 발급/저장합니다.
-     * 반환값은 카카오 authorize URL입니다.
+     * 카카오 authorize URL 생성 (동적 콜백)
+     * - Origin 기반 또는 요청의 스킴/호스트/포트로 "{base}/oauth/kakao/callback"을 계산합니다.
+     * - 프론트 콜백 플로우에 사용합니다.
      */
     public String requestRedirect(jakarta.servlet.http.HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         String redirectBase;
 
         if (StringUtils.hasText(origin)) {
-
-            // 브라우저가 Cross-Origin 요청으로 보낸 경우: Origin 헤더 기반으로 검증/사용
+            // 브라우저가 보낸 Origin이 화이트리스트에 있는지 검증
             List<String> allowed = oAuthProperties.getAllowedOrigins();
-
             if (allowed != null && !allowed.isEmpty() && !allowed.contains(origin)) {
                 log.warn("허용되지 않은 Origin: {}", origin);
                 throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
             }
-
             redirectBase = origin;
         } else {
-
-            /**
-             * Origin 헤더가 없는 경우(주소창 직접 입력, 같은 오리진 요청 등):
-             * 현재 요청의 스킴/호스트/포트를 기반으로 베이스 URL을 계산합니다.
-             * */
+            // Origin 헤더가 없으면 현재 요청의 서버 기준으로 복원
             String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
             String forwardedHost = request.getHeader("X-Forwarded-Host");
-
             if (StringUtils.hasText(forwardedHost)) {
-                
-                // X-Forwarded-Host에 host 또는 host:port가 포함됨
                 redirectBase = scheme + "://" + forwardedHost;
             } else {
                 String host = request.getServerName();
                 int port = request.getServerPort();
-                boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) ||
-                        ("https".equalsIgnoreCase(scheme) && port == 443);
+                boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) || ("https".equalsIgnoreCase(scheme) && port == 443);
                 redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
             }
         }
@@ -94,7 +84,6 @@ public class OAuthService {
         String encodedRedirect = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedScope = URLEncoder.encode(kaKaoConfig.getScope(), StandardCharsets.UTF_8);
 
-        // state 파라미터 제거(요청 사항에 따라 CSRF 관련 로직 제거)
         return String.format(
                 "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent",
                 kaKaoConfig.getClientId(), encodedRedirect, encodedScope
@@ -113,10 +102,9 @@ public class OAuthService {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        // state 없이 redirect_uri를 재구성합니다.
-        // 프론트 콜백 플로우에서는 요청의 Origin을 이용하여 최초 authorize 단계와 동일한 redirect_uri를 산출합니다.
-        String redirectBase;
+        // 동적 콜백 redirect_uri를 재구성 (인가요청에서 사용한 값과 일치하도록)
         String origin = request.getHeader("Origin");
+        String redirectBase;
         if (StringUtils.hasText(origin)) {
             List<String> allowed = oAuthProperties.getAllowedOrigins();
             if (allowed != null && !allowed.isEmpty() && !allowed.contains(origin)) {
@@ -227,27 +215,11 @@ public class OAuthService {
 
 
     /**
-     * 항상 서버 콜백 방식 - 시작 단계 (CSRF state 미사용)
-     * - 서버의 스킴/호스트/포트를 기준으로 redirect_uri를 계산합니다.
-     * - 계산된 redirect_uri는 "/oauth/kakao/server/callback"으로 고정됩니다.
+     * 항상 서버 콜백 방식 - 시작 단계 (yml redirect_uri 사용)
+     * - yml에 설정된 redirect_uri를 그대로 사용합니다.
      */
     public String requestRedirectServer(HttpServletRequest request) {
-        String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
-
-        String redirectBase;
-        if (StringUtils.hasText(forwardedHost)) {
-            redirectBase = scheme + "://" + forwardedHost;
-        } else {
-            String host = request.getServerName();
-            int port = request.getServerPort();
-            boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) ||
-                    ("https".equalsIgnoreCase(scheme) && port == 443);
-            redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
-        }
-
-        // 서버 콜백 고정 경로
-        String redirectUri = redirectBase + "/oauth/kakao/server/callback";
+        String redirectUri = kaKaoConfig.getRedirectUri();
 
         String encodedRedirect = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedScope = URLEncoder.encode(kaKaoConfig.getScope(), StandardCharsets.UTF_8);
@@ -259,9 +231,8 @@ public class OAuthService {
     }
 
     /**
-     * 항상 서버 콜백 방식 - 카카오로부터 서버 콜백을 받을 때 호출
-     * - state로 저장된 redirect_uri를 복원하여 토큰 교환을 수행합니다.
-     * - 이후 사용자 저장/조회 및 JWT 발급까지 처리합니다.
+     * 항상 서버 콜백 방식 - 카카오로부터 서버 콜백을 받을 때 호출 (yml redirect_uri 사용)
+     * - 설정된 redirect_uri로 토큰 교환을 수행합니다.
      */
     public Boolean kakaoLoginServer(String accessCode, HttpServletRequest request, HttpServletResponse response) {
         Boolean isNewUser = false;
@@ -270,19 +241,7 @@ public class OAuthService {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-
-        String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
-        String redirectBase;
-        if (StringUtils.hasText(forwardedHost)) {
-            redirectBase = scheme + "://" + forwardedHost;
-        } else {
-            String host = request.getServerName();
-            int port = request.getServerPort();
-            boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) || ("https".equalsIgnoreCase(scheme) && port == 443);
-            redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
-        }
-        String redirectUri = redirectBase + "/oauth/kakao/server/callback";
+        String redirectUri = kaKaoConfig.getRedirectUri();
 
         KaKaoOAuthTokenDTO authorizationCode;
         try {
