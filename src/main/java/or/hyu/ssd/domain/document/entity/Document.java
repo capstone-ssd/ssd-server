@@ -50,12 +50,10 @@ public class Document extends BaseEntity {
 
 
 
-    public static Document of(String title, String content, String summary, String details, boolean bookmark, Member member) {
+    public static Document of(String title, String content, boolean bookmark, Member member) {
         return Document.builder()
                 .title(title)
                 .content(content)
-                .summary(summary)
-                .details(details)
                 .bookmark(bookmark)
                 .member(member)
                 .build();

@@ -31,9 +31,8 @@ public class DocumentService {
 
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
-        boolean bookmark = req.bookmark() != null ? req.bookmark() : false;
 
-        Document doc = Document.of(req.title(), req.content(), req.summary(), req.details(), bookmark, user.getMember());
+        Document doc = Document.of(req.title(), req.content(), false, user.getMember());
 
         Document saved = documentRepository.save(doc);
         return CreateDocumentResponse.of(saved.getId());
