@@ -43,4 +43,15 @@ public class Document extends BaseEntity {
     /**
      * 수정기록과 주석 관련 기능 확인하고 ERD 반영해야함 (11/20)
      * */
+
+
+
+    public static Document of(String content, String summary, String details,boolean bookmark, Member member) {
+        return Document.builder()
+                .content(content)
+                .summary(summary)
+                .details(details)
+                .bookmark(bookmark)
+                .build();
+    }
 }

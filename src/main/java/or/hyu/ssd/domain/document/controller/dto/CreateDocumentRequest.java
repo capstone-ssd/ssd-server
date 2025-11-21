@@ -1,0 +1,12 @@
+package or.hyu.ssd.domain.document.controller.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateDocumentRequest(
+        @NotBlank(message = "내용은 필수입니다")
+        String content,
+        String summary,
+        String details,
+        Boolean bookmark
+) {}
+
