@@ -12,12 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 
 @RestController
 @RequestMapping("/api")
@@ -31,8 +33,8 @@ public class DocumentController {
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        Long id = documentService.createDocument(user, request);
-        return ResponseEntity.ok(ApiResponse.ok(new CreateDocumentResponse(id), "문서가 저장되었습니다"));
+        CreateDocumentResponse dto = documentService.createDocument(user, request);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
 
@@ -42,8 +44,8 @@ public class DocumentController {
             @RequestBody UpdateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        Long updatedId = documentService.updateDocument(id, user, request);
-        return ResponseEntity.ok(ApiResponse.ok(new UpdateDocumentResponse(updatedId), "문서가 수정되었습니다"));
+        UpdateDocumentResponse dto = documentService.updateDocument(id, user, request);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
 
@@ -54,5 +56,15 @@ public class DocumentController {
     ) {
         documentService.deleteDocument(id, user);
         return ResponseEntity.ok(ApiResponse.ok("문서가 삭제되었습니다"));
+    }
+
+
+    @GetMapping("/v1/documents/{id}")
+    public ResponseEntity<ApiResponse<GetDocumentResponse>> getDocument(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        GetDocumentResponse dto = documentService.getDocument(id, user);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 조회되었습니다"));
     }
 }

@@ -7,6 +7,9 @@ import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
+import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import org.springframework.stereotype.Service;
@@ -21,17 +24,17 @@ public class DocumentService {
     private final CheckListRepository checkListRepository;
 
 
-    public Long createDocument(CustomUserDetails user, CreateDocumentRequest req) {
+    public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
         boolean bookmark = req.bookmark() != null ? req.bookmark() : false;
 
         Document doc = Document.of(req.content(), req.summary(), req.details(), bookmark,user.getMember());
 
         Document saved = documentRepository.save(doc);
-        return saved.getId();
+        return CreateDocumentResponse.of(saved.getId());
     }
 
 
-    public Long updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
+    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
         Document doc = documentRepository.findById(documentId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
 
@@ -44,7 +47,7 @@ public class DocumentService {
 
         doc.updateIfPresent(req.content(), req.summary(), req.details(), req.bookmark());
 
-        return doc.getId();
+        return UpdateDocumentResponse.of(doc.getId());
     }
 
 
@@ -64,6 +67,22 @@ public class DocumentService {
 
         // 문서 삭제
         documentRepository.delete(doc);
+    }
+
+    // 문서 단일 조회 API
+    @Transactional(readOnly = true)
+    public GetDocumentResponse getDocument(Long documentId, CustomUserDetails user) {
+        Document doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+
+        if (doc.getMember() == null || user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!doc.getMember().getId().equals(user.getMember().getId())) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+
+        return GetDocumentResponse.of(doc);
     }
 
 
