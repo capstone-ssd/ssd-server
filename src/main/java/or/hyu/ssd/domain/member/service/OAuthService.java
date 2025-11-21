@@ -174,13 +174,7 @@ public class OAuthService {
 
             String profileImageKey = "kakao:" + (kakaoId != null ? kakaoId : java.util.UUID.randomUUID());
 
-            Member newMember = Member.builder()
-                    .name(StringUtils.hasText(nickname) ? nickname : email)
-                    .email(email)
-                    .profileImageUrl(StringUtils.hasText(profileImageUrl) ? profileImageUrl : "")
-                    .profileImageKey(profileImageKey)
-                    .role(Role.ROLE_AUTHOR)
-                    .build();
+            Member newMember = Member.join(nickname, email, profileImageUrl, profileImageKey, Role.ROLE_AUTHOR);
 
             userRepository.save(newMember);
 
@@ -285,13 +279,8 @@ public class OAuthService {
         if (userExist == Boolean.FALSE) {
             String profileImageKey = "kakao:" + (kakaoId != null ? kakaoId : java.util.UUID.randomUUID());
 
-            Member newMember = Member.builder()
-                    .name(StringUtils.hasText(nickname) ? nickname : email)
-                    .email(email)
-                    .profileImageUrl(StringUtils.hasText(profileImageUrl) ? profileImageUrl : "")
-                    .profileImageKey(profileImageKey)
-                    .role(Role.ROLE_AUTHOR)
-                    .build();
+            Member newMember = Member.join(nickname, email, profileImageUrl, profileImageKey, Role.ROLE_AUTHOR);
+
             userRepository.save(newMember);
             isNewUser = true;
         }
