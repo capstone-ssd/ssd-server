@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/api")
@@ -34,6 +35,7 @@ public class DocumentController {
         return ResponseEntity.ok(ApiResponse.ok(new CreateDocumentResponse(id), "문서가 저장되었습니다"));
     }
 
+
     @PutMapping("/v1/documents/{id}")
     public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
             @PathVariable("id") Long id,
@@ -42,5 +44,15 @@ public class DocumentController {
     ) {
         Long updatedId = documentService.updateDocument(id, user, request);
         return ResponseEntity.ok(ApiResponse.ok(new UpdateDocumentResponse(updatedId), "문서가 수정되었습니다"));
+    }
+
+
+    @DeleteMapping("/v1/documents/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteDocument(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        documentService.deleteDocument(id, user);
+        return ResponseEntity.ok(ApiResponse.ok("문서가 삭제되었습니다"));
     }
 }
