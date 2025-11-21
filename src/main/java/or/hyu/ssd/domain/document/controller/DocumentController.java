@@ -1,5 +1,9 @@
 package or.hyu.ssd.domain.document.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.service.DocumentService;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
@@ -28,11 +32,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Tag(name = "문서 API")
 public class DocumentController {
 
     private final DocumentService documentService;
 
     @PostMapping("/v1/documents")
+    @Operation(summary = "문서 생성", description = "새 문서를 생성합니다. title, content는 필수이며 summary, details, bookmark는 선택입니다.")
     public ResponseEntity<ApiResponse<CreateDocumentResponse>> createDocument(
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
@@ -43,6 +49,7 @@ public class DocumentController {
 
 
     @PutMapping("/v1/documents/{id}")
+    @Operation(summary = "문서 수정", description = "문서 ID로 문서를 부분/전체 수정합니다. 제공된 필드만 반영됩니다.")
     public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
             @PathVariable("id") Long id,
             @RequestBody UpdateDocumentRequest request,
@@ -54,6 +61,7 @@ public class DocumentController {
 
 
     @DeleteMapping("/v1/documents/{id}")
+    @Operation(summary = "문서 삭제", description = "문서 ID로 문서를 삭제합니다. 소유자만 삭제할 수 있습니다.")
     public ResponseEntity<ApiResponse<String>> deleteDocument(
             @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails user
@@ -64,6 +72,7 @@ public class DocumentController {
 
 
     @GetMapping("/v1/documents/{id}")
+    @Operation(summary = "문서 단일 조회", description = "문서 ID로 단일 문서를 조회합니다. 소유자만 조회할 수 있습니다.")
     public ResponseEntity<ApiResponse<GetDocumentResponse>> getDocument(
             @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails user
@@ -74,8 +83,11 @@ public class DocumentController {
 
 
     @GetMapping("/v1/documents")
+    @Operation(summary = "문서 목록 조회", description = "회원의 모든 문서를 정렬 옵션과 함께 조회합니다. <br>" +
+            "정렬 옵션: LATEST(최신순), OLDEST(오래된순), NAME(제목순), MODIFIED(최근수정순)")
     public ResponseEntity<ApiResponse<List<DocumentListItemResponse>>> listDocuments(
             @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "정렬 옵션", schema = @Schema(allowableValues = {"LATEST","OLDEST","NAME","MODIFIED"}))
             @RequestParam(name = "sort", defaultValue = "LATEST") DocumentSort sort
     ) {
         List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);

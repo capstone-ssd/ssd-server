@@ -110,9 +110,4 @@ public class DocumentService {
                 .map(DocumentListItemResponse::of)
                 .collect(Collectors.toList());
     }
-
-
-
-    // 문서 조회 API
-    // 문서 전체 조회 API
 }
