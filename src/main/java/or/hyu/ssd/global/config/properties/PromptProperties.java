@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class PromptProperties {
 
     private ChecklistPrompt checklist = new ChecklistPrompt();
+    private SummaryPrompt summary = new SummaryPrompt();
 
     @Getter
     @Setter
@@ -19,5 +20,11 @@ public class PromptProperties {
         private String system;
         private String user;
     }
-}
 
+    @Getter
+    @Setter
+    public static class SummaryPrompt {
+        private String system;
+        private String user;
+    }
+}

@@ -70,6 +70,9 @@ app:
     checklist:
       system: ${CHECK_SYS_PROMPT}
       user: ${CHECK_USER_PROMPT}
+    summary:
+      system: ${SUMMARY_SYS_PROMPT}
+      user: ${SUMMARY_USER_PROMPT}
 
 ---
 spring:
