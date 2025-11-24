@@ -36,4 +36,8 @@ public class CheckList extends BaseEntity {
                 .document(document)
                 .build();
     }
+
+    public void updateChecked(boolean checked) {
+        this.checked = checked;
+    }
 }

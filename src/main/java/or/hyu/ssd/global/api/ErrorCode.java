@@ -26,6 +26,10 @@ public enum ErrorCode {
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOC40401", "문서를 찾지 못했습니다"),
     DOCUMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "DOC40301", "해당 문서를 수정할 권한이 없습니다"),
 
+    // 체크리스트 예외
+    CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CHK40401", "체크리스트를 찾지 못했습니다"),
+    CHECKLIST_FORBIDDEN(HttpStatus.FORBIDDEN, "CHK40301", "해당 체크리스트에 접근할 권한이 없습니다"),
+
 
     // 토큰 예외
     TOKEN_SECRET_IS_NULL(HttpStatus.INTERNAL_SERVER_ERROR, "TOKEN50001","JWT SECRET KEY가 주입되지 않았습니다"),
