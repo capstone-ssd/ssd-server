@@ -113,6 +113,10 @@ public class CheckListService {
         return GenerateChecklistResponse.of(doc.getId(), responses);
     }
 
+
+    /**
+     * 사업계획서의 작성자를 확인하는 메서드
+     * */
     private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
         Document doc = documentRepository.findById(documentId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));

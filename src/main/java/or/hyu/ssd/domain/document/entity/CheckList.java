@@ -10,7 +10,15 @@ import org.hibernate.annotations.Comment;
 @AllArgsConstructor
 @Getter
 @Builder
-@Table(name = "check_lists")
+@Table(
+        name = "check_lists",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_checklist_doc_content", columnNames = {"document_id", "content"})
+        },
+        indexes = {
+                @Index(name = "idx_checklist_document_id", columnList = "document_id")
+        }
+)
 public class CheckList extends BaseEntity {
 
     @Id
