@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CheckListRepository extends JpaRepository<CheckList, Long> {
     void deleteAllByDocument(Document document);
+    java.util.List<CheckList> findAllByDocument(Document document);
 }

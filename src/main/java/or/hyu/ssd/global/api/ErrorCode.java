@@ -26,6 +26,11 @@ public enum ErrorCode {
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOC40401", "문서를 찾지 못했습니다"),
     DOCUMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "DOC40301", "해당 문서를 수정할 권한이 없습니다"),
 
+    // 체크리스트 예외
+    CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CHK40401", "체크리스트를 찾지 못했습니다"),
+    CHECKLIST_FORBIDDEN(HttpStatus.FORBIDDEN, "CHK40301", "해당 체크리스트에 접근할 권한이 없습니다"),
+    CHECKLIST_CONFLICT(HttpStatus.CONFLICT, "CHK40901", "체크리스트가 동시에 수정되었습니다. 다시 시도해 주세요"),
+
 
     // 토큰 예외
     TOKEN_SECRET_IS_NULL(HttpStatus.INTERNAL_SERVER_ERROR, "TOKEN50001","JWT SECRET KEY가 주입되지 않았습니다"),
@@ -37,6 +42,9 @@ public enum ErrorCode {
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED,"TOKEN40305" ,"리프레시 토큰이 만료되었습니다"),
     INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED,"TOKEN40306" ,"JWT 시그니처가 위조되었습니다" ),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED,"TOKEN40307" ,"유효하지 않은 토큰입니다"),
+
+    // 요청 바디/JSON 파싱 예외
+    REQUEST_BODY_INVALID_JSON(HttpStatus.BAD_REQUEST, "REQ40001", "요청 본문 JSON 파싱에 실패했습니다. 문자열의 개행은 \\n 로 이스케이프해 주세요"),
 
 
 

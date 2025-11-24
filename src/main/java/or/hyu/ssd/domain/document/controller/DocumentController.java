@@ -93,4 +93,7 @@ public class DocumentController {
         List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
     }
+
+
+    
 }

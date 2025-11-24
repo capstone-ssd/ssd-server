@@ -32,6 +32,8 @@ ext {
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        // Spring AI BOM for version alignment
+        mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
     }
 }
 
@@ -79,6 +81,9 @@ dependencies {
 
     // redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Spring AI
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 }
 
 tasks.named('test') {

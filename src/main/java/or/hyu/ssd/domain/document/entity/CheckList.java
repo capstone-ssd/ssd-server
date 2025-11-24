@@ -10,7 +10,15 @@ import org.hibernate.annotations.Comment;
 @AllArgsConstructor
 @Getter
 @Builder
-@Table(name = "check_lists")
+@Table(
+        name = "check_lists",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_checklist_doc_content", columnNames = {"document_id", "content"})
+        },
+        indexes = {
+                @Index(name = "idx_checklist_document_id", columnList = "document_id")
+        }
+)
 public class CheckList extends BaseEntity {
 
     @Id
@@ -28,4 +36,19 @@ public class CheckList extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id")
     private Document document;
+
+    @Version
+    private Long version;
+
+    public static CheckList of(String content, Document document) {
+        return CheckList.builder()
+                .content(content)
+                .checked(false)
+                .document(document)
+                .build();
+    }
+
+    public void updateChecked(boolean checked) {
+        this.checked = checked;
+    }
 }

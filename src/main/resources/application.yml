@@ -66,3 +66,17 @@ app:
     allowed-origins:
       - http://localhost:5173
       - http://localhost:8080
+  prompts:
+    checklist:
+      system: ${CHECK_SYS_PROMPT}
+      user: ${CHECK_USER_PROMPT}
+
+---
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.7
