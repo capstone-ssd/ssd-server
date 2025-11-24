@@ -6,6 +6,7 @@ import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
@@ -16,6 +17,7 @@ import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import or.hyu.ssd.global.util.OptimisticRetryExecutor;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final CheckListRepository checkListRepository;
+    private final OptimisticRetryExecutor optimisticRetryExecutor;
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
 
@@ -96,6 +99,25 @@ public class DocumentService {
                 .stream()
                 .map(DocumentListItemResponse::of)
                 .collect(Collectors.toList());
+    }
+
+    public DocumentBookmarkResponse toggleBookmark(Long documentId, CustomUserDetails user) {
+        DocumentBookmarkResponse result = optimisticRetryExecutor.execute(3, () -> {
+            Document doc = getDocument(documentId);
+
+            if (doc.getMember() == null || user == null || user.getMember() == null) {
+                throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            }
+            if (!doc.getMember().getId().equals(user.getMember().getId())) {
+                throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            }
+
+            boolean newVal = !doc.isBookmark();
+            doc.updateIfPresent(null, null, null, null, newVal);
+            documentRepository.flush();
+            return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
+        });
+        return result;
     }
 
 

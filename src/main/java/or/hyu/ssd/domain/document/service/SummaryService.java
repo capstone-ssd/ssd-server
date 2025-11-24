@@ -29,12 +29,13 @@ public class SummaryService {
     public ThreeLineSummaryResponse generate(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, user);
         String content = doc.getContent();
+
         if (content == null || content.isBlank()) {
             doc.updateIfPresent(null, null, null, null, null);
             return ThreeLineSummaryResponse.of(doc.getId(), List.of());
         }
 
-        var prompts = promptProperties.getSummary();
+        PromptProperties.SummaryPrompt prompts = promptProperties.getSummary();
         String systemPrompt = prompts.getSystem();
         String userPrompt = String.format(prompts.getUser(), content);
         String merged = PromptComposer.mergeSystemUser(systemPrompt, userPrompt);
@@ -43,7 +44,6 @@ public class SummaryService {
         String json = AiResponseUtil.extractJsonArray(raw);
         List<String> lines = AiResponseUtil.parseStringArray(json);
 
-        // take first 3 non-blank lines
         List<String> three = new ArrayList<>();
         for (String line : lines) {
             if (line == null) continue;
