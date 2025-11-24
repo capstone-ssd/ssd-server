@@ -4,6 +4,7 @@ package or.hyu.ssd.global.api;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.global.api.handler.CustomException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -33,6 +34,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
         ErrorCode errorCode = ErrorCode.CHECKLIST_CONFLICT;
         log.warn("Optimistic locking failure: {}", e.getMessage());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.fail(errorCode));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
+        ErrorCode errorCode = ErrorCode.REQUEST_BODY_INVALID_JSON;
+        log.warn("JSON parse error: {}", e.getMessage());
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode));
     }

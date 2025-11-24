@@ -43,6 +43,9 @@ public enum ErrorCode {
     INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED,"TOKEN40306" ,"JWT 시그니처가 위조되었습니다" ),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED,"TOKEN40307" ,"유효하지 않은 토큰입니다"),
 
+    // 요청 바디/JSON 파싱 예외
+    REQUEST_BODY_INVALID_JSON(HttpStatus.BAD_REQUEST, "REQ40001", "요청 본문 JSON 파싱에 실패했습니다. 문자열의 개행은 \\n 로 이스케이프해 주세요"),
+
 
 
     // 서버 예외
