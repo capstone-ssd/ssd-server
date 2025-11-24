@@ -2,7 +2,6 @@ package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.CheckListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.UpdateCheckListRequest;
 import or.hyu.ssd.domain.document.controller.dto.GenerateChecklistResponse;
 import or.hyu.ssd.domain.document.entity.CheckList;
 import or.hyu.ssd.domain.document.entity.Document;
@@ -45,10 +44,9 @@ public class CheckListService {
                 .collect(Collectors.toList());
     }
 
-    public CheckListItemResponse updateChecked(Long checkListId, UpdateCheckListRequest req, CustomUserDetails user) {
+    public CheckListItemResponse toggleChecked(Long checkListId, CustomUserDetails user) {
         CheckList entity = getOwnedCheckList(checkListId, user);
-        entity.updateChecked(Boolean.TRUE.equals(req.checked()));
-        // flush 시점에 낙관적 락 충돌을 조기 감지
+        entity.updateChecked(!entity.isChecked());
         checkListRepository.flush();
         return CheckListItemResponse.of(entity);
     }
@@ -75,18 +73,42 @@ public class CheckListService {
         String raw = aiTextClient.complete(mergedPrompt);
 
         String json = AiResponseUtil.extractJsonArray(raw);
-        List<String> items = AiResponseUtil.parseStringArray(json);
+        List<String> rawItems = AiResponseUtil.parseStringArray(json);
 
-        checkListRepository.deleteAllByDocument(doc);
+        // 중복 제거 + 순서 유지
+        java.util.LinkedHashSet<String> targetSet = new java.util.LinkedHashSet<>(rawItems);
+        List<String> targetItems = new java.util.ArrayList<>(targetSet);
 
-        List<CheckList> toSave = items.stream()
-                .map(it -> CheckList.of(it, doc))
+        // 기존 항목 조회
+        List<CheckList> existing = checkListRepository.findAllByDocument(doc);
+        java.util.Map<String, CheckList> existingByContent = existing.stream()
+                .collect(java.util.stream.Collectors.toMap(CheckList::getContent, java.util.function.Function.identity(), (a,b)->a));
+
+        // 삭제 목록: 타깃에 없는 기존 항목
+        List<CheckList> toDelete = existing.stream()
+                .filter(e -> !targetSet.contains(e.getContent()))
+                .collect(Collectors.toList());
+        if (!toDelete.isEmpty()) {
+            checkListRepository.deleteAll(toDelete);
+        }
+
+        // 생성 목록: 기존에 없는 신규 항목만
+        List<CheckList> toCreate = targetItems.stream()
+                .filter(s -> !existingByContent.containsKey(s))
+                .map(s -> CheckList.of(s, doc))
                 .collect(Collectors.toList());
 
-        List<CheckList> saved = checkListRepository.saveAll(toSave);
-        List<CheckListItemResponse> responses = saved.stream()
-                .map(CheckListItemResponse::of)
-                .collect(Collectors.toList());
+        List<CheckList> created = toCreate.isEmpty() ? java.util.List.of() : checkListRepository.saveAll(toCreate);
+        java.util.Map<String, CheckList> createdByContent = created.stream()
+                .collect(java.util.stream.Collectors.toMap(CheckList::getContent, java.util.function.Function.identity()));
+
+        // 응답은 targetItems 순서를 따르고, 기존 항목은 체크 상태 보존
+        List<CheckListItemResponse> responses = new java.util.ArrayList<>();
+        for (String s : targetItems) {
+            CheckList e = existingByContent.get(s);
+            if (e == null) e = createdByContent.get(s);
+            if (e != null) responses.add(CheckListItemResponse.of(e));
+        }
 
         return GenerateChecklistResponse.of(doc.getId(), responses);
     }

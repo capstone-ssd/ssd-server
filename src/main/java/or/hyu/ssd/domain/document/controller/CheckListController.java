@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.CheckListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.UpdateCheckListRequest;
 import or.hyu.ssd.domain.document.controller.dto.GenerateChecklistResponse;
 import or.hyu.ssd.domain.document.service.CheckListService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -35,14 +34,13 @@ public class CheckListController {
     }
 
     @PatchMapping("/v1/checklists/{id}")
-    @Operation(summary = "체크리스트 체크/해제", description = "체크리스트의 체크 상태를 변경합니다.")
-    public ResponseEntity<ApiResponse<CheckListItemResponse>> updateChecked(
+    @Operation(summary = "체크리스트 토글", description = "체크리스트의 체크 상태를 토글합니다.")
+    public ResponseEntity<ApiResponse<CheckListItemResponse>> toggleChecked(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateCheckListRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CheckListItemResponse dto = checkListService.updateChecked(id, request, user);
-        return ResponseEntity.ok(ApiResponse.ok(dto, "체크 상태가 변경되었습니다"));
+        CheckListItemResponse dto = checkListService.toggleChecked(id, user);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "체크 상태가 토글되었습니다"));
     }
 
     @DeleteMapping("/v1/checklists/{id}")
