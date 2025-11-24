@@ -29,6 +29,7 @@ public enum ErrorCode {
     // 체크리스트 예외
     CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CHK40401", "체크리스트를 찾지 못했습니다"),
     CHECKLIST_FORBIDDEN(HttpStatus.FORBIDDEN, "CHK40301", "해당 체크리스트에 접근할 권한이 없습니다"),
+    CHECKLIST_CONFLICT(HttpStatus.CONFLICT, "CHK40901", "체크리스트가 동시에 수정되었습니다. 다시 시도해 주세요"),
 
 
     // 토큰 예외

@@ -29,6 +29,9 @@ public class CheckList extends BaseEntity {
     @JoinColumn(name = "document_id")
     private Document document;
 
+    @Version
+    private Long version;
+
     public static CheckList of(String content, Document document) {
         return CheckList.builder()
                 .content(content)

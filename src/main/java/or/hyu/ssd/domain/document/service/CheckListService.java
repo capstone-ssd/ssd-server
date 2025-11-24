@@ -26,6 +26,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CheckListService {
 
+    /**
+     * 1. 체크리스트 체크 관련 동시성 여부 - 낙관적 락을 통해 구현
+     * 2. 체크리스트 등록 API 기존의 체크리스트가 있을때 어떻게 할 것인가?
+     *  - 이미 있으면 기존의 것들 전부 삭제하고 다시 새로운 데이터로 채우는 로직이 필요함
+     * */
+
     private final CheckListRepository checkListRepository;
     private final DocumentRepository documentRepository;
     private final AiTextClient aiTextClient;
@@ -42,6 +48,8 @@ public class CheckListService {
     public CheckListItemResponse updateChecked(Long checkListId, UpdateCheckListRequest req, CustomUserDetails user) {
         CheckList entity = getOwnedCheckList(checkListId, user);
         entity.updateChecked(Boolean.TRUE.equals(req.checked()));
+        // flush 시점에 낙관적 락 충돌을 조기 감지
+        checkListRepository.flush();
         return CheckListItemResponse.of(entity);
     }
 
