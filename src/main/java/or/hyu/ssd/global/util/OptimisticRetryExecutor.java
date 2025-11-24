@@ -23,10 +23,17 @@ public class OptimisticRetryExecutor {
                 return tt.execute(status -> callback.get());
             } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
                 lastEx = e;
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(50L * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(ie);
+                    }
+                }
             }
         }
         if (lastEx instanceof RuntimeException re) throw re;
         throw new RuntimeException(String.valueOf(lastEx));
     }
 }
-

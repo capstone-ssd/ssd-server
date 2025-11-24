@@ -44,7 +44,6 @@ public class SummaryService {
         String json = AiResponseUtil.extractJsonArray(raw);
         List<String> lines = AiResponseUtil.parseStringArray(json);
 
-        // take first 3 non-blank lines
         List<String> three = new ArrayList<>();
         for (String line : lines) {
             if (line == null) continue;
