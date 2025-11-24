@@ -10,6 +10,7 @@ import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.GenerateChecklistResponse;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -92,5 +93,16 @@ public class DocumentController {
     ) {
         List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
+    }
+
+
+    @PostMapping("/v1/documents/{id}/checklists/generate")
+    @Operation(summary = "체크리스트 생성 및 저장", description = "문서의 content를 기반으로 AI가 체크리스트를 생성하고 DB에 저장합니다.")
+    public ResponseEntity<ApiResponse<GenerateChecklistResponse>> generateChecklist(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        GenerateChecklistResponse dto = documentService.generateChecklist(id, user);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "체크리스트가 생성되어 저장되었습니다"));
     }
 }
