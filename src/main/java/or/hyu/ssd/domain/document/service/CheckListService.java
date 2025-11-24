@@ -27,10 +27,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CheckListService {
 
-    /**
-     * 1. 체크리스트 체크 동시성: 낙관적 락(@Version)으로 충돌 감지
-     * 2. 체크리스트 등록(generate): 기존 항목은 유지하고, AI가 제안한 항목 중 신규 content만 추가
-     */
 
     private final CheckListRepository checkListRepository;
     private final DocumentRepository documentRepository;
