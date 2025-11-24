@@ -28,4 +28,12 @@ public class CheckList extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id")
     private Document document;
+
+    public static CheckList of(String content, Document document) {
+        return CheckList.builder()
+                .content(content)
+                .checked(false)
+                .document(document)
+                .build();
+    }
 }
