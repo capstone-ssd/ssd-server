@@ -29,12 +29,13 @@ public class SummaryService {
     public ThreeLineSummaryResponse generate(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, user);
         String content = doc.getContent();
+
         if (content == null || content.isBlank()) {
             doc.updateIfPresent(null, null, null, null, null);
             return ThreeLineSummaryResponse.of(doc.getId(), List.of());
         }
 
-        var prompts = promptProperties.getSummary();
+        PromptProperties.SummaryPrompt prompts = promptProperties.getSummary();
         String systemPrompt = prompts.getSystem();
         String userPrompt = String.format(prompts.getUser(), content);
         String merged = PromptComposer.mergeSystemUser(systemPrompt, userPrompt);

@@ -16,6 +16,7 @@ import or.hyu.ssd.global.config.properties.PromptProperties;
 import or.hyu.ssd.global.util.AiResponseUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import or.hyu.ssd.global.util.OptimisticRetryExecutor;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ public class CheckListService {
     private final DocumentRepository documentRepository;
     private final AiTextClient aiTextClient;
     private final PromptProperties promptProperties;
+    private final OptimisticRetryExecutor optimisticRetryExecutor;
 
     @Transactional(readOnly = true)
     public List<CheckListItemResponse> listByDocument(Long documentId, CustomUserDetails user) {
@@ -42,10 +44,12 @@ public class CheckListService {
     }
 
     public CheckListItemResponse toggleChecked(Long checkListId, CustomUserDetails user) {
-        CheckList entity = getOwnedCheckList(checkListId, user);
-        entity.updateChecked(!entity.isChecked());
-        checkListRepository.flush();
-        return CheckListItemResponse.of(entity);
+        return optimisticRetryExecutor.execute(3, () -> {
+            CheckList entity = getOwnedCheckList(checkListId, user);
+            entity.updateChecked(!entity.isChecked());
+            checkListRepository.flush();
+            return CheckListItemResponse.of(entity);
+        });
     }
 
     public void delete(Long checkListId, CustomUserDetails user) {

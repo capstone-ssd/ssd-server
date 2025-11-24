@@ -27,6 +27,7 @@ import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import org.springframework.web.bind.annotation.RequestParam;
+import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import java.util.List;
 
 @RestController
@@ -95,5 +96,13 @@ public class DocumentController {
     }
 
 
-    
+    @PatchMapping("/v1/documents/{id}/bookmark")
+    @Operation(summary = "문서 즐겨찾기 토글", description = "문서의 bookmark 상태를 토글합니다.")
+    public ResponseEntity<ApiResponse<DocumentBookmarkResponse>> toggleBookmark(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        DocumentBookmarkResponse dto = documentService.toggleBookmark(id, user);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "즐겨찾기 상태가 토글되었습니다"));
+    }
 }

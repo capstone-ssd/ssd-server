@@ -42,6 +42,9 @@ public class Document extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
+    @Version
+    private Long version;
+
 
 
     /**
