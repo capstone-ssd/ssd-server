@@ -102,7 +102,7 @@ public class DocumentService {
     }
 
     public DocumentBookmarkResponse toggleBookmark(Long documentId, CustomUserDetails user) {
-        return optimisticRetryExecutor.execute(3, () -> {
+        DocumentBookmarkResponse result = optimisticRetryExecutor.execute(3, () -> {
             Document doc = getDocument(documentId);
 
             if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -117,6 +117,7 @@ public class DocumentService {
             documentRepository.flush();
             return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
         });
+        return result;
     }
 
 
