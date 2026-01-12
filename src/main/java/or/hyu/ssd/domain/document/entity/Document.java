@@ -38,6 +38,10 @@ public class Document extends BaseEntity {
     @Column(name = "details", nullable = true, columnDefinition = "TEXT")
     private String details;
 
+    @Comment("ai가 생성한 사업계획서 상세 평가")
+    @Column(name = "details", nullable = true, columnDefinition = "TEXT")
+    private String evaluation;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
