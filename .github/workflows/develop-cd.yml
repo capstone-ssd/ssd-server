@@ -53,7 +53,7 @@ jobs:
           key: ${{ secrets.KEY }}
           script: |
             cd /home/monitor  
-            sudo docker-compose down || true
+            sudo docker compose down || true
             sudo docker pull ${{ secrets.DOCKER_REPO }}
-            sudo docker-compose up -d
+            sudo docker compose up -d
             sudo docker image prune -f
