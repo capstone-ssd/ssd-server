@@ -85,6 +85,9 @@ app:
     details:
       system: ${DETAILS_SYS_PROMPT}
       user: ${DETAILS_USER_PROMPT}
+    evaluator-checklist:
+      system: ${EVAL_CHECK_SYS_PROMPT}
+      user: ${EVAL_CHECK_USER_PROMPT}
 
 ---
 spring:
