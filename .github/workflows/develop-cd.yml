@@ -27,7 +27,9 @@ jobs:
       - name: Make application.yml
         run: |
           mkdir -p src/main/resources
-          echo "${{ secrets.APPLICATION_DEV }}" > src/main/resources/application-dev.yml
+          cat <<'EOF' > src/main/resources/application-dev.yml
+${{ secrets.APPLICATION_DEV }}
+EOF
           mv src/main/resources/application-dev.yml src/main/resources/application.yml
 
       - name: Build with Gradle
