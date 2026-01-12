@@ -25,13 +25,44 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Tag(name = "문서 API")
+@Tag(
+        name = "문서 API",
+        description = """
+                문서 CRUD 및 즐겨찾기 엔드포인트
+
+                - 인증: Authorization: Bearer {accessToken}
+                - 응답: ApiResponse(code/msg/data)
+                - 경로 prefix: /api/v1/...
+                """
+)
 public class DocumentController {
 
     private final DocumentService documentService;
 
     @PostMapping("/v1/documents")
-    @Operation(summary = "문서 생성", description = "새 문서를 생성합니다. title, content는 필수입니다.")
+    @Operation(
+            summary = "문서 생성",
+            description = """
+                    ### 개요
+                    - 새 문서를 저장하고 ID를 반환합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청 본문
+                    - title (string, required): 공백 불가 제목
+                    - content (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
+
+                    ### 응답
+                    - 200 OK
+                    - data.id: 생성된 문서 ID
+
+                    ### 오류
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    - REQ40001: JSON 파싱 실패
+                    - SERVER50001: 내부 서버 오류
+                    """
+    )
     public ResponseEntity<ApiResponse<CreateDocumentResponse>> createDocument(
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
@@ -42,8 +73,37 @@ public class DocumentController {
 
 
     @PutMapping("/v1/documents/{id}")
-    @Operation(summary = "문서 수정", description = "문서 ID로 문서를 부분/전체 수정합니다. 제공된 필드만 반영됩니다.")
+    @Operation(
+            summary = "문서 수정",
+            description = """
+                    ### 개요
+                    - 문서 ID로 부분/전체 수정합니다. Body에 포함된 필드만 변경됩니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{id}
+                    - Body(JSON, optional)
+                      - title (string): 새 제목
+                      - content (string): 새 본문
+                      - summary (string): 요약 본문
+                      - details (string): 상세 요약
+                      - bookmark (boolean): 즐겨찾기 여부
+
+                    ### 응답
+                    - 200 OK
+                    - data.id: 수정된 문서 ID
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    - REQ40001: JSON 파싱 실패
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
     public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
+            @Parameter(description = "수정할 문서 ID", example = "42")
             @PathVariable("id") Long id,
             @RequestBody UpdateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
@@ -54,8 +114,30 @@ public class DocumentController {
 
 
     @DeleteMapping("/v1/documents/{id}")
-    @Operation(summary = "문서 삭제", description = "문서 ID로 문서를 삭제합니다. 소유자만 삭제할 수 있습니다.")
+    @Operation(
+            summary = "문서 삭제",
+            description = """
+                    ### 개요
+                    - 문서를 삭제하며 체크리스트/평가자 체크리스트도 함께 삭제합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{id}
+
+                    ### 응답
+                    - 200 OK
+                    - data: "문서가 삭제되었습니다"
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
     public ResponseEntity<ApiResponse<String>> deleteDocument(
+            @Parameter(description = "삭제할 문서 ID", example = "42")
             @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
@@ -65,8 +147,32 @@ public class DocumentController {
 
 
     @GetMapping("/v1/documents/{id}")
-    @Operation(summary = "문서 단일 조회", description = "문서 ID로 단일 문서를 조회합니다. 소유자만 조회할 수 있습니다.")
+    @Operation(
+            summary = "문서 단일 조회",
+            description = """
+                    ### 개요
+                    - 문서 ID로 단일 문서를 조회합니다. 작성자만 접근 가능합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Path: /api/v1/documents/{id}
+
+                    ### 응답
+                    - 200 OK
+                    - data:
+                      - id, title, content, summary, details, bookmark
+                      - authorId, authorName
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
     public ResponseEntity<ApiResponse<GetDocumentResponse>> getDocument(
+            @Parameter(description = "조회할 문서 ID", example = "42")
             @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
@@ -76,8 +182,34 @@ public class DocumentController {
 
 
     @GetMapping("/v1/documents")
-    @Operation(summary = "문서 목록 조회", description = "회원의 모든 문서를 정렬 옵션과 함께 조회합니다. <br>" +
-            "정렬 옵션: LATEST(최신순), OLDEST(오래된순), NAME(제목순), MODIFIED(최근수정순)")
+    @Operation(
+            summary = "문서 목록 조회",
+            description = """
+                    ### 개요
+                    - 로그인한 회원의 모든 문서를 정렬 옵션과 함께 조회합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Query sort (optional, default=LATEST)
+                      - LATEST: 생성일 최신순
+                      - OLDEST: 생성일 오래된순
+                      - NAME: 제목 오름차순
+                      - MODIFIED: 수정일 최신순
+
+                    ### 응답
+                    - 200 OK
+                    - data[]
+                      - id: 문서 ID
+                      - title: 제목
+                      - updatedAt: 마지막 수정 시각
+
+                    ### 오류
+                    - MEMBER_NOT_FOUND: 인증 정보 없음/회원 없음
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
     public ResponseEntity<ApiResponse<List<DocumentListItemResponse>>> listDocuments(
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "정렬 옵션", schema = @Schema(allowableValues = {"LATEST","OLDEST","NAME","MODIFIED"}))
@@ -89,8 +221,33 @@ public class DocumentController {
 
 
     @PatchMapping("/v1/documents/{id}/bookmark")
-    @Operation(summary = "문서 즐겨찾기 토글", description = "문서의 bookmark 상태를 토글합니다.")
+    @Operation(
+            summary = "문서 즐겨찾기 토글",
+            description = """
+                    ### 개요
+                    - 문서의 bookmark 상태를 토글합니다. 낙관적 락 충돌 시 최대 3회까지 자동 재시도합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{id}/bookmark
+
+                    ### 응답
+                    - 200 OK
+                    - data:
+                      - id: 문서 ID
+                      - bookmark: 토글 후 상태
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    - CHECKLIST_CONFLICT: 동시 수정 충돌
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
     public ResponseEntity<ApiResponse<DocumentBookmarkResponse>> toggleBookmark(
+            @Parameter(description = "즐겨찾기 토글 대상 문서 ID", example = "42")
             @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
