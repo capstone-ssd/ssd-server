@@ -5,9 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.global.api.handler.CustomException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 @RestControllerAdvice
 @Slf4j
@@ -20,6 +22,22 @@ public class GlobalExceptionHandler {
         ApiResponse<Void> response = ApiResponse.fail(errorCode);
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(NoHandlerFoundException e) {
+        ErrorCode errorCode = ErrorCode.REQUEST_API_NOT_FOUND;
+        log.warn("API not found: {} {}", e.getHttpMethod(), e.getRequestURL());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.fail(errorCode));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
+        ErrorCode errorCode = ErrorCode.REQUEST_METHOD_NOT_ALLOWED;
+        log.warn("Method not allowed: {}", e.getMessage());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.fail(errorCode));
     }
 
     @ExceptionHandler(Exception.class)

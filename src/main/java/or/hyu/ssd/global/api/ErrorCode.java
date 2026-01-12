@@ -31,6 +31,10 @@ public enum ErrorCode {
     CHECKLIST_FORBIDDEN(HttpStatus.FORBIDDEN, "CHK40301", "해당 체크리스트에 접근할 권한이 없습니다"),
     CHECKLIST_CONFLICT(HttpStatus.CONFLICT, "CHK40901", "체크리스트가 동시에 수정되었습니다. 다시 시도해 주세요"),
 
+    // 요청/라우팅 예외
+    REQUEST_API_NOT_FOUND(HttpStatus.NOT_FOUND, "REQ40401", "요청하신 API를 찾지 못했습니다"),
+    REQUEST_METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "REQ40501", "지원하지 않는 HTTP 메서드입니다"),
+
 
     // 토큰 예외
     TOKEN_SECRET_IS_NULL(HttpStatus.INTERNAL_SERVER_ERROR, "TOKEN50001","JWT SECRET KEY가 주입되지 않았습니다"),
