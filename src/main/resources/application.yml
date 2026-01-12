@@ -73,6 +73,9 @@ app:
     summary:
       system: ${SUMMARY_SYS_PROMPT}
       user: ${SUMMARY_USER_PROMPT}
+    evaluation:
+      system: ${EVALUATION_SYS_PROMPT}
+      user: ${EVALUATION_USER_PROMPT}
 
 ---
 spring:

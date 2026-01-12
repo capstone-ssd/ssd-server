@@ -39,7 +39,7 @@ public class Document extends BaseEntity {
     private String details;
 
     @Comment("ai가 생성한 사업계획서 상세 평가")
-    @Column(name = "details", nullable = true, columnDefinition = "TEXT")
+    @Column(name = "evaluation", nullable = true, columnDefinition = "TEXT")
     private String evaluation;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -73,5 +73,9 @@ public class Document extends BaseEntity {
         if (summary != null) this.summary = summary;
         if (details != null) this.details = details;
         if (bookmark != null) this.bookmark = bookmark;
+    }
+
+    public void updateEvaluation(String evaluation) {
+        this.evaluation = evaluation;
     }
 }
