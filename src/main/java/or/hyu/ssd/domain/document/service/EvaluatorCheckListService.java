@@ -65,7 +65,7 @@ public class EvaluatorCheckListService {
         List<AiChecklistItem> items = parseItems(json);
         if (items.isEmpty()) {
             log.warn("[평가자 체크리스트 파싱 결과 없음] documentId={}", documentId);
-            return EvaluatorCheckListResponse.of(doc.getId(), List.of());
+            throw new UserExceptionHandler(ErrorCode.EVALUATOR_CHECKLIST_PARSE_ERROR);
         }
 
         // 3) AI 결과를 중복 없이 순서대로 병합한다.
@@ -111,7 +111,7 @@ public class EvaluatorCheckListService {
             return objectMapper.readValue(json, new TypeReference<List<AiChecklistItem>>() {});
         } catch (Exception e) {
             log.warn("[평가자 체크리스트 JSON 파싱 실패] json={}, error={}", json, e.getMessage());
-            return new ArrayList<>();
+            throw new UserExceptionHandler(ErrorCode.EVALUATOR_CHECKLIST_PARSE_ERROR);
         }
     }
 
