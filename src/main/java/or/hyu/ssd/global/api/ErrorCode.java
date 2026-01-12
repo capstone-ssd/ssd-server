@@ -32,6 +32,9 @@ public enum ErrorCode {
     CHECKLIST_CONFLICT(HttpStatus.CONFLICT, "CHK40901", "체크리스트가 동시에 수정되었습니다. 다시 시도해 주세요"),
     EVALUATOR_CHECKLIST_PARSE_ERROR(HttpStatus.BAD_REQUEST, "CHK40002", "평가자 체크리스트 응답 파싱에 실패했습니다"),
 
+    // 평가자 리뷰 예외
+    REVIEW_INVALID_SCORE(HttpStatus.BAD_REQUEST, "REV40001", "리뷰 점수는 0~100 범위여야 합니다"),
+
     // 요청/라우팅 예외
     REQUEST_API_NOT_FOUND(HttpStatus.NOT_FOUND, "REQ40401", "요청하신 API를 찾지 못했습니다"),
     REQUEST_METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "REQ40501", "지원하지 않는 HTTP 메서드입니다"),

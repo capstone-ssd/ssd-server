@@ -46,6 +46,26 @@ public class Document extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
+    @Comment("평가자 리뷰 - 사업타당성 평균 점수")
+    @Column(name = "review_feasibility_avg")
+    private Double reviewFeasibilityAvg;
+
+    @Comment("평가자 리뷰 - 사업차별성 평균 점수")
+    @Column(name = "review_differentiation_avg")
+    private Double reviewDifferentiationAvg;
+
+    @Comment("평가자 리뷰 - 재무적정성 평균 점수")
+    @Column(name = "review_financial_avg")
+    private Double reviewFinancialAvg;
+
+    @Comment("평가자 리뷰 - 전체 평균 점수")
+    @Column(name = "review_total_avg")
+    private Double reviewTotalAvg;
+
+    @Comment("평가자 리뷰 - 참여 평가자 수")
+    @Column(name = "review_count")
+    private Integer reviewCount;
+
     @Version
     private Long version;
 
@@ -81,5 +101,13 @@ public class Document extends BaseEntity {
 
     public void updateDetails(String details) {
         this.details = details;
+    }
+
+    public void updateReviewSummary(Double feasibilityAvg, Double differentiationAvg, Double financialAvg, Double totalAvg, Integer count) {
+        this.reviewFeasibilityAvg = feasibilityAvg;
+        this.reviewDifferentiationAvg = differentiationAvg;
+        this.reviewFinancialAvg = financialAvg;
+        this.reviewTotalAvg = totalAvg;
+        this.reviewCount = count;
     }
 }
