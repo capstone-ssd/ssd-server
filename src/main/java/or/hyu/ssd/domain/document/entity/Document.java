@@ -78,4 +78,8 @@ public class Document extends BaseEntity {
     public void updateEvaluation(String evaluation) {
         this.evaluation = evaluation;
     }
+
+    public void updateDetails(String details) {
+        this.details = details;
+    }
 }
