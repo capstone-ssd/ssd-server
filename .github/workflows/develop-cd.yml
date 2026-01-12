@@ -1,4 +1,4 @@
-name: develop-cd
+name: dev-cd
 
 on:
   push:
@@ -11,9 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-
-      - name: checkout the code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -52,8 +50,8 @@ jobs:
           username: ubuntu
           key: ${{ secrets.KEY }}
           script: |
-            cd ~/infra
-            sudo docker compose down || true
+            cd /home/monitor  
+            sudo docker-compose down || true
             sudo docker pull ${{ secrets.DOCKER_REPO }}
-            sudo docker compose up -d
+            sudo docker-compose up -d
             sudo docker image prune -f
