@@ -82,6 +82,9 @@ app:
     evaluation:
       system: ${EVALUATION_SYS_PROMPT}
       user: ${EVALUATION_USER_PROMPT}
+    details:
+      system: ${DETAILS_SYS_PROMPT}
+      user: ${DETAILS_USER_PROMPT}
 
 ---
 spring:
