@@ -8,6 +8,8 @@ import java.util.List;
 
 public class AiResponseUtil {
 
+
+    // 문자열을 JSON으로 변환하는 알고리즘
     public static String extractJsonArray(String raw) {
         if (raw == null) return "[]";
         String s = raw.trim();

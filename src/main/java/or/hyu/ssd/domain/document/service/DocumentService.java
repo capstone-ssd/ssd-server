@@ -9,6 +9,7 @@ import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -29,6 +30,7 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final CheckListRepository checkListRepository;
+    private final EvaluatorCheckListRepository evaluatorCheckListRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
@@ -65,6 +67,7 @@ public class DocumentService {
         }
 
         checkListRepository.deleteAllByDocument(doc);
+        evaluatorCheckListRepository.deleteAllByDocument(doc);
         documentRepository.delete(doc);
     }
 

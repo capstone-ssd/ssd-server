@@ -15,6 +15,7 @@ public class PromptProperties {
     private SummaryPrompt summary = new SummaryPrompt();
     private EvaluationPrompt evaluation = new EvaluationPrompt();
     private DetailsPrompt details = new DetailsPrompt();
+    private EvaluatorChecklistPrompt evaluatorChecklist = new EvaluatorChecklistPrompt();
 
     @Getter
     @Setter
@@ -40,6 +41,13 @@ public class PromptProperties {
     @Getter
     @Setter
     public static class DetailsPrompt {
+        private String system;
+        private String user;
+    }
+
+    @Getter
+    @Setter
+    public static class EvaluatorChecklistPrompt {
         private String system;
         private String user;
     }
