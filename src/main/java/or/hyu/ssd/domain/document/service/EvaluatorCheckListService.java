@@ -3,6 +3,7 @@ package or.hyu.ssd.domain.document.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.domain.ai.util.AiTextClient;
 import or.hyu.ssd.domain.ai.util.PromptComposer;
 import or.hyu.ssd.domain.document.controller.dto.EvaluatorCheckListItemResponse;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class EvaluatorCheckListService {
 
     private final EvaluatorCheckListRepository evaluatorCheckListRepository;
@@ -55,10 +57,14 @@ public class EvaluatorCheckListService {
 
         // 2) AI 호출 후 JSON 배열만 추출한다. (```json ... ``` 등 포맷팅을 제거)
         String raw = aiTextClient.complete(mergedPrompt);
+        log.info("[평가자 체크리스트 RAW 응답] raw={}", raw);
+
         String json = AiResponseUtil.extractJsonArray(raw);
+        log.info("[평가자 체크리스트 추출 JSON] json={}", json);
 
         List<AiChecklistItem> items = parseItems(json);
         if (items.isEmpty()) {
+            log.warn("[평가자 체크리스트 파싱 결과 없음] documentId={}", documentId);
             return EvaluatorCheckListResponse.of(doc.getId(), List.of());
         }
 
@@ -104,6 +110,7 @@ public class EvaluatorCheckListService {
         try {
             return objectMapper.readValue(json, new TypeReference<List<AiChecklistItem>>() {});
         } catch (Exception e) {
+            log.warn("[평가자 체크리스트 JSON 파싱 실패] json={}, error={}", json, e.getMessage());
             return new ArrayList<>();
         }
     }
