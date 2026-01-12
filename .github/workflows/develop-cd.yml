@@ -28,8 +28,8 @@ jobs:
         run: |
           mkdir -p src/main/resources
           cat <<'EOF' > src/main/resources/application-dev.yml
-${{ secrets.APPLICATION_DEV }}
-EOF
+          ${{ secrets.APPLICATION_DEV }}
+          EOF
           mv src/main/resources/application-dev.yml src/main/resources/application.yml
 
       - name: Build with Gradle
