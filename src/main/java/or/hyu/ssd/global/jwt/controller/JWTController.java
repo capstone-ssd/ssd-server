@@ -18,14 +18,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "토큰 관련 API")
+@Tag(name = "토큰 관련 API", description = "JWT 액세스/리프레시 발급 및 재발급")
 public class JWTController {
 
     private final JWTService jwtService;
 
     @GetMapping("/access")
-    @Operation(summary = "테스트용 액세스 토큰 발급기",
-            description = "자체 로그인이 없기 때문에 액세스 토큰이 필요한 경우에 해당 메서드를 이용하여 토큰을 발급 받아주세요")
+    @Operation(
+            summary = "테스트용 액세스 토큰 발급기",
+            description = """
+                    ### 개요
+                    - 개발/테스트용 액세스 토큰을 헤더에 발급합니다.
+
+                    ### 요청
+                    - GET /access
+
+                    ### 응답
+                    - 200 OK
+                    - 헤더: access 또는 Authorization 헤더에 토큰
+                    - data: "테스트용 액세스 토큰이 발급되었습니다. 헤더를 확인해주세요"
+                    """
+    )
     public ResponseEntity<ApiResponse<String>> createAccess(HttpServletResponse response){
         jwtService.createToken(response);
 
@@ -34,9 +47,21 @@ public class JWTController {
 
 
     @GetMapping("/access-test")
-    @Operation(summary = "액세스 토큰 사용 방법",
-            description = "**@AuthenticationPrincipal** 어노테이션을 통해서 회원정보를 가져옵니다 <br><br>" +
-                    "이걸로 회원을 식별해주시면 됩니다")
+    @Operation(
+            summary = "액세스 토큰 사용 방법",
+            description = """
+                    ### 개요
+                    - Access 토큰을 헤더에 담아 호출하면 `@AuthenticationPrincipal` 로 회원 정보를 확인할 수 있습니다.
+
+                    ### 요청
+                    - GET /access-test
+                    - 헤더: Authorization: Bearer {accessToken}
+
+                    ### 응답
+                    - 200 OK
+                    - data: "액세스 토큰이 성공적으로 작동합니다"
+                    """
+    )
     public ResponseEntity<ApiResponse<String>> accessTest(@AuthenticationPrincipal CustomUserDetails userDetails, HttpServletRequest request) {
 
         log.info(userDetails.getEmail());
@@ -46,9 +71,21 @@ public class JWTController {
     @PostMapping("/reissue")
     @Operation(
             summary = "리프레시,액세스 토큰 재발급 API",
-            description = "리프레시,액세스 토큰 재발급 API입니다.<br><br>" +
-                    "리프레시 토큰 탈취에 대비하여 액세스와 함께 리프레시 토큰도 재발급하는 Refresh Rotate 로직입니다 <br><br>" +
-                    "**반드시 만료된 액세스토큰을 헤더에서 뺀 후**에 요청을 넣어주세요"
+            description = """
+                    ### 개요
+                    - Refresh Rotate 방식으로 리프레시/액세스 토큰을 함께 재발급합니다.
+
+                    ### 요청
+                    - POST /reissue
+                    - 헤더: Authorization에 만료된 액세스 토큰을 제외하고 리프레시 토큰을 쿠키로 전송
+
+                    ### 응답
+                    - 200 OK
+                    - 새 액세스/리프레시 토큰 발급
+
+                    ### 주의
+                    - 만료된 액세스 토큰은 헤더에서 제거하고 요청하세요.
+                    """
     )
     public ResponseEntity<ApiResponse<String>> reissue(HttpServletRequest request, HttpServletResponse response) {
 

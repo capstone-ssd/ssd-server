@@ -18,13 +18,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Tag(name = "상세평가 API")
+@Tag(name = "상세평가 API", description = "문서 상세 평가 생성/조회")
 public class EvaluationController {
 
     private final EvaluationService evaluationService;
 
     @PostMapping("/v1/documents/{documentId}/evaluation/generate")
-    @Operation(summary = "상세평가 생성", description = "문서의 내용을 기반으로 상세 평가를 생성/저장합니다. 기존 평가가 있으면 삭제 후 덮어씁니다.")
+    @Operation(
+            summary = "상세평가 생성",
+            description = """
+                    ### 개요
+                    - 문서 내용을 기반으로 상세 평가를 생성/저장합니다. 기존 평가가 있으면 삭제 후 덮어씁니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{documentId}/evaluation/generate
+
+                    ### 응답
+                    - 200 OK
+                    - data.documentId: 문서 ID
+                    - data.evaluation: 생성된 상세 평가
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    """
+    )
     public ResponseEntity<ApiResponse<DocumentEvaluationResponse>> generate(
             @PathVariable Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
@@ -34,7 +55,28 @@ public class EvaluationController {
     }
 
     @GetMapping("/v1/documents/{documentId}/evaluation")
-    @Operation(summary = "상세평가 조회", description = "문서에 저장된 상세 평가를 조회합니다.")
+    @Operation(
+            summary = "상세평가 조회",
+            description = """
+                    ### 개요
+                    - 문서에 저장된 상세 평가를 조회합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{documentId}/evaluation
+
+                    ### 응답
+                    - 200 OK
+                    - data.documentId: 문서 ID
+                    - data.evaluation: 상세 평가 내용
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    """
+    )
     public ResponseEntity<ApiResponse<DocumentEvaluationResponse>> get(
             @PathVariable Long documentId,
             @AuthenticationPrincipal CustomUserDetails user

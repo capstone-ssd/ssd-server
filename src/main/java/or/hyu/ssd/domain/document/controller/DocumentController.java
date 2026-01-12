@@ -27,13 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(
         name = "문서 API",
-        description = """
-                문서 CRUD 및 즐겨찾기 엔드포인트
-
-                - 인증: Authorization: Bearer {accessToken}
-                - 응답: ApiResponse(code/msg/data)
-                - 경로 prefix: /api/v1/...
-                """
+        description = "문서 CRUD와 즐겨찾기 토글 엔드포인트"
 )
 public class DocumentController {
 
