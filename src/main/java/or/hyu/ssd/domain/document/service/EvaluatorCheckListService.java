@@ -31,6 +31,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class EvaluatorCheckListService {
 
+    private static final List<String> FIXED_ITEMS = List.of(
+            "사업개념",
+            "사업목표",
+            "제품 설명 및 차별화",
+            "목표시장",
+            "마케팅 전략",
+            "재무상태"
+    );
+
     private final EvaluatorCheckListRepository evaluatorCheckListRepository;
     private final DocumentRepository documentRepository;
     private final PromptProperties promptProperties;
@@ -52,7 +61,7 @@ public class EvaluatorCheckListService {
         // 1) 프롬프트 구성: 시스템/유저 프롬프트를 합쳐 AI에게 전달할 최종 프롬프트를 만든다.
         PromptProperties.EvaluatorChecklistPrompt prompts = promptProperties.getEvaluatorChecklist();
         String systemPrompt = prompts.getSystem();
-        String userPrompt = String.format(prompts.getUser(), content);
+        String userPrompt = buildUserPrompt(prompts.getUser(), content);
         String mergedPrompt = PromptComposer.mergeSystemUser(systemPrompt, userPrompt);
 
         // 2) AI 호출 후 JSON 배열만 추출한다. (```json ... ``` 등 포맷팅을 제거)
@@ -68,16 +77,18 @@ public class EvaluatorCheckListService {
             throw new UserExceptionHandler(ErrorCode.EVALUATOR_CHECKLIST_PARSE_ERROR);
         }
 
-        // 3) AI 결과를 중복 없이 순서대로 병합한다.
-        //    동일한 content가 여러 번 오더라도 첫 번째 판단만 반영하고, checked가 null이면 기본값(false)으로 처리한다.
+        // 3) 정해진 항목만 평가 결과를 반영한다. 기본값은 false이며, AI 응답에 있는 항목만 덮어쓴다.
         LinkedHashMap<String, Boolean> merged = new LinkedHashMap<>();
+        for (String itemName : FIXED_ITEMS) {
+            merged.put(itemName, false);
+        }
         for (AiChecklistItem item : items) {
             if (item == null) continue;
             String text = item.content();
             if (text == null) continue;
             String trimmed = text.trim();
-            if (trimmed.isEmpty()) continue;
-            merged.putIfAbsent(trimmed, item.checked() != null && item.checked());
+            if (!merged.containsKey(trimmed)) continue; // 고정 리스트 외 항목은 무시
+            merged.put(trimmed, item.checked() != null && item.checked());
         }
 
         // 키밸류 형식의 해쉬맵에 저장된 content와 checked를 엔티티에 반영
@@ -126,6 +137,19 @@ public class EvaluatorCheckListService {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return doc;
+    }
+
+    private String buildUserPrompt(String userTemplate, String content) {
+        String fixedList = FIXED_ITEMS.stream()
+                .map(s -> "- " + s)
+                .collect(Collectors.joining("\n"));
+        String exampleJson = "[{\"content\":\"사업개념\",\"checked\":true},"
+                + "{\"content\":\"사업목표\",\"checked\":false},"
+                + "{\"content\":\"제품 설명 및 차별화\",\"checked\":true},"
+                + "{\"content\":\"목표시장\",\"checked\":true},"
+                + "{\"content\":\"마케팅 전략\",\"checked\":false},"
+                + "{\"content\":\"재무상태\",\"checked\":true}]";
+        return String.format(userTemplate, content, fixedList, exampleJson);
     }
 
     private record AiChecklistItem(String content, Boolean checked) {}
