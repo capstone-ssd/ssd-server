@@ -5,5 +5,6 @@ public record UpdateDocumentRequest(
         String content,
         String summary,
         String details,
+        String path,
         Boolean bookmark
 ) {}

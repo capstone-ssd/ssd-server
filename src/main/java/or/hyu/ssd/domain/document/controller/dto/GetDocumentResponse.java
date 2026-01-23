@@ -9,6 +9,7 @@ public record GetDocumentResponse(
         String content,
         String summary,
         String details,
+        String path,
         boolean bookmark,
         Long authorId,
         String authorName
@@ -22,6 +23,7 @@ public record GetDocumentResponse(
                 doc.getContent(),
                 doc.getSummary(),
                 doc.getDetails(),
+                doc.getPath(),
                 doc.isBookmark(),
                 authorId,
                 authorName

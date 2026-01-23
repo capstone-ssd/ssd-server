@@ -35,7 +35,8 @@ public class DocumentService {
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
 
-        Document doc = Document.of(req.title(), req.content(), false, user.getMember());
+        String normalizedPath = normalizePath(req.path());
+        Document doc = Document.of(req.title(), req.content(), normalizedPath, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
         return CreateDocumentResponse.of(saved.getId());
@@ -51,7 +52,8 @@ public class DocumentService {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
-        doc.updateIfPresent(req.title(), req.content(), req.summary(), req.details(), req.bookmark());
+        String normalizedPath = normalizePathOrNull(req.path());
+        doc.updateIfPresent(req.title(), req.content(), req.summary(), req.details(), normalizedPath, req.bookmark());
 
         return UpdateDocumentResponse.of(doc.getId());
     }
@@ -116,7 +118,7 @@ public class DocumentService {
             }
 
             boolean newVal = !doc.isBookmark();
-            doc.updateIfPresent(null, null, null, null, newVal);
+            doc.updateIfPresent(null, null, null, null, null, newVal);
             documentRepository.flush();
             return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
         });
@@ -129,5 +131,33 @@ public class DocumentService {
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+    }
+
+    private String normalizePathOrNull(String rawPath) {
+        if (rawPath == null) {
+            return null;
+        }
+        return normalizePath(rawPath);
+    }
+
+    private String normalizePath(String rawPath) {
+        if (rawPath == null) {
+            return "";
+        }
+        String path = rawPath.trim();
+        if (path.isEmpty()) {
+            return "";
+        }
+        path = path.replace('\\', '/');
+        while (path.contains("//")) {
+            path = path.replace("//", "/");
+        }
+        while (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 }

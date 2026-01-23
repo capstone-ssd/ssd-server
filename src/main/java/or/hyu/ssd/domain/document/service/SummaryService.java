@@ -31,7 +31,7 @@ public class SummaryService {
         String content = doc.getContent();
 
         if (content == null || content.isBlank()) {
-            doc.updateIfPresent(null, null, null, null, null);
+            doc.updateIfPresent(null, null, null, null, null, null);
             return ThreeLineSummaryResponse.of(doc.getId(), List.of());
         }
 
@@ -53,7 +53,7 @@ public class SummaryService {
         }
 
         String summary = String.join("\n", three);
-        doc.updateIfPresent(null, null, summary, null, null);
+        doc.updateIfPresent(null, null, summary, null, null, null);
         return ThreeLineSummaryResponse.of(doc.getId(), three);
     }
 
@@ -74,7 +74,7 @@ public class SummaryService {
 
     public void delete(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, user);
-        doc.updateIfPresent(null, null, null, null, null);
+        doc.updateIfPresent(null, null, null, null, null, null);
     }
 
     private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
