@@ -35,7 +35,8 @@ public class DocumentService {
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
 
-        Document doc = Document.of(req.title(), req.content(), false, user.getMember());
+        String normalizedPath = normalizePath(req.path());
+        Document doc = Document.of(req.title(), req.content(), normalizedPath, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
         return CreateDocumentResponse.of(saved.getId());
@@ -51,7 +52,8 @@ public class DocumentService {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
-        doc.updateIfPresent(req.title(), req.content(), req.summary(), req.details(), req.bookmark());
+        String normalizedPath = normalizePathOrNull(req.path());
+        doc.updateIfPresent(req.title(), req.content(), req.summary(), req.details(), normalizedPath, req.bookmark());
 
         return UpdateDocumentResponse.of(doc.getId());
     }
@@ -116,7 +118,7 @@ public class DocumentService {
             }
 
             boolean newVal = !doc.isBookmark();
-            doc.updateIfPresent(null, null, null, null, newVal);
+            doc.updateIfPresent(null, null, null, null, null, newVal);
             documentRepository.flush();
             return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
         });
@@ -129,5 +131,48 @@ public class DocumentService {
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+    }
+
+    private String normalizePathOrNull(String rawPath) {
+        if (rawPath == null) {
+            return null;
+        }
+        return normalizePath(rawPath);
+    }
+
+    private String normalizePath(String rawPath) {
+
+        // null이면 루트 경로로 반환
+        if (rawPath == null) {
+            return "/";
+        }
+
+        // null이 아니라면 앞뒤 공백 제거 후 비어있다면 루트 경로 반환
+        String path = rawPath.trim();
+        if (path.isEmpty()) {
+            return "/";
+        }
+
+        // 백슬래시와 슬래시 동기화 후 //가 있다면 /으로 축약
+        path = path.replace('\\', '/');
+        while (path.contains("//")) {
+            path = path.replace("//", "/");
+        }
+
+        if ("/".equals(path)) {
+            return "/";
+        }
+
+        // 앞뒤 슬래시 제거 후 항상 선행 슬래시를 붙인다
+        while (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        if (path.isEmpty()) {
+            return "/";
+        }
+        return "/" + path;
     }
 }

@@ -46,6 +46,7 @@ public class DocumentController {
                     ### 요청 본문
                     - title (string, required): 공백 불가 제목
                     - content (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
+                    - path (string, optional): 폴더 경로 (예: team/project)
 
                     ### 응답
                     - 200 OK
@@ -83,6 +84,7 @@ public class DocumentController {
                       - content (string): 새 본문
                       - summary (string): 요약 본문
                       - details (string): 상세 요약
+                      - path (string): 폴더 경로 (예: team/project)
                       - bookmark (boolean): 즐겨찾기 여부
 
                     ### 응답
@@ -156,7 +158,7 @@ public class DocumentController {
                     ### 응답
                     - 200 OK
                     - data:
-                      - id, title, content, summary, details, bookmark
+                      - id, title, content, summary, details, path, bookmark
                       - authorId, authorName
 
                     ### 오류
@@ -197,6 +199,7 @@ public class DocumentController {
                     - data[]
                       - id: 문서 ID
                       - title: 제목
+                      - path: 폴더 경로
                       - updatedAt: 마지막 수정 시각
 
                     ### 오류
