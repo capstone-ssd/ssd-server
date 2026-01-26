@@ -3,14 +3,17 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentLogResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentParagraphDto;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentLog;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
@@ -35,6 +38,7 @@ public class DocumentService {
     private final CheckListRepository checkListRepository;
     private final EvaluatorCheckListRepository evaluatorCheckListRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
+    private final DocumentLogRepository documentLogRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
@@ -45,6 +49,7 @@ public class DocumentService {
 
         Document saved = documentRepository.save(doc);
         saveParagraphsIfPresent(saved, req.paragraphs());
+        saveDocumentLog(saved, user);
         return CreateDocumentResponse.of(saved.getId());
     }
 
@@ -64,6 +69,7 @@ public class DocumentService {
             documentParagraphRepository.deleteAllByDocument(doc);
             saveParagraphsIfPresent(doc, req.paragraphs());
         }
+        saveDocumentLog(doc, user);
 
         return UpdateDocumentResponse.of(doc.getId());
     }
@@ -81,6 +87,7 @@ public class DocumentService {
         checkListRepository.deleteAllByDocument(doc);
         evaluatorCheckListRepository.deleteAllByDocument(doc);
         documentParagraphRepository.deleteAllByDocument(doc);
+        documentLogRepository.deleteAllByDocument(doc);
         documentRepository.delete(doc);
     }
 
@@ -97,6 +104,21 @@ public class DocumentService {
 
         List<DocumentParagraphDto> paragraphs = fetchParagraphs(doc);
         return GetDocumentResponse.of(doc, paragraphs);
+    }
+
+    @Transactional(readOnly = true)
+    public DocumentLogResponse listDocumentLogs(Long documentId, CustomUserDetails user) {
+        Document doc = getDocument(documentId);
+
+        if (doc.getMember() == null || user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!doc.getMember().getId().equals(user.getMember().getId())) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+
+        List<DocumentLog> logs = documentLogRepository.findAllByDocumentOrderByCreatedAtAsc(doc);
+        return DocumentLogResponse.of(doc.getId(), logs);
     }
 
     @Transactional(readOnly = true)
@@ -245,5 +267,25 @@ public class DocumentService {
         return documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
                 .map(p -> new DocumentParagraphDto(p.getContent(), p.getRole(), p.getPageNumber(), p.getBlockId()))
                 .collect(Collectors.toList());
+    }
+
+    private void saveDocumentLog(Document doc, CustomUserDetails user) {
+        String editorName = resolveEditorName(user);
+        documentLogRepository.save(DocumentLog.of(editorName, doc));
+    }
+
+    private String resolveEditorName(CustomUserDetails user) {
+        if (user == null || user.getMember() == null) {
+            return "Unknown";
+        }
+        String name = user.getMember().getName();
+        if (name != null && !name.isBlank()) {
+            return name.trim();
+        }
+        String email = user.getMember().getEmail();
+        if (email != null && !email.isBlank()) {
+            return email.trim();
+        }
+        return "Unknown";
     }
 }
