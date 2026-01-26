@@ -44,7 +44,7 @@ public class DocumentController {
                     - Authorization: Bearer {accessToken}
 
                     ### 요청 본문
-                    - title (string, required): 공백 불가 제목
+                    - title (string, optional): 제목. 없으면 text/paragraphs 첫 항목으로 자동 생성
                     - text (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
                     - paragraphs (array, optional): 문단 메타데이터 배열
                     - path (string, optional): 폴더 경로 (예: team/project)

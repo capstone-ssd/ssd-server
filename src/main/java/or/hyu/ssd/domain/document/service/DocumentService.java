@@ -40,7 +40,8 @@ public class DocumentService {
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
 
         String normalizedPath = normalizePath(req.path());
-        Document doc = Document.of(req.title(), req.text(), normalizedPath, false, user.getMember());
+        String title = resolveTitle(req.title(), req.text(), req.paragraphs());
+        Document doc = Document.of(title, req.text(), normalizedPath, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
         saveParagraphsIfPresent(saved, req.paragraphs());
@@ -185,6 +186,49 @@ public class DocumentService {
             return "/";
         }
         return "/" + path;
+    }
+
+    private String resolveTitle(String requestedTitle, String text, List<DocumentParagraphDto> paragraphs) {
+        String title = trimOrNull(requestedTitle);
+        if (title != null) {
+            return title;
+        }
+        if (paragraphs != null && !paragraphs.isEmpty()) {
+            String fromParagraph = trimOrNull(paragraphs.get(0).content());
+            if (fromParagraph != null) {
+                return fromParagraph;
+            }
+        }
+        String fromText = extractFirstLine(text);
+        if (fromText != null) {
+            return fromText;
+        }
+        return "Untitled";
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String extractFirstLine(String text) {
+        if (text == null) {
+            return null;
+        }
+        for (String line : text.split("\\R")) {
+            String cleaned = line.trim();
+            if (cleaned.isEmpty()) {
+                continue;
+            }
+            cleaned = cleaned.replaceFirst("^#+\\s*", "").trim();
+            if (!cleaned.isEmpty()) {
+                return cleaned;
+            }
+        }
+        return null;
     }
 
     private void saveParagraphsIfPresent(Document doc, List<DocumentParagraphDto> paragraphs) {

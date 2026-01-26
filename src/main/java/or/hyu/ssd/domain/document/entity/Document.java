@@ -19,7 +19,7 @@ public class Document extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Comment("사업계획서 제목 (입력: title)")
+    @Comment("사업계획서 제목 (입력: title, 없으면 text/paragraphs에서 생성)")
     @Column(name = "title", nullable = false)
     private String title;
 
