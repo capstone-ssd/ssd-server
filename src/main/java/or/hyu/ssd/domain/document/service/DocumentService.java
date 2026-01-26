@@ -3,12 +3,15 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentParagraphDto;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
@@ -31,14 +34,17 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final CheckListRepository checkListRepository;
     private final EvaluatorCheckListRepository evaluatorCheckListRepository;
+    private final DocumentParagraphRepository documentParagraphRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
 
         String normalizedPath = normalizePath(req.path());
-        Document doc = Document.of(req.title(), req.content(), normalizedPath, false, user.getMember());
+        String title = resolveTitle(req.title(), req.text(), req.paragraphs());
+        Document doc = Document.of(title, req.text(), normalizedPath, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
+        saveParagraphsIfPresent(saved, req.paragraphs());
         return CreateDocumentResponse.of(saved.getId());
     }
 
@@ -53,7 +59,11 @@ public class DocumentService {
         }
 
         String normalizedPath = normalizePathOrNull(req.path());
-        doc.updateIfPresent(req.title(), req.content(), req.summary(), req.details(), normalizedPath, req.bookmark());
+        doc.updateIfPresent(req.title(), req.text(), req.summary(), req.details(), normalizedPath, req.bookmark());
+        if (req.paragraphs() != null) {
+            documentParagraphRepository.deleteAllByDocument(doc);
+            saveParagraphsIfPresent(doc, req.paragraphs());
+        }
 
         return UpdateDocumentResponse.of(doc.getId());
     }
@@ -70,6 +80,7 @@ public class DocumentService {
 
         checkListRepository.deleteAllByDocument(doc);
         evaluatorCheckListRepository.deleteAllByDocument(doc);
+        documentParagraphRepository.deleteAllByDocument(doc);
         documentRepository.delete(doc);
     }
 
@@ -84,7 +95,8 @@ public class DocumentService {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
-        return GetDocumentResponse.of(doc);
+        List<DocumentParagraphDto> paragraphs = fetchParagraphs(doc);
+        return GetDocumentResponse.of(doc, paragraphs);
     }
 
     @Transactional(readOnly = true)
@@ -174,5 +186,64 @@ public class DocumentService {
             return "/";
         }
         return "/" + path;
+    }
+
+    private String resolveTitle(String requestedTitle, String text, List<DocumentParagraphDto> paragraphs) {
+        String title = trimOrNull(requestedTitle);
+        if (title != null) {
+            return title;
+        }
+        if (paragraphs != null && !paragraphs.isEmpty()) {
+            String fromParagraph = trimOrNull(paragraphs.get(0).content());
+            if (fromParagraph != null) {
+                return fromParagraph;
+            }
+        }
+        String fromText = extractFirstLine(text);
+        if (fromText != null) {
+            return fromText;
+        }
+        return "Untitled";
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String extractFirstLine(String text) {
+        if (text == null) {
+            return null;
+        }
+        for (String line : text.split("\\R")) {
+            String cleaned = line.trim();
+            if (cleaned.isEmpty()) {
+                continue;
+            }
+            cleaned = cleaned.replaceFirst("^#+\\s*", "").trim();
+            if (!cleaned.isEmpty()) {
+                return cleaned;
+            }
+        }
+        return null;
+    }
+
+    private void saveParagraphsIfPresent(Document doc, List<DocumentParagraphDto> paragraphs) {
+        if (paragraphs == null || paragraphs.isEmpty()) {
+            return;
+        }
+        List<DocumentParagraph> entities = paragraphs.stream()
+                .map(p -> DocumentParagraph.of(p.content(), p.role(), p.pageNumber(), p.blockId(), doc))
+                .collect(Collectors.toList());
+        documentParagraphRepository.saveAll(entities);
+    }
+
+    private List<DocumentParagraphDto> fetchParagraphs(Document doc) {
+        return documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
+                .map(p -> new DocumentParagraphDto(p.getContent(), p.getRole(), p.getPageNumber(), p.getBlockId()))
+                .collect(Collectors.toList());
     }
 }

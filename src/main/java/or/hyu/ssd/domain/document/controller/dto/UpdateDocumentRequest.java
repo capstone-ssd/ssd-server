@@ -1,10 +1,13 @@
 package or.hyu.ssd.domain.document.controller.dto;
 
+import java.util.List;
+
 public record UpdateDocumentRequest(
         String title,
-        String content,
+        String text,
         String summary,
         String details,
         String path,
-        Boolean bookmark
+        Boolean bookmark,
+        List<DocumentParagraphDto> paragraphs
 ) {}
