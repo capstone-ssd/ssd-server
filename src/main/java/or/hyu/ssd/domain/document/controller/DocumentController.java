@@ -20,6 +20,7 @@ import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentLogResponse;
 import java.util.List;
 
 @RestController
@@ -216,6 +217,43 @@ public class DocumentController {
     ) {
         List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
+    }
+
+
+    @GetMapping("/v1/documents/{id}/logs")
+    @Operation(
+            summary = "문서 수정 기록 조회",
+            description = """
+                    ### 개요
+                    - 문서 ID에 대한 수정 기록(수정자 이름, 시간)을 모두 조회합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{id}/logs
+
+                    ### 응답
+                    - 200 OK
+                    - data:
+                      - documentId
+                      - logs[]
+                        - editorName
+                        - time (예: 01월 02일 03시 04분)
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
+    public ResponseEntity<ApiResponse<DocumentLogResponse>> listDocumentLogs(
+            @Parameter(description = "조회할 문서 ID", example = "42")
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        DocumentLogResponse dto = documentService.listDocumentLogs(id, user);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서 기록이 조회되었습니다"));
     }
 
 
