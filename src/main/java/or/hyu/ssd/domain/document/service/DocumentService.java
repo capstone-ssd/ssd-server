@@ -141,23 +141,38 @@ public class DocumentService {
     }
 
     private String normalizePath(String rawPath) {
+
+        // null이면 루트 경로로 반환
         if (rawPath == null) {
-            return "";
+            return "/";
         }
+
+        // null이 아니라면 앞뒤 공백 제거 후 비어있다면 루트 경로 반환
         String path = rawPath.trim();
         if (path.isEmpty()) {
-            return "";
+            return "/";
         }
+
+        // 백슬래시와 슬래시 동기화 후 //가 있다면 /으로 축약
         path = path.replace('\\', '/');
         while (path.contains("//")) {
             path = path.replace("//", "/");
         }
+
+        if ("/".equals(path)) {
+            return "/";
+        }
+
+        // 앞뒤 슬래시 제거 후 항상 선행 슬래시를 붙인다
         while (path.startsWith("/")) {
             path = path.substring(1);
         }
         while (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
-        return path;
+        if (path.isEmpty()) {
+            return "/";
+        }
+        return "/" + path;
     }
 }
