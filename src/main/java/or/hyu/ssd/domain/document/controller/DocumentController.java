@@ -45,7 +45,8 @@ public class DocumentController {
 
                     ### 요청 본문
                     - title (string, required): 공백 불가 제목
-                    - content (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
+                    - text (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
+                    - paragraphs (array, optional): 문단 메타데이터 배열
                     - path (string, optional): 폴더 경로 (예: team/project)
 
                     ### 응답
@@ -81,11 +82,12 @@ public class DocumentController {
                     - Path: /api/v1/documents/{id}
                     - Body(JSON, optional)
                       - title (string): 새 제목
-                      - content (string): 새 본문
+                      - text (string): 새 본문
                       - summary (string): 요약 본문
                       - details (string): 상세 요약
                       - path (string): 폴더 경로 (예: team/project)
                       - bookmark (boolean): 즐겨찾기 여부
+                      - paragraphs (array): 문단 메타데이터 배열
 
                     ### 응답
                     - 200 OK
@@ -158,7 +160,7 @@ public class DocumentController {
                     ### 응답
                     - 200 OK
                     - data:
-                      - id, title, content, summary, details, path, bookmark
+                      - id, title, text, paragraphs, summary, details, path, bookmark
                       - authorId, authorName
 
                     ### 오류

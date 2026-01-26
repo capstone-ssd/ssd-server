@@ -19,28 +19,28 @@ public class Document extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Comment("사업계획서 제목")
+    @Comment("사업계획서 제목 (입력: title)")
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Comment("사업계획서 본문")
+    @Comment("사업계획서 본문 (입력: text)")
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Comment("문서 경로(폴더 경로)")
+    @Comment("문서 경로(폴더 경로) (입력: path)")
     @Column(name = "path", nullable = false, length = 512)
     @ColumnDefault("''")
     private String path;
 
-    @Comment("사업계획서 즐겨찾기 여부")
+    @Comment("사업계획서 즐겨찾기 여부 (입력: bookmark)")
     @Column(name = "bookmark", nullable = false)
     private boolean bookmark;
 
-    @Comment("ai가 생성한 사업계획서 세 줄 요약")
+    @Comment("ai가 생성한 사업계획서 세 줄 요약 (입력: summary)")
     @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
     private String summary;
 
-    @Comment("ai가 생성한 사업계획서 상세 요약")
+    @Comment("ai가 생성한 사업계획서 상세 요약 (입력: details)")
     @Column(name = "details", nullable = true, columnDefinition = "TEXT")
     private String details;
 
