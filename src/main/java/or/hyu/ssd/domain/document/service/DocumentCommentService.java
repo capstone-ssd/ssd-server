@@ -1,10 +1,12 @@
 package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.domain.document.controller.dto.DocumentCommentItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentRequest;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentComment;
+import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
@@ -13,6 +15,10 @@ import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -36,6 +42,34 @@ public class DocumentCommentService {
                 DocumentComment.of(blockId, request.comment(), doc, user.getMember())
         );
         return DocumentCommentResponse.of(saved.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DocumentCommentItemResponse> list(Long documentId, CustomUserDetails user) {
+
+        // 문서 ID로 문서를 가져옵니다
+        Document doc = getDocument(documentId);
+        ensureAuthenticated(user);
+
+        // 문서에 매핑된 DocumentParagraph를 blockId순으로 정렬하여 가져옵니다 -> 주석의 본문 내용을 가져오기 위함
+        Map<Integer, String> blockContentMap = documentParagraphRepository
+                .findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
+                .collect(Collectors.toMap(
+                        DocumentParagraph::getBlockId,
+                        DocumentParagraph::getContent,
+                        (a, b) -> a
+                ));
+
+        // 문서가 매핑된 주석을 가져옥 DTO에 매핑합니다
+        return documentCommentRepository.findAllByDocumentOrderByCreatedAtAsc(doc).stream()
+                .map(comment -> DocumentCommentItemResponse.of(
+                        comment.getMember() != null ? comment.getMember().getName() : null,
+                        comment.getMember() != null ? comment.getMember().getEmail() : null,
+                        comment.getCreatedAt(),
+                        blockContentMap.get(comment.getBlockId()),
+                        comment.getComment()
+                ))
+                .collect(Collectors.toList());
     }
 
     private Document getDocument(Long documentId) {
