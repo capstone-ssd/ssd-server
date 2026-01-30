@@ -33,7 +33,7 @@ public class DocumentCommentController {
                     - 문서의 특정 블록에 주석 코멘트를 저장합니다.
 
                     ### 인증
-                    - Authorization: Bearer {accessToken} (문서 작성자만)
+                    - Authorization: Bearer {accessToken}
 
                     ### 요청
                     - Path: /api/v1/documents/{documentId}/comments
@@ -47,7 +47,7 @@ public class DocumentCommentController {
 
                     ### 오류
                     - DOC40401: 문서를 찾을 수 없음
-                    - DOC40301: 문서 소유자가 아님
+                    - MEMBER40101: 회원을 찾지 못했습니다
                     - DOC40402: 문서 블록을 찾을 수 없음
                     """
     )

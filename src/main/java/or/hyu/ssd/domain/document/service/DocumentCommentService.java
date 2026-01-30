@@ -24,9 +24,8 @@ public class DocumentCommentService {
     private final DocumentCommentRepository documentCommentRepository;
 
     public DocumentCommentResponse create(Long documentId, CustomUserDetails user, DocumentCommentRequest request) {
-
-        // 식별자를 통해서 문서를 조회합니다
-        Document doc = getOwnedDocument(documentId, user);
+        Document doc = getDocument(documentId);
+        ensureAuthenticated(user);
         int blockId = request.blockId();
 
         // 문서와 blockId를 통해서 지정된 blockId를 조회합니다
@@ -39,16 +38,15 @@ public class DocumentCommentService {
         return DocumentCommentResponse.of(saved.getId());
     }
 
-    private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
-        Document doc = documentRepository.findById(documentId)
+    private Document getDocument(Long documentId) {
+        return documentRepository.findById(documentId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
-        if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+    }
+
+    private void ensureAuthenticated(CustomUserDetails user) {
+        if (user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
         }
-        if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        return doc;
     }
 
     private void ensureBlockExists(Document doc, int blockId) {
