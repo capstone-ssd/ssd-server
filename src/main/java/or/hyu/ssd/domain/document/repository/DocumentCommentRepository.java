@@ -1,0 +1,12 @@
+package or.hyu.ssd.domain.document.repository;
+
+import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentComment;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface DocumentCommentRepository extends JpaRepository<DocumentComment, Long> {
+    List<DocumentComment> findAllByDocumentOrderByCreatedAtAsc(Document document);
+    void deleteAllByDocument(Document document);
+}
