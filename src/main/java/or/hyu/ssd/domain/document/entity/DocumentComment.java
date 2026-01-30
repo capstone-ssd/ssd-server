@@ -62,4 +62,8 @@ public class DocumentComment extends BaseEntity {
                 .member(member)
                 .build();
     }
+
+    public void updateComment(String comment) {
+        this.comment = comment;
+    }
 }

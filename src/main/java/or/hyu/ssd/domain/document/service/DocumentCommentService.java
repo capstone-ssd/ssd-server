@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentRequest;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentCommentUpdateRequest;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentComment;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
@@ -44,6 +45,14 @@ public class DocumentCommentService {
         return DocumentCommentResponse.of(saved.getId());
     }
 
+    public DocumentCommentResponse update(Long commentId, CustomUserDetails user, DocumentCommentUpdateRequest request) {
+        ensureAuthenticated(user);
+        DocumentComment comment = getComment(commentId);
+        ensureCommentOwner(comment, user);
+        comment.updateComment(request.comment());
+        return DocumentCommentResponse.of(comment.getId());
+    }
+
     @Transactional(readOnly = true)
     public List<DocumentCommentItemResponse> list(Long documentId, CustomUserDetails user) {
 
@@ -77,9 +86,23 @@ public class DocumentCommentService {
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
+    private DocumentComment getComment(Long commentId) {
+        return documentCommentRepository.findById(commentId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.COMMENT_NOT_FOUND));
+    }
+
     private void ensureAuthenticated(CustomUserDetails user) {
         if (user == null || user.getMember() == null) {
             throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
+        }
+    }
+
+    private void ensureCommentOwner(DocumentComment comment, CustomUserDetails user) {
+        if (comment.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.COMMENT_FORBIDDEN);
+        }
+        if (!comment.getMember().getId().equals(user.getMember().getId())) {
+            throw new UserExceptionHandler(ErrorCode.COMMENT_FORBIDDEN);
         }
     }
 

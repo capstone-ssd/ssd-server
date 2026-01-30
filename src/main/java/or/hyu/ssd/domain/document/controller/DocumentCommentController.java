@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentRequest;
 import or.hyu.ssd.domain.document.controller.dto.DocumentCommentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentCommentUpdateRequest;
 import or.hyu.ssd.domain.document.service.DocumentCommentService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,6 +64,40 @@ public class DocumentCommentController {
     ) {
         DocumentCommentResponse dto = documentCommentService.create(documentId, user, request);
         return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 저장되었습니다"));
+    }
+
+    @PatchMapping("/v1/comments/{id}")
+    @Operation(
+            summary = "주석 수정",
+            description = """
+                    ### 개요
+                    - 주석 코멘트 내용을 수정합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Path: /api/v1/comments/{id}
+                    - Body(JSON)
+                      - comment (string, required): 수정할 주석 코멘트 본문
+
+                    ### 응답
+                    - 200 OK
+                    - data.id: 수정된 주석 ID
+
+                    ### 오류
+                    - CMT40401: 주석을 찾지 못했습니다
+                    - CMT40301: 해당 주석을 수정할 권한이 없습니다
+                    - MEMBER40101: 회원을 찾지 못했습니다
+                    """
+    )
+    public ResponseEntity<ApiResponse<DocumentCommentResponse>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody DocumentCommentUpdateRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        DocumentCommentResponse dto = documentCommentService.update(id, user, request);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 수정되었습니다"));
     }
 
     @GetMapping("/v1/documents/{documentId}/comments")
