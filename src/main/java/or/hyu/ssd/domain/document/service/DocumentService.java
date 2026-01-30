@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import or.hyu.ssd.global.util.OptimisticRetryExecutor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -257,9 +258,13 @@ public class DocumentService {
         if (paragraphs == null || paragraphs.isEmpty()) {
             return;
         }
-        List<DocumentParagraph> entities = paragraphs.stream()
-                .map(p -> DocumentParagraph.of(p.content(), p.role(), p.pageNumber(), p.blockId(), doc))
-                .collect(Collectors.toList());
+        List<DocumentParagraph> entities = new ArrayList<>(paragraphs.size());
+
+        // blockId를 서버에서 임의로 증가시킵니다
+        int blockId = 1;
+        for (DocumentParagraphDto p : paragraphs) {
+            entities.add(DocumentParagraph.of(p.content(), p.role(), p.pageNumber(), blockId++, doc));
+        }
         documentParagraphRepository.saveAll(entities);
     }
 
