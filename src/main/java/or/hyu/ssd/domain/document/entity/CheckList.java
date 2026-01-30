@@ -19,6 +19,7 @@ import org.hibernate.annotations.Comment;
                 @Index(name = "idx_checklist_document_id", columnList = "document_id")
         }
 )
+@Comment("작성자 체크리스트")
 public class CheckList extends BaseEntity {
 
     @Id

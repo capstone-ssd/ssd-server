@@ -16,6 +16,7 @@ import org.hibernate.annotations.Comment;
                 @Index(name = "idx_document_log_document_id", columnList = "document_id")
         }
 )
+@Comment("문서 수정 기록 엔티티")
 public class DocumentLog extends BaseEntity {
 
     @Id
