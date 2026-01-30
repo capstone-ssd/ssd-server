@@ -21,6 +21,7 @@ import org.hibernate.annotations.Comment;
                 @Index(name = "idx_evaluator_review_member_id", columnList = "member_id")
         }
 )
+@Comment("평가자 리뷰 엔티티")
 public class EvaluatorReview extends BaseEntity {
 
     @Id

@@ -25,6 +25,11 @@ public enum ErrorCode {
     // 문서 예외
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOC40401", "문서를 찾지 못했습니다"),
     DOCUMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "DOC40301", "해당 문서를 수정할 권한이 없습니다"),
+    DOCUMENT_PARAGRAPH_NOT_FOUND(HttpStatus.NOT_FOUND, "DOC40402", "문서의 블록을 찾지 못했습니다"),
+
+    // 주석 예외
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CMT40401", "주석을 찾지 못했습니다"),
+    COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "CMT40301", "해당 주석을 수정할 권한이 없습니다"),
 
     // 체크리스트 예외
     CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CHK40401", "체크리스트를 찾지 못했습니다"),

@@ -19,7 +19,7 @@ import org.hibernate.annotations.Comment;
                 @Index(name = "idx_document_paragraph_document_id", columnList = "document_id")
         }
 )
-@Comment("Document의 block을 저장하는 엔티티입니다")
+@Comment("Document의 block을 저장하는 엔티티")
 public class DocumentParagraph extends BaseEntity {
 
     @Id
