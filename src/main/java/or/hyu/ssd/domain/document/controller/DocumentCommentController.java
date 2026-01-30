@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.List;
 
@@ -98,6 +99,37 @@ public class DocumentCommentController {
     ) {
         DocumentCommentResponse dto = documentCommentService.update(id, user, request);
         return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 수정되었습니다"));
+    }
+
+    @DeleteMapping("/v1/comments/{id}")
+    @Operation(
+            summary = "주석 삭제",
+            description = """
+                    ### 개요
+                    - 주석을 삭제합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Path: /api/v1/comments/{id}
+
+                    ### 응답
+                    - 200 OK
+                    - data: "주석이 삭제되었습니다"
+
+                    ### 오류
+                    - CMT40401: 주석을 찾지 못했습니다
+                    - CMT40301: 해당 주석을 수정할 권한이 없습니다
+                    - MEMBER40101: 회원을 찾지 못했습니다
+                    """
+    )
+    public ResponseEntity<ApiResponse<String>> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        documentCommentService.delete(id, user);
+        return ResponseEntity.ok(ApiResponse.ok("주석이 삭제되었습니다"));
     }
 
     @GetMapping("/v1/documents/{documentId}/comments")

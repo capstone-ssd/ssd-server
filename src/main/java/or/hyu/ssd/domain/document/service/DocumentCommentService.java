@@ -53,6 +53,13 @@ public class DocumentCommentService {
         return DocumentCommentResponse.of(comment.getId());
     }
 
+    public void delete(Long commentId, CustomUserDetails user) {
+        ensureAuthenticated(user);
+        DocumentComment comment = getComment(commentId);
+        ensureCommentOwner(comment, user);
+        documentCommentRepository.delete(comment);
+    }
+
     @Transactional(readOnly = true)
     public List<DocumentCommentItemResponse> list(Long documentId, CustomUserDetails user) {
 
