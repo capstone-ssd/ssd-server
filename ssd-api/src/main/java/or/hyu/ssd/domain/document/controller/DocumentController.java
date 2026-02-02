@@ -81,7 +81,7 @@ public class DocumentController {
 
                     ### 요청
                     - Path: /api/v1/documents/{id}
-                    - Body(JSON, optional)
+                    - Body(JSON, required)
                       - title (string): 새 제목
                       - text (string): 새 본문
                       - summary (string): 요약 본문
