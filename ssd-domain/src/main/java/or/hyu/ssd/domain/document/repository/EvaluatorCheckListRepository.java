@@ -2,11 +2,13 @@ package or.hyu.ssd.domain.document.repository;
 
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.EvaluatorCheckList;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface EvaluatorCheckListRepository extends JpaRepository<EvaluatorCheckList, Long> {
+public interface EvaluatorCheckListRepository {
     List<EvaluatorCheckList> findAllByDocumentOrderByIdAsc(Document document);
+
+    List<EvaluatorCheckList> saveAll(Iterable<EvaluatorCheckList> entities);
+
     void deleteAllByDocument(Document document);
 }

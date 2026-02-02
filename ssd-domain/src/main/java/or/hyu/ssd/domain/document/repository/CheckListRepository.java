@@ -2,9 +2,20 @@ package or.hyu.ssd.domain.document.repository;
 
 import or.hyu.ssd.domain.document.entity.CheckList;
 import or.hyu.ssd.domain.document.entity.Document;
-import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CheckListRepository extends JpaRepository<CheckList, Long> {
+import java.util.List;
+import java.util.Optional;
+
+public interface CheckListRepository {
+    Optional<CheckList> findById(Long id);
+
+    List<CheckList> findAllByDocument(Document document);
+
+    List<CheckList> saveAll(Iterable<CheckList> entities);
+
     void deleteAllByDocument(Document document);
-    java.util.List<CheckList> findAllByDocument(Document document);
+
+    void delete(CheckList entity);
+
+    void flush();
 }
