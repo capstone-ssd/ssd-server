@@ -20,7 +20,6 @@ import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentLogResponse;
 import java.util.List;
 
 @RestController
@@ -45,10 +44,8 @@ public class DocumentController {
                     - Authorization: Bearer {accessToken}
 
                     ### 요청 본문
-                    - title (string, optional): 제목. 없으면 text/paragraphs 첫 항목으로 자동 생성
-                    - text (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
-                    - paragraphs (array, optional): 문단 메타데이터 배열 (blockId는 서버가 1..n으로 자동 부여)
-                    - path (string, optional): 폴더 경로 (예: team/project)
+                    - title (string, required): 공백 불가 제목
+                    - content (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
 
                     ### 응답
                     - 200 OK
@@ -83,12 +80,10 @@ public class DocumentController {
                     - Path: /api/v1/documents/{id}
                     - Body(JSON, optional)
                       - title (string): 새 제목
-                      - text (string): 새 본문
+                      - content (string): 새 본문
                       - summary (string): 요약 본문
                       - details (string): 상세 요약
-                      - path (string): 폴더 경로 (예: team/project)
                       - bookmark (boolean): 즐겨찾기 여부
-                      - paragraphs (array): 문단 메타데이터 배열 (blockId는 서버가 1..n으로 자동 부여)
 
                     ### 응답
                     - 200 OK
@@ -161,7 +156,7 @@ public class DocumentController {
                     ### 응답
                     - 200 OK
                     - data:
-                      - id, title, text, paragraphs, summary, details, path, bookmark
+                      - id, title, content, summary, details, bookmark
                       - authorId, authorName
 
                     ### 오류
@@ -202,7 +197,6 @@ public class DocumentController {
                     - data[]
                       - id: 문서 ID
                       - title: 제목
-                      - path: 폴더 경로
                       - updatedAt: 마지막 수정 시각
 
                     ### 오류
@@ -217,43 +211,6 @@ public class DocumentController {
     ) {
         List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
-    }
-
-
-    @GetMapping("/v1/documents/{id}/logs")
-    @Operation(
-            summary = "문서 수정 기록 조회",
-            description = """
-                    ### 개요
-                    - 문서 ID에 대한 수정 기록(수정자 이름, 시간)을 모두 조회합니다.
-
-                    ### 인증
-                    - Authorization: Bearer {accessToken} (문서 작성자만)
-
-                    ### 요청
-                    - Path: /api/v1/documents/{id}/logs
-
-                    ### 응답
-                    - 200 OK
-                    - data:
-                      - documentId
-                      - logs[]
-                        - editorName
-                        - time (예: 01월 02일 03시 04분)
-
-                    ### 오류
-                    - DOC40401: 문서를 찾을 수 없음
-                    - DOC40301: 문서 소유자가 아님
-                    - TOKEN4030x: 토큰 누락/만료/위조
-                    """
-    )
-    public ResponseEntity<ApiResponse<DocumentLogResponse>> listDocumentLogs(
-            @Parameter(description = "조회할 문서 ID", example = "42")
-            @PathVariable("id") Long id,
-            @AuthenticationPrincipal CustomUserDetails user
-    ) {
-        DocumentLogResponse dto = documentService.listDocumentLogs(id, user);
-        return ResponseEntity.ok(ApiResponse.ok(dto, "문서 기록이 조회되었습니다"));
     }
 
 
