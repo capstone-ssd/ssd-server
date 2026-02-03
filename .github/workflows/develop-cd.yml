@@ -20,16 +20,16 @@ jobs:
           distribution: "adopt"
 
 
-      - name: Remove existing application.yml (if exists)
+      - name: Remove existing application-dev.yml (if exists)
         run: |
-          rm -f src/main/resources/application.yml
+          rm -f ssd-api/src/main/resources/application-dev.yml
 
-      - name: Make application.yml
+      - name: Make application-dev.yml
         env:
           APPLICATION_DEV: ${{ secrets.APPLICATION_DEV }}
         run: |
-          mkdir -p src/main/resources
-          printf '%s\n' "$APPLICATION_DEV" > src/main/resources/application.yml
+          mkdir -p ssd-api/src/main/resources
+          printf '%s\n' "$APPLICATION_DEV" > ssd-api/src/main/resources/application-dev.yml
 
       - name: Build with Gradle
         run: |
