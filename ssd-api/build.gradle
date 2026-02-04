@@ -7,7 +7,7 @@ plugins {
 dependencies {
     implementation project(':ssd-domain')
     implementation project(':ssd-core')
-    runtimeOnly project(':ssd-infra')
+    implementation project(':ssd-infra')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
