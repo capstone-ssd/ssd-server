@@ -8,7 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.CreateFolderRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateFolderResponse;
-import or.hyu.ssd.domain.document.controller.dto.FolderListItemResponse;
+import or.hyu.ssd.domain.document.controller.dto.FolderContentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateFolderResponse;
 import or.hyu.ssd.domain.document.service.FolderService;
@@ -17,8 +17,6 @@ import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -123,31 +121,28 @@ public class FolderController {
             summary = "폴더 목록 조회",
             description = """
                     ### 개요
-                    - 특정 부모 폴더의 하위 폴더 목록을 조회합니다.
+                    - 특정 부모 폴더의 하위 폴더와 문서를 함께 조회합니다.
 
                     ### 인증
                     - Authorization: Bearer {accessToken}
 
                     ### 요청
-                    - Query parentId (optional): 상위 폴더 ID (없으면 루트)
+                    - Query parentId (optional): 부모 폴더 ID (없으면 루트)
 
                     ### 응답
                     - 200 OK
                     - data[]
-                      - id: 폴더 ID
-                      - name: 폴더명
-                      - color: 폴더 색상
-                      - parentId: 상위 폴더 ID
-                      - hasChildren: 하위 폴더 존재 여부
-                      - updatedAt: 마지막 수정 시각
+                      - parentId: 현재 조회한 부모 폴더 ID (루트는 0)
+                      - folders[]: 하위 폴더 목록
+                      - documents[]: 해당 폴더 내부 문서 목록
                     """
     )
-    public ResponseEntity<ApiResponse<List<FolderListItemResponse>>> listFolders(
+    public ResponseEntity<ApiResponse<FolderContentResponse>> listFolders(
             @AuthenticationPrincipal CustomUserDetails user,
-            @Parameter(description = "상위 폴더 ID (없으면 루트)", schema = @Schema(type = "integer", example = "0"))
+            @Parameter(description = "부모 폴더 ID (없으면 루트)", schema = @Schema(type = "integer", example = "0"))
             @RequestParam(name = "parentId", required = false) Long parentId
     ) {
-        List<FolderListItemResponse> list = folderService.list(user, parentId);
-        return ResponseEntity.ok(ApiResponse.ok(list, "폴더 목록이 조회되었습니다"));
+        FolderContentResponse data = folderService.listContent(user, parentId);
+        return ResponseEntity.ok(ApiResponse.ok(data, "폴더 내용이 조회되었습니다"));
     }
 }
