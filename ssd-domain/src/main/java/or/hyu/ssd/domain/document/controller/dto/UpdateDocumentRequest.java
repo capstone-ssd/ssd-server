@@ -7,7 +7,7 @@ public record UpdateDocumentRequest(
         String text,
         String summary,
         String details,
-        String path,
+        Long folderId,
         Boolean bookmark,
         List<DocumentParagraphDto> paragraphs
 ) {}

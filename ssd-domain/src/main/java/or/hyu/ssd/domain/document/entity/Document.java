@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.global.entity.BaseEntity;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 
 @Entity
@@ -27,10 +26,10 @@ public class Document extends BaseEntity {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Comment("문서 경로(폴더 경로) (입력: path)")
-    @Column(name = "path", nullable = false, length = 512)
-    @ColumnDefault("''")
-    private String path;
+    @Comment("문서가 속한 폴더 (없으면 루트)")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private Folder folder;
 
     @Comment("사업계획서 즐겨찾기 여부 (입력: bookmark)")
     @Column(name = "bookmark", nullable = false)
@@ -83,24 +82,27 @@ public class Document extends BaseEntity {
 
 
 
-    public static Document of(String title, String content, String path, boolean bookmark, Member member) {
+    public static Document of(String title, String content, Folder folder, boolean bookmark, Member member) {
         return Document.builder()
                 .title(title)
                 .content(content)
-                .path(path)
+                .folder(folder)
                 .bookmark(bookmark)
                 .member(member)
                 .build();
     }
 
     // 부분/전체 수정 편의 메서드
-    public void updateIfPresent(String title, String content, String summary, String details, String path, Boolean bookmark) {
+    public void updateIfPresent(String title, String content, String summary, String details, Boolean bookmark) {
         if (title != null) this.title = title;
         if (content != null) this.content = content;
         if (summary != null) this.summary = summary;
         if (details != null) this.details = details;
-        if (path != null) this.path = path;
         if (bookmark != null) this.bookmark = bookmark;
+    }
+
+    public void updateFolder(Folder folder) {
+        this.folder = folder;
     }
 
     public void updateEvaluation(String evaluation) {

@@ -48,7 +48,7 @@ public class DocumentController {
                     - title (string, optional): 제목. 없으면 text/paragraphs 첫 항목으로 자동 생성
                     - text (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
                     - paragraphs (array, optional): 문단 메타데이터 배열 (blockId는 서버가 1..n으로 자동 부여)
-                    - path (string, optional): 폴더 경로 (예: team/project)
+                    - folderId (number, optional): 폴더 ID (없으면 루트)
 
                     ### 응답
                     - 200 OK
@@ -86,7 +86,7 @@ public class DocumentController {
                       - text (string): 새 본문
                       - summary (string): 요약 본문
                       - details (string): 상세 요약
-                      - path (string): 폴더 경로 (예: team/project)
+                      - folderId (number): 폴더 ID (0이면 루트로 이동)
                       - bookmark (boolean): 즐겨찾기 여부
                       - paragraphs (array): 문단 메타데이터 배열 (blockId는 서버가 1..n으로 자동 부여)
 
@@ -161,7 +161,7 @@ public class DocumentController {
                     ### 응답
                     - 200 OK
                     - data:
-                      - id, title, text, paragraphs, summary, details, path, bookmark
+                      - id, title, text, paragraphs, summary, details, folderId, bookmark
                       - authorId, authorName
 
                     ### 오류
@@ -196,13 +196,16 @@ public class DocumentController {
                       - OLDEST: 생성일 오래된순
                       - NAME: 제목 오름차순
                       - MODIFIED: 수정일 최신순
+                    - Query folderId (optional)
+                      - 없으면 전체
+                      - 0이면 루트
 
                     ### 응답
                     - 200 OK
                     - data[]
                       - id: 문서 ID
                       - title: 제목
-                      - path: 폴더 경로
+                      - folderId: 폴더 ID (없으면 루트)
                       - updatedAt: 마지막 수정 시각
 
                     ### 오류
@@ -213,9 +216,11 @@ public class DocumentController {
     public ResponseEntity<ApiResponse<List<DocumentListItemResponse>>> listDocuments(
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "정렬 옵션", schema = @Schema(allowableValues = {"LATEST","OLDEST","NAME","MODIFIED"}))
-            @RequestParam(name = "sort", defaultValue = "LATEST") DocumentSort sort
+            @RequestParam(name = "sort", defaultValue = "LATEST") DocumentSort sort,
+            @Parameter(description = "폴더 ID (없으면 전체, 0이면 루트)")
+            @RequestParam(name = "folderId", required = false) Long folderId
     ) {
-        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort);
+        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort, folderId);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
     }
 

@@ -27,6 +27,11 @@ public enum ErrorCode {
     DOCUMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "DOC40301", "해당 문서를 수정할 권한이 없습니다"),
     DOCUMENT_PARAGRAPH_NOT_FOUND(HttpStatus.NOT_FOUND, "DOC40402", "문서의 블록을 찾지 못했습니다"),
 
+    // 폴더 예외
+    FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "FOLDER40401", "폴더를 찾지 못했습니다"),
+    FOLDER_FORBIDDEN(HttpStatus.FORBIDDEN, "FOLDER40301", "해당 폴더에 접근할 권한이 없습니다"),
+    FOLDER_INVALID_PARENT(HttpStatus.BAD_REQUEST, "FOLDER40001", "잘못된 폴더 이동입니다"),
+
     // 주석 예외
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CMT40401", "주석을 찾지 못했습니다"),
     COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "CMT40301", "해당 주석을 수정할 권한이 없습니다"),
