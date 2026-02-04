@@ -3,6 +3,8 @@ package or.hyu.ssd.domain.document.service;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.CreateFolderRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateFolderResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
+import or.hyu.ssd.domain.document.controller.dto.FolderContentResponse;
 import or.hyu.ssd.domain.document.controller.dto.FolderListItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateFolderResponse;
@@ -13,6 +15,7 @@ import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,24 +70,36 @@ public class FolderService {
     }
 
     @Transactional(readOnly = true)
-    public List<FolderListItemResponse> list(CustomUserDetails user, Long parentId) {
+    public FolderContentResponse listContent(CustomUserDetails user, Long parentId) {
         ensureAuthenticated(user);
         Long memberId = user.getMember().getId();
+        Long resolvedParentId = (parentId == null) ? 0L : parentId;
 
         List<Folder> folders;
-        if (parentId == null || parentId == 0L) {
+        List<Document> documents;
+        Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
+
+        if (resolvedParentId == 0L) {
             folders = folderRepository.findAllByMember_IdAndParentIsNull(memberId);
+            documents = documentRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
         } else {
-            getFolderOwned(parentId, user);
-            folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, parentId);
+            getFolderOwned(resolvedParentId, user);
+            folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, resolvedParentId);
+            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, resolvedParentId, sort);
         }
 
-        return folders.stream()
+        List<FolderListItemResponse> folderItems = folders.stream()
                 .map(folder -> FolderListItemResponse.of(
                         folder,
                         folderRepository.existsByMember_IdAndParent_Id(memberId, folder.getId())
                 ))
                 .collect(Collectors.toList());
+
+        List<DocumentListItemResponse> documentItems = documents.stream()
+                .map(DocumentListItemResponse::of)
+                .collect(Collectors.toList());
+
+        return FolderContentResponse.of(resolvedParentId, folderItems, documentItems);
     }
 
     private void deleteRecursively(Folder folder, CustomUserDetails user) {
