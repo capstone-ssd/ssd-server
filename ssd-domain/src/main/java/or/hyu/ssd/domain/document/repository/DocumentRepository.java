@@ -13,6 +13,12 @@ public interface DocumentRepository {
 
     List<Document> findAllByMember_Id(Long memberId, Sort sort);
 
+    List<Document> findAllByMember_IdAndFolder_Id(Long memberId, Long folderId, Sort sort);
+
+    List<Document> findAllByMember_IdAndFolderIsNull(Long memberId, Sort sort);
+
+    List<Document> findAllByFolder_Id(Long folderId);
+
     void delete(Document document);
 
     void flush();

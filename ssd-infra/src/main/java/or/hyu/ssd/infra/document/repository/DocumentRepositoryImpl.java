@@ -31,6 +31,21 @@ public class DocumentRepositoryImpl implements DocumentRepository {
     }
 
     @Override
+    public List<Document> findAllByMember_IdAndFolder_Id(Long memberId, Long folderId, Sort sort) {
+        return documentJpaRepository.findAllByMember_IdAndFolder_Id(memberId, folderId, sort);
+    }
+
+    @Override
+    public List<Document> findAllByMember_IdAndFolderIsNull(Long memberId, Sort sort) {
+        return documentJpaRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
+    }
+
+    @Override
+    public List<Document> findAllByFolder_Id(Long folderId) {
+        return documentJpaRepository.findAllByFolder_Id(folderId);
+    }
+
+    @Override
     public void delete(Document document) {
         documentJpaRepository.delete(document);
     }
