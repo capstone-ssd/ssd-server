@@ -6,14 +6,14 @@ import java.time.LocalDateTime;
 public record DocumentListItemResponse(
         Long id,
         String title,
-        String path,
+        Long folderId,
         LocalDateTime updatedAt
 ) {
     public static DocumentListItemResponse of(Document doc) {
         return new DocumentListItemResponse(
                 doc.getId(),
                 doc.getTitle(),
-                doc.getPath(),
+                doc.getFolder() != null ? doc.getFolder().getId() : null,
                 doc.getUpdatedAt()
         );
     }

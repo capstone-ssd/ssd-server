@@ -12,11 +12,13 @@ import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentLog;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
+import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
+import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -42,13 +44,17 @@ public class DocumentService {
     private final DocumentParagraphRepository documentParagraphRepository;
     private final DocumentCommentRepository documentCommentRepository;
     private final DocumentLogRepository documentLogRepository;
+    private final FolderRepository folderRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
+        if (user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
+        }
 
-        String normalizedPath = normalizePath(req.path());
         String title = resolveTitle(req.title(), req.text(), req.paragraphs());
-        Document doc = Document.of(title, req.text(), normalizedPath, false, user.getMember());
+        Folder folder = resolveFolderOrNull(user, req.folderId());
+        Document doc = Document.of(title, req.text(), folder, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
         saveParagraphsIfPresent(saved, req.paragraphs());
@@ -66,8 +72,11 @@ public class DocumentService {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
-        String normalizedPath = normalizePathOrNull(req.path());
-        doc.updateIfPresent(req.title(), req.text(), req.summary(), req.details(), normalizedPath, req.bookmark());
+        doc.updateIfPresent(req.title(), req.text(), req.summary(), req.details(), req.bookmark());
+        if (req.folderId() != null) {
+            Folder folder = resolveFolderOrNull(user, req.folderId());
+            doc.updateFolder(folder);
+        }
         if (req.paragraphs() != null) {
             documentParagraphRepository.deleteAllByDocument(doc);
             saveParagraphsIfPresent(doc, req.paragraphs());
@@ -126,7 +135,7 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentListItemResponse> listDocuments(CustomUserDetails user, DocumentSort sortOption) {
+    public List<DocumentListItemResponse> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
         if (user == null || user.getMember() == null) {
             throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
         }
@@ -137,9 +146,19 @@ public class DocumentService {
             case NAME -> Sort.by(Sort.Order.asc("title"));
             case MODIFIED -> Sort.by(Sort.Order.desc("updatedAt"));
         };
+        List<Document> documents;
+        Long memberId = user.getMember().getId();
 
-        return documentRepository.findAllByMember_Id(user.getMember().getId(), sort)
-                .stream()
+        if (folderId == null) {
+            documents = documentRepository.findAllByMember_Id(memberId, sort);
+        } else if (folderId == 0L) {
+            documents = documentRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
+        } else {
+            Folder folder = resolveFolderOrNull(user, folderId);
+            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, folder.getId(), sort);
+        }
+
+        return documents.stream()
                 .map(DocumentListItemResponse::of)
                 .collect(Collectors.toList());
     }
@@ -156,7 +175,7 @@ public class DocumentService {
             }
 
             boolean newVal = !doc.isBookmark();
-            doc.updateIfPresent(null, null, null, null, null, newVal);
+            doc.updateIfPresent(null, null, null, null, newVal);
             documentRepository.flush();
             return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
         });
@@ -171,47 +190,19 @@ public class DocumentService {
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
-    private String normalizePathOrNull(String rawPath) {
-        if (rawPath == null) {
+    private Folder resolveFolderOrNull(CustomUserDetails user, Long folderId) {
+        if (folderId == null || folderId == 0L) {
             return null;
         }
-        return normalizePath(rawPath);
-    }
-
-    private String normalizePath(String rawPath) {
-
-        // null이면 루트 경로로 반환
-        if (rawPath == null) {
-            return "/";
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.FOLDER_NOT_FOUND));
+        if (folder.getMember() == null || user == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.FOLDER_FORBIDDEN);
         }
-
-        // null이 아니라면 앞뒤 공백 제거 후 비어있다면 루트 경로 반환
-        String path = rawPath.trim();
-        if (path.isEmpty()) {
-            return "/";
+        if (!folder.getMember().getId().equals(user.getMember().getId())) {
+            throw new UserExceptionHandler(ErrorCode.FOLDER_FORBIDDEN);
         }
-
-        // 백슬래시와 슬래시 동기화 후 //가 있다면 /으로 축약
-        path = path.replace('\\', '/');
-        while (path.contains("//")) {
-            path = path.replace("//", "/");
-        }
-
-        if ("/".equals(path)) {
-            return "/";
-        }
-
-        // 앞뒤 슬래시 제거 후 항상 선행 슬래시를 붙인다
-        while (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        while (path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
-        if (path.isEmpty()) {
-            return "/";
-        }
-        return "/" + path;
+        return folder;
     }
 
     private String resolveTitle(String requestedTitle, String text, List<DocumentParagraphDto> paragraphs) {

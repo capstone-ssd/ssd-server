@@ -10,7 +10,7 @@ public record GetDocumentResponse(
         List<DocumentParagraphDto> paragraphs,
         String summary,
         String details,
-        String path,
+        Long folderId,
         boolean bookmark,
         Long authorId,
         String authorName
@@ -25,7 +25,7 @@ public record GetDocumentResponse(
                 paragraphs,
                 doc.getSummary(),
                 doc.getDetails(),
-                doc.getPath(),
+                doc.getFolder() != null ? doc.getFolder().getId() : null,
                 doc.isBookmark(),
                 authorId,
                 authorName
