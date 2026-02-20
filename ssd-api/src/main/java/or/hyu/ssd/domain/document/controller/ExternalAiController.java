@@ -13,8 +13,10 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRespo
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.service.ExternalAiService;
+import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,9 +56,10 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalEvaluationResponse>> evaluate(
-            @Valid @RequestBody ExternalEvaluationRequest request
+            @Valid @RequestBody ExternalEvaluationRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalEvaluationResponse response = externalAiService.evaluate(request);
+        ExternalEvaluationResponse response = externalAiService.evaluate(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 종합평가를 성공적으로 호출했습니다"));
     }
 
@@ -86,9 +89,10 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalSummarizationBasicResponse>> summarizeBasic(
-            @Valid @RequestBody ExternalSummarizationBasicRequest request
+            @Valid @RequestBody ExternalSummarizationBasicRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalSummarizationBasicResponse response = externalAiService.summarizeBasic(request);
+        ExternalSummarizationBasicResponse response = externalAiService.summarizeBasic(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 요약 API를 성공적으로 호출했습니다"));
     }
 
@@ -118,9 +122,10 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalSummarizationKeywordResponse>> summarizeKeyword(
-            @Valid @RequestBody ExternalSummarizationKeywordRequest request
+            @Valid @RequestBody ExternalSummarizationKeywordRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalSummarizationKeywordResponse response = externalAiService.summarizeKeyword(request);
+        ExternalSummarizationKeywordResponse response = externalAiService.summarizeKeyword(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 키워드 API를 성공적으로 호출했습니다"));
     }
 
@@ -150,9 +155,10 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalCheckNewTextResponse>> checkNewText(
-            @Valid @RequestBody ExternalCheckNewTextRequest request
+            @Valid @RequestBody ExternalCheckNewTextRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalCheckNewTextResponse response = externalAiService.checkNewText(request);
+        ExternalCheckNewTextResponse response = externalAiService.checkNewText(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 체크리스트 평가 API를 성공적으로 호출했습니다"));
     }
 }

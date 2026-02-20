@@ -61,6 +61,9 @@ feign:
       default:
         connectTimeout: 2000
         readTimeout: 3000
+      externalAiClient:
+        connectTimeout: 5000
+        readTimeout: 60000
 
 app:
   cookie:
@@ -72,7 +75,7 @@ app:
       - http://localhost:5173
       - http://localhost:8080
   external-ai:
-    base-url: ${EXTERNAL_AI_BASE_URL:http://166.104.246.77:8080}
+    base-url: ${EXTERNAL_AI_BASE_URL}
   prompts:
     checklist:
       system: ${CHECK_SYS_PROMPT}

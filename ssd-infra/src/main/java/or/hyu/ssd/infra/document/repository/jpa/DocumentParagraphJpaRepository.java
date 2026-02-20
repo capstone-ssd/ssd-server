@@ -12,5 +12,7 @@ public interface DocumentParagraphJpaRepository extends JpaRepository<DocumentPa
 
     Optional<DocumentParagraph> findByDocumentAndBlockId(Document document, int blockId);
 
+    boolean existsByDocument_Member_IdAndBlockId(Long memberId, int blockId);
+
     void deleteAllByDocument(Document document);
 }

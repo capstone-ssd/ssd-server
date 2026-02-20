@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.document.client;
+package or.hyu.ssd.infra.document.client;
 
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;

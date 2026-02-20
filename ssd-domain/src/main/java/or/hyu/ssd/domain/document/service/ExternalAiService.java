@@ -1,9 +1,7 @@
 package or.hyu.ssd.domain.document.service;
 
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import or.hyu.ssd.domain.document.client.ExternalAiClient;
+import or.hyu.ssd.domain.document.client.ExternalAiPort;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationRequest;
@@ -12,44 +10,101 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicReque
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
+import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
+import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import org.springframework.stereotype.Service;
 
-import java.util.function.Supplier;
-
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ExternalAiService {
 
-    private final ExternalAiClient externalAiClient;
+    private final ExternalAiPort externalAiPort;
+    private final DocumentRepository documentRepository;
+    private final DocumentParagraphRepository documentParagraphRepository;
 
-    public ExternalEvaluationResponse evaluate(ExternalEvaluationRequest request) {
-        return callExternalApi(() -> externalAiClient.evaluate(request), "POST /evaluate");
+    public ExternalEvaluationResponse evaluate(ExternalEvaluationRequest request, CustomUserDetails user) {
+        Document doc = getOwnedDocument(request.docId(), user);
+        ExternalEvaluationRequest externalRequest = new ExternalEvaluationRequest(
+                String.valueOf(doc.getId()),
+                doc.getContent()
+        );
+        return externalAiPort.evaluate(externalRequest);
     }
 
-    public ExternalSummarizationBasicResponse summarizeBasic(ExternalSummarizationBasicRequest request) {
-        return callExternalApi(() -> externalAiClient.summarizeBasic(request), "POST /summarization/Basic");
+    public ExternalSummarizationBasicResponse summarizeBasic(ExternalSummarizationBasicRequest request, CustomUserDetails user) {
+        Document doc = getOwnedDocument(request.docId(), user);
+        ExternalSummarizationBasicRequest externalRequest = new ExternalSummarizationBasicRequest(
+                String.valueOf(doc.getId()),
+                doc.getContent()
+        );
+        return externalAiPort.summarizeBasic(externalRequest);
     }
 
-    public ExternalSummarizationKeywordResponse summarizeKeyword(ExternalSummarizationKeywordRequest request) {
-        return callExternalApi(() -> externalAiClient.summarizeKeyword(request), "POST /summarization/Keyword");
+    public ExternalSummarizationKeywordResponse summarizeKeyword(ExternalSummarizationKeywordRequest request, CustomUserDetails user) {
+        Document doc = getOwnedDocument(request.docId(), user);
+        ExternalSummarizationKeywordRequest externalRequest = new ExternalSummarizationKeywordRequest(
+                String.valueOf(doc.getId()),
+                doc.getContent()
+        );
+        return externalAiPort.summarizeKeyword(externalRequest);
     }
 
-    public ExternalCheckNewTextResponse checkNewText(ExternalCheckNewTextRequest request) {
-        return callExternalApi(() -> externalAiClient.checkNewText(request), "POST /check/new-text");
+    public ExternalCheckNewTextResponse checkNewText(ExternalCheckNewTextRequest request, CustomUserDetails user) {
+        Long memberId = getMemberId(user);
+        int blockId = parseBlockId(request.blockId());
+        boolean owned = documentParagraphRepository.existsByDocumentMemberIdAndBlockId(memberId, blockId);
+        if (!owned) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        return externalAiPort.checkNewText(request);
     }
 
-    private <T> T callExternalApi(Supplier<T> supplier, String endpoint) {
+    private Document getOwnedDocument(String rawDocId, CustomUserDetails user) {
+        Long docId = parseDocumentId(rawDocId);
+        Document doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+        Long memberId = getMemberId(user);
+        if (doc.getMember() == null || doc.getMember().getId() == null) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!doc.getMember().getId().equals(memberId)) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        return doc;
+    }
+
+    private Long getMemberId(CustomUserDetails user) {
+        if (user == null || user.getMember() == null || user.getMember().getId() == null) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        return user.getMember().getId();
+    }
+
+    private Long parseDocumentId(String rawDocId) {
         try {
-            return supplier.get();
-        } catch (FeignException e) {
-            log.warn("[외부 AI 서버 호출 실패] endpoint={}, status={}, message={}", endpoint, e.status(), e.getMessage());
-            throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_CALL_FAILED);
+            Long docId = Long.parseLong(rawDocId);
+            if (docId <= 0) {
+                throw new NumberFormatException("doc_id must be positive");
+            }
+            return docId;
         } catch (Exception e) {
-            log.error("[외부 AI 응답 처리 실패] endpoint={}", endpoint, e);
-            throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_RESPONSE_INVALID);
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND);
+        }
+    }
+
+    private int parseBlockId(String rawBlockId) {
+        try {
+            int blockId = Integer.parseInt(rawBlockId);
+            if (blockId <= 0) {
+                throw new NumberFormatException("block_id must be positive");
+            }
+            return blockId;
+        } catch (Exception e) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
         }
     }
 }
