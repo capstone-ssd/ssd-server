@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRequest;
@@ -26,7 +27,7 @@ public class ExternalAiService {
     private final DocumentRepository documentRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
 
-    public ExternalEvaluationResponse evaluate(ExternalEvaluationRequest request, CustomUserDetails user) {
+    public ExternalEvaluationResponse evaluate(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
         ExternalEvaluationRequest externalRequest = new ExternalEvaluationRequest(
                 String.valueOf(doc.getId()),
@@ -35,7 +36,7 @@ public class ExternalAiService {
         return externalAiPort.evaluate(externalRequest);
     }
 
-    public ExternalSummarizationBasicResponse summarizeBasic(ExternalSummarizationBasicRequest request, CustomUserDetails user) {
+    public ExternalSummarizationBasicResponse summarizeBasic(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
         ExternalSummarizationBasicRequest externalRequest = new ExternalSummarizationBasicRequest(
                 String.valueOf(doc.getId()),
@@ -44,7 +45,7 @@ public class ExternalAiService {
         return externalAiPort.summarizeBasic(externalRequest);
     }
 
-    public ExternalSummarizationKeywordResponse summarizeKeyword(ExternalSummarizationKeywordRequest request, CustomUserDetails user) {
+    public ExternalSummarizationKeywordResponse summarizeKeyword(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
         ExternalSummarizationKeywordRequest externalRequest = new ExternalSummarizationKeywordRequest(
                 String.valueOf(doc.getId()),

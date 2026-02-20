@@ -6,11 +6,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationRequest;
+import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.service.ExternalAiService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -43,8 +41,11 @@ public class ExternalAiController {
                     ### 요청
                     - Path: /api/v1/external-ai/evaluate
                     - Body(JSON)
-                      - doc_id (string): 문서 식별자
-                      - doc (string): 평가할 사업계획서 본문
+                      - docId (string): 문서 식별자
+
+                    ### 처리
+                    - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
+                      서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
 
                     ### 응답
                     - 200 OK
@@ -56,7 +57,7 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalEvaluationResponse>> evaluate(
-            @Valid @RequestBody ExternalEvaluationRequest request,
+            @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalEvaluationResponse response = externalAiService.evaluate(request, user);
@@ -76,8 +77,11 @@ public class ExternalAiController {
                     ### 요청
                     - Path: /api/v1/external-ai/summarization/basic
                     - Body(JSON)
-                      - doc_id (string): 문서 식별자
-                      - doc (string): 요약할 사업계획서 본문
+                      - docId (string): 문서 식별자
+
+                    ### 처리
+                    - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
+                      서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
 
                     ### 응답
                     - 200 OK
@@ -89,7 +93,7 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalSummarizationBasicResponse>> summarizeBasic(
-            @Valid @RequestBody ExternalSummarizationBasicRequest request,
+            @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalSummarizationBasicResponse response = externalAiService.summarizeBasic(request, user);
@@ -109,8 +113,11 @@ public class ExternalAiController {
                     ### 요청
                     - Path: /api/v1/external-ai/summarization/keyword
                     - Body(JSON)
-                      - doc_id (string): 문서 식별자
-                      - doc (string): 키워드를 추출할 사업계획서 본문
+                      - docId (string): 문서 식별자
+
+                    ### 처리
+                    - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
+                      서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
 
                     ### 응답
                     - 200 OK
@@ -122,7 +129,7 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalSummarizationKeywordResponse>> summarizeKeyword(
-            @Valid @RequestBody ExternalSummarizationKeywordRequest request,
+            @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalSummarizationKeywordResponse response = externalAiService.summarizeKeyword(request, user);
