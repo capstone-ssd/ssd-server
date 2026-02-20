@@ -28,8 +28,8 @@ public class ExternalAiProperties {
             throw new IllegalStateException("EXTERNAL_AI_BASE_URL 형식이 올바르지 않습니다.");
         }
 
-        if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            throw new IllegalStateException("EXTERNAL_AI_BASE_URL은 반드시 HTTPS 스킴이어야 합니다.");
+        if (uri.getScheme() == null || uri.getScheme().isBlank()) {
+            throw new IllegalStateException("EXTERNAL_AI_BASE_URL은 스킴(http/https)을 포함해야 합니다.");
         }
     }
 }
