@@ -55,10 +55,13 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
             log.error("[외부 AI 응답 처리 실패] endpoint={}, message={}", endpoint, sanitize(e.getMessage(), MAX_LOG_BODY_LENGTH));
             throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_RESPONSE_INVALID);
         } catch (FeignException e) {
+            Throwable cause = e.getCause();
             log.warn(
-                    "[외부 AI 서버 호출 실패] endpoint={}, status={}, responseSnippet={}",
+                    "[외부 AI 서버 호출 실패] endpoint={}, status={}, causeType={}, causeMessage={}, responseSnippet={}",
                     endpoint,
                     e.status(),
+                    cause == null ? "(none)" : cause.getClass().getSimpleName(),
+                    sanitize(cause == null ? null : cause.getMessage(), MAX_LOG_BODY_LENGTH),
                     sanitize(e.contentUTF8(), MAX_LOG_BODY_LENGTH)
             );
             throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_CALL_FAILED);
