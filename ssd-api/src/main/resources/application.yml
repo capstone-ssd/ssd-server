@@ -61,9 +61,6 @@ feign:
       default:
         connectTimeout: 2000
         readTimeout: 3000
-      externalAiClient:
-        connectTimeout: ${EXTERNAL_AI_CONNECT_TIMEOUT:5000}
-        readTimeout: ${EXTERNAL_AI_READ_TIMEOUT:180000}
 
 app:
   cookie:

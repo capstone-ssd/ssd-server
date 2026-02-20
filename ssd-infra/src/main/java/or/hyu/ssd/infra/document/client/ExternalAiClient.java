@@ -10,12 +10,13 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicReque
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.time.Duration;
 
 @FeignClient(
         name = "externalAiClient",
@@ -40,12 +41,9 @@ public interface ExternalAiClient {
     @Slf4j
     class ExternalAiClientConfig {
         @Bean
-        public Request.Options externalAiRequestOptions(
-                @Value("${feign.client.config.externalAiClient.connectTimeout:5000}") int connectTimeout,
-                @Value("${feign.client.config.externalAiClient.readTimeout:300000}") int readTimeout
-        ) {
-            log.info("[ExternalAiClient Timeout] connectTimeout={}ms, readTimeout={}ms", connectTimeout, readTimeout);
-            return new Request.Options(connectTimeout, readTimeout);
+        public Request.Options externalAiRequestOptions() {
+            log.info("[ExternalAiClient Timeout] timeout disabled");
+            return new Request.Options(Duration.ZERO, Duration.ZERO, true);
         }
     }
 }
