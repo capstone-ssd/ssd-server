@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
         name = "externalAiClient",
-        url = "${app.external-ai.base-url}"
+        url = "${app.external-ai.base-url}",
+        configuration = ExternalAiFeignClientConfig.class
 )
 public interface ExternalAiClient {
 
