@@ -45,6 +45,10 @@ public enum ErrorCode {
     // 평가자 리뷰 예외
     REVIEW_INVALID_SCORE(HttpStatus.BAD_REQUEST, "REV40001", "리뷰 점수는 0~100 범위여야 합니다"),
 
+    // 외부 AI 연동 예외
+    EXTERNAL_AI_CALL_FAILED(HttpStatus.BAD_GATEWAY, "AI50201", "외부 AI 서버 호출에 실패했습니다"),
+    EXTERNAL_AI_RESPONSE_INVALID(HttpStatus.BAD_GATEWAY, "AI50202", "외부 AI 서버 응답 처리에 실패했습니다"),
+
     // 요청/라우팅 예외
     REQUEST_API_NOT_FOUND(HttpStatus.NOT_FOUND, "REQ40401", "요청하신 API를 찾지 못했습니다"),
     REQUEST_METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "REQ40501", "지원하지 않는 HTTP 메서드입니다"),

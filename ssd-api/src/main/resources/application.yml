@@ -71,6 +71,8 @@ app:
     allowed-origins:
       - http://localhost:5173
       - http://localhost:8080
+  external-ai:
+    base-url: ${EXTERNAL_AI_BASE_URL}
   prompts:
     checklist:
       system: ${CHECK_SYS_PROMPT}

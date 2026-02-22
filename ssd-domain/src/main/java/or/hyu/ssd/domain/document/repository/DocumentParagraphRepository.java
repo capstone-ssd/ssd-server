@@ -13,5 +13,7 @@ public interface DocumentParagraphRepository {
 
     Optional<DocumentParagraph> findByDocumentAndBlockId(Document document, int blockId);
 
+    boolean existsByDocumentMemberIdAndBlockId(Long memberId, int blockId);
+
     void deleteAllByDocument(Document document);
 }

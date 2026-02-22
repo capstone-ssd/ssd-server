@@ -31,6 +31,11 @@ public class DocumentParagraphRepositoryImpl implements DocumentParagraphReposit
     }
 
     @Override
+    public boolean existsByDocumentMemberIdAndBlockId(Long memberId, int blockId) {
+        return documentParagraphJpaRepository.existsByDocument_Member_IdAndBlockId(memberId, blockId);
+    }
+
+    @Override
     public void deleteAllByDocument(Document document) {
         documentParagraphJpaRepository.deleteAllByDocument(document);
     }
