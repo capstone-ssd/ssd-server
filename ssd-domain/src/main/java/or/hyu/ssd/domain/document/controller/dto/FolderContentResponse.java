@@ -4,6 +4,7 @@ import java.util.List;
 
 public record FolderContentResponse(
         Long parentId,
+        Long currentFolderId,
         List<FolderListItemResponse> folders,
         List<DocumentListItemResponse> documents
 ) {
@@ -12,6 +13,6 @@ public record FolderContentResponse(
             List<FolderListItemResponse> folders,
             List<DocumentListItemResponse> documents
     ) {
-        return new FolderContentResponse(parentId, folders, documents);
+        return new FolderContentResponse(parentId, parentId, folders, documents);
     }
 }

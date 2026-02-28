@@ -17,7 +17,7 @@ public record FolderListItemResponse(
                 folder.getId(),
                 folder.getName(),
                 folder.getColor(),
-                folder.getParent() != null ? folder.getParent().getId() : null,
+                folder.getParent() != null ? folder.getParent().getId() : 0L,
                 hasChildren,
                 folder.getUpdatedAt()
         );

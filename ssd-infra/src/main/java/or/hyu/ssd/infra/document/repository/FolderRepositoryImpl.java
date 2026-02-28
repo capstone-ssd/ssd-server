@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.infra.document.repository.jpa.FolderJpaRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -38,6 +39,11 @@ public class FolderRepositoryImpl implements FolderRepository {
     @Override
     public List<Folder> findAllByMember_IdAndParentIsNull(Long memberId) {
         return folderJpaRepository.findAllByMember_IdAndParentIsNull(memberId);
+    }
+
+    @Override
+    public List<Folder> findAllByMember_Id(Long memberId, Sort sort) {
+        return folderJpaRepository.findAllByMember_Id(memberId, sort);
     }
 
     @Override
