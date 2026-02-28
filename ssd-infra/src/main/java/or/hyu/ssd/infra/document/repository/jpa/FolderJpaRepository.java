@@ -2,6 +2,7 @@ package or.hyu.ssd.infra.document.repository.jpa;
 
 import or.hyu.ssd.domain.document.entity.Folder;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,8 @@ public interface FolderJpaRepository extends JpaRepository<Folder, Long> {
     List<Folder> findAllByMember_IdAndParent_Id(Long memberId, Long parentId);
 
     List<Folder> findAllByMember_IdAndParentIsNull(Long memberId);
+
+    List<Folder> findAllByMember_Id(Long memberId, Sort sort);
 
     boolean existsByMember_IdAndParent_Id(Long memberId, Long parentId);
 }

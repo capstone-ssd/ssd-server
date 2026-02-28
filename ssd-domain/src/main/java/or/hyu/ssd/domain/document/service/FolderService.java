@@ -88,18 +88,27 @@ public class FolderService {
             documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, resolvedParentId, sort);
         }
 
-        List<FolderListItemResponse> folderItems = folders.stream()
-                .map(folder -> FolderListItemResponse.of(
-                        folder,
-                        folderRepository.existsByMember_IdAndParent_Id(memberId, folder.getId())
-                ))
-                .collect(Collectors.toList());
+        return FolderContentResponse.of(
+                resolvedParentId,
+                toFolderItems(memberId, folders),
+                toDocumentItems(documents)
+        );
+    }
 
-        List<DocumentListItemResponse> documentItems = documents.stream()
-                .map(DocumentListItemResponse::of)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public FolderContentResponse listAllContent(CustomUserDetails user) {
+        ensureAuthenticated(user);
+        Long memberId = user.getMember().getId();
+        Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
 
-        return FolderContentResponse.of(resolvedParentId, folderItems, documentItems);
+        List<Folder> folders = folderRepository.findAllByMember_Id(memberId, sort);
+        List<Document> documents = documentRepository.findAllByMember_Id(memberId, sort);
+
+        return FolderContentResponse.of(
+                0L,
+                toFolderItems(memberId, folders),
+                toDocumentItems(documents)
+        );
     }
 
     private void deleteRecursively(Folder folder, CustomUserDetails user) {
@@ -167,5 +176,20 @@ public class FolderService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private List<FolderListItemResponse> toFolderItems(Long memberId, List<Folder> folders) {
+        return folders.stream()
+                .map(folder -> FolderListItemResponse.of(
+                        folder,
+                        folderRepository.existsByMember_IdAndParent_Id(memberId, folder.getId())
+                ))
+                .collect(Collectors.toList());
+    }
+
+    private List<DocumentListItemResponse> toDocumentItems(List<Document> documents) {
+        return documents.stream()
+                .map(DocumentListItemResponse::of)
+                .collect(Collectors.toList());
     }
 }

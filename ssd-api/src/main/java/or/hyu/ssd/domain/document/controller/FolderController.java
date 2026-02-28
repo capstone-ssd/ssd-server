@@ -132,7 +132,8 @@ public class FolderController {
                     ### 응답
                     - 200 OK
                     - data[]
-                      - parentId: 현재 조회한 부모 폴더 ID (루트는 0)
+                      - parentId: 현재 조회한 폴더 ID (루트는 0)
+                      - currentFolderId: 현재 탐색 중인 폴더 ID (루트는 0)
                       - folders[]: 하위 폴더 목록
                       - documents[]: 해당 폴더 내부 문서 목록
                     """
@@ -144,5 +145,32 @@ public class FolderController {
     ) {
         FolderContentResponse data = folderService.listContent(user, parentId);
         return ResponseEntity.ok(ApiResponse.ok(data, "폴더 내용이 조회되었습니다"));
+    }
+
+    @GetMapping("/v1/folders/all")
+    @Operation(
+            summary = "파일 경로 전체 조회",
+            description = """
+                    ### 개요
+                    - 로그인한 회원이 보유한 모든 폴더/문서를 한 번에 조회합니다.
+                    - 응답의 folders는 각 항목 parentId로 계층을 복원할 수 있습니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 응답
+                    - 200 OK
+                    - data
+                      - parentId: 0 (루트 기준)
+                      - currentFolderId: 0 (루트 기준)
+                      - folders[]: 전체 폴더 목록
+                      - documents[]: 전체 문서 목록
+                    """
+    )
+    public ResponseEntity<ApiResponse<FolderContentResponse>> listAllPaths(
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        FolderContentResponse data = folderService.listAllContent(user);
+        return ResponseEntity.ok(ApiResponse.ok(data, "파일 경로 전체 조회에 성공했습니다"));
     }
 }
