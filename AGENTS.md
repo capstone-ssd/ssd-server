@@ -81,6 +81,10 @@
 
 ### Git & Collaboration
 - 기본 브랜치 흐름: `feature/*`, `fix/*` -> `develop` -> `main`
+- 브랜치 명명 규칙
+  - 기능 작업: `feature/#이슈번호/요약`
+  - 버그 수정: `fix/#이슈번호/요약`
+  - 잡무/설정 작업: `chore/#이슈번호/요약`
 - 커밋/이슈 prefix는 현재 템플릿 관례를 따른다.
   - `[FEATURE]`, `[FIX]`, `[CHORE]`, `[INIT]`
 - 커밋 메세지는 아래와 같이 작성한다
