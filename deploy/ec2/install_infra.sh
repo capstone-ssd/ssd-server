@@ -30,7 +30,7 @@ fi
 
 if command -v docker >/dev/null 2>&1; then
   docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1 || docker network create "${NETWORK_NAME}"
-  docker compose -f "${INFRA_DIR}/docker-compose.yml" up -d --remove-orphans redis
+  docker compose -f "${INFRA_DIR}/docker-compose.yml" up -d redis
 else
   echo "[ERROR] docker is not installed" >&2
   exit 1

@@ -54,6 +54,7 @@ fi
 NEXT_CONTAINER="${APP_NAME}-${NEXT_COLOR}"
 CURRENT_CONTAINER="${APP_NAME}-${CURRENT_COLOR}"
 HEALTH_URL="http://127.0.0.1:${NEXT_PORT}${HEALTH_PATH}"
+LEGACY_APP_CONTAINER_NAME="${LEGACY_APP_CONTAINER_NAME:-infra-app-1}"
 
 echo "[INFO] Current=${CURRENT_COLOR}(${CURRENT_PORT}), Next=${NEXT_COLOR}(${NEXT_PORT})"
 echo "[INFO] Pull image: ${IMAGE}"
@@ -112,6 +113,9 @@ systemctl reload nginx
 echo "${NEXT_COLOR}" > "${STATE_FILE}"
 
 docker rm -f "${CURRENT_CONTAINER}" >/dev/null 2>&1 || true
+if [[ "${LEGACY_APP_CONTAINER_NAME}" != "${NEXT_CONTAINER}" && "${LEGACY_APP_CONTAINER_NAME}" != "${CURRENT_CONTAINER}" ]]; then
+  docker rm -f "${LEGACY_APP_CONTAINER_NAME}" >/dev/null 2>&1 || true
+fi
 docker image prune -f >/dev/null 2>&1 || true
 
 echo "[INFO] Deploy success: active=${NEXT_COLOR}"
