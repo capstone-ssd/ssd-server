@@ -1,5 +1,6 @@
 package or.hyu.ssd.domain.document.service;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
@@ -57,7 +58,7 @@ public class DocumentService {
         Document doc = Document.of(title, req.text(), folder, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
-        saveParagraphsIfPresent(saved, req.paragraphs());
+        saveCreateParagraphsIfPresent(saved, req.paragraphs());
         saveDocumentLog(saved, user);
         return CreateDocumentResponse.of(saved.getId());
     }
@@ -205,7 +206,7 @@ public class DocumentService {
         return folder;
     }
 
-    private String resolveTitle(String requestedTitle, String text, List<DocumentParagraphDto> paragraphs) {
+    private String resolveTitle(String requestedTitle, String text, List<CreateDocumentParagraphRequest> paragraphs) {
         String title = trimOrNull(requestedTitle);
         if (title != null) {
             return title;
@@ -246,6 +247,20 @@ public class DocumentService {
             }
         }
         return null;
+    }
+
+    private void saveCreateParagraphsIfPresent(Document doc, List<CreateDocumentParagraphRequest> paragraphs) {
+        if (paragraphs == null || paragraphs.isEmpty()) {
+            return;
+        }
+        List<DocumentParagraph> entities = new ArrayList<>(paragraphs.size());
+
+        // 생성 API는 pageNumber를 받지 않으므로 모든 문단을 1페이지로 저장합니다.
+        int blockId = 1;
+        for (CreateDocumentParagraphRequest p : paragraphs) {
+            entities.add(DocumentParagraph.of(p.content(), p.role(), 1, blockId++, doc));
+        }
+        documentParagraphRepository.saveAll(entities);
     }
 
     private void saveParagraphsIfPresent(Document doc, List<DocumentParagraphDto> paragraphs) {

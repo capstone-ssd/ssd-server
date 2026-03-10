@@ -1,0 +1,123 @@
+package or.hyu.ssd.domain.document.service;
+
+import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
+import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
+import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentParagraph;
+import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
+import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
+import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
+import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
+import or.hyu.ssd.domain.document.repository.FolderRepository;
+import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.domain.member.entity.Role;
+import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.global.util.OptimisticRetryExecutor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class DocumentServiceTest {
+
+    @Mock
+    private DocumentRepository documentRepository;
+    @Mock
+    private CheckListRepository checkListRepository;
+    @Mock
+    private EvaluatorCheckListRepository evaluatorCheckListRepository;
+    @Mock
+    private DocumentParagraphRepository documentParagraphRepository;
+    @Mock
+    private DocumentCommentRepository documentCommentRepository;
+    @Mock
+    private DocumentLogRepository documentLogRepository;
+    @Mock
+    private FolderRepository folderRepository;
+    @Mock
+    private OptimisticRetryExecutor optimisticRetryExecutor;
+
+    @InjectMocks
+    private DocumentService documentService;
+
+    @Test
+    @DisplayName("createDocument()는 생성 요청 문단의 pageNumber를 1로 저장하고 첫 문단으로 제목을 만든다")
+    void createDocument_defaultsPageNumberAndResolvesTitleFromParagraph() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        CreateDocumentRequest request = new CreateDocumentRequest(
+                null,
+                "   ",
+                List.of(
+                        new CreateDocumentParagraphRequest("첫 문단 제목", "BODY", 99),
+                        new CreateDocumentParagraphRequest("둘째 문단", "BODY", 100)
+                ),
+                0L
+        );
+
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
+            Document doc = invocation.getArgument(0);
+            return Document.builder()
+                    .id(42L)
+                    .title(doc.getTitle())
+                    .content(doc.getContent())
+                    .folder(doc.getFolder())
+                    .bookmark(doc.isBookmark())
+                    .member(doc.getMember())
+                    .build();
+        });
+        when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> {
+            Iterable<DocumentParagraph> paragraphs = invocation.getArgument(0);
+            List<DocumentParagraph> saved = new ArrayList<>();
+            paragraphs.forEach(saved::add);
+            return saved;
+        });
+
+        CreateDocumentResponse response = documentService.createDocument(user, request);
+
+        ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+        verify(documentRepository).save(documentCaptor.capture());
+        assertThat(documentCaptor.getValue().getTitle()).isEqualTo("첫 문단 제목");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Iterable<DocumentParagraph>> paragraphCaptor =
+                (ArgumentCaptor<Iterable<DocumentParagraph>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Iterable.class);
+        verify(documentParagraphRepository).saveAll(paragraphCaptor.capture());
+        List<DocumentParagraph> savedParagraphs = new ArrayList<>();
+        paragraphCaptor.getValue().forEach(savedParagraphs::add);
+
+        assertThat(savedParagraphs)
+                .extracting(DocumentParagraph::getPageNumber)
+                .containsExactly(1, 1);
+        assertThat(savedParagraphs)
+                .extracting(DocumentParagraph::getBlockId)
+                .containsExactly(1, 2);
+        assertThat(response.id()).isEqualTo(42L);
+    }
+
+    private Member member(Long id) {
+        return Member.builder()
+                .id(id)
+                .name("테스터")
+                .email("tester@example.com")
+                .profileImageUrl("")
+                .profileImageKey(null)
+                .role(Role.ROLE_AUTHOR)
+                .build();
+    }
+}
