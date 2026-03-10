@@ -1,0 +1,20 @@
+name: infra
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - ssd-net
+
+networks:
+  ssd-net:
+    name: ssd-net
+
+volumes:
+  redis-data:
