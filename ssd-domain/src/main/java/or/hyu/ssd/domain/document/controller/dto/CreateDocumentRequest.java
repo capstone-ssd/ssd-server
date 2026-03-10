@@ -7,6 +7,6 @@ public record CreateDocumentRequest(
         String title,
         @NotBlank(message = "내용은 필수입니다")
         String text,
-        List<DocumentParagraphDto> paragraphs,
+        List<CreateDocumentParagraphRequest> paragraphs,
         Long folderId
 ) {}
