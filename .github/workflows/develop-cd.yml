@@ -1,76 +1,126 @@
-name: dev-cd
+name: develop-cd
 
 on:
   push:
     branches: [ "develop" ]
 
+concurrency:
+  group: develop-cd-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v3
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: JDK 21 설치
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: "adopt"
+          distribution: 'temurin'
 
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Remove existing application-dev.yml (if exists)
-        run: |
-          rm -f ssd-api/src/main/resources/application-dev.yml
+      - name: gradlew 권한 설정
+        run: chmod +x gradlew
 
-      - name: Make application-dev.yml
+      - name: application-dev.yml 생성
         env:
           APPLICATION_DEV: ${{ secrets.APPLICATION_DEV }}
         run: |
-          mkdir -p ssd-api/src/main/resources
-          printf '%s\n' "$APPLICATION_DEV" > ssd-api/src/main/resources/application-dev.yml
+          mkdir -p .runtime
+          FILE=.runtime/application-dev.yml
+          rm -f "$FILE"
+          printf '%s\n' "$APPLICATION_DEV" > "$FILE"
 
-      - name: Build with Gradle
+          if grep -Eq '^[[:space:]]*on-profile:[[:space:]]*local' "$FILE"; then
+            echo "[WARN] application-dev.yml의 on-profile: local 을 dev로 보정합니다."
+            perl -0pi -e 's/on-profile:\s*local/on-profile: dev/g' "$FILE"
+          fi
+
+      - name: dev 설정 필수값 검증
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean build -x test
+          FILE=.runtime/application-dev.yml
+          grep -Eq '^spring:' "$FILE" || { echo "[ERROR] spring 루트가 없습니다."; exit 1; }
+          grep -Eq '^[[:space:]]*datasource:' "$FILE" || { echo "[ERROR] spring.datasource 블록이 없습니다."; exit 1; }
+          grep -Eq '^[[:space:]]*url:[[:space:]]*jdbc:' "$FILE" || { echo "[ERROR] spring.datasource.url이 jdbc 형식이 아닙니다."; exit 1; }
+          grep -Eq '^[[:space:]]*username:[[:space:]]*[^[:space:]].*' "$FILE" || { echo "[ERROR] spring.datasource.username이 비어 있습니다."; exit 1; }
+          grep -Eq '^[[:space:]]*password:[[:space:]]*[^[:space:]].*' "$FILE" || { echo "[ERROR] spring.datasource.password가 비어 있습니다."; exit 1; }
+          ! grep -Eq '^[[:space:]]*on-profile:[[:space:]]*local' "$FILE" || { echo "[ERROR] on-profile: local 이 남아 있습니다."; exit 1; }
 
-      - name: Docker BUILD_PUSH
+      - name: 배포 스크립트 문법 검증
         run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -f Dockerfile -t ${{ secrets.DOCKER_REPO }} .
-          docker push ${{ secrets.DOCKER_REPO }}
+          bash -n deploy/ec2/install_infra.sh
+          bash -n deploy/ec2/blue_green_deploy.sh
 
+      - name: Docker 레포지토리 이름 정규화
+        env:
+          RAW_DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
+        run: |
+          if [[ "${RAW_DOCKER_REPO##*/}" == *:* ]]; then
+            DOCKER_REPO="${RAW_DOCKER_REPO%:*}"
+          else
+            DOCKER_REPO="${RAW_DOCKER_REPO}"
+          fi
+          echo "DOCKER_REPO=${DOCKER_REPO}" >> "$GITHUB_ENV"
 
-      - name: Deploy_EC2
-        uses: appleboy/ssh-action@master
-        id: deploy
+      - name: Jib 이미지 빌드 및 푸시
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_SHA: ${{ github.sha }}
+        run: |
+          ./gradlew :ssd-api:jib -x test --no-daemon --build-cache \
+            -Djib.from.auth.username="${DOCKER_USERNAME}" \
+            -Djib.from.auth.password="${DOCKER_PASSWORD}" \
+            -Djib.to.image="${DOCKER_REPO}" \
+            -Djib.to.tags="${IMAGE_SHA},develop-latest" \
+            -Djib.to.auth.username="${DOCKER_USERNAME}" \
+            -Djib.to.auth.password="${DOCKER_PASSWORD}"
+
+      - name: 배포 파일 전송
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
           username: ubuntu
           key: ${{ secrets.KEY }}
+          source: deploy/ec2
+          target: /tmp
+
+      - name: dev 설정 파일 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.KEY }}
+          source: .runtime/application-dev.yml
+          target: /tmp
+
+      - name: EC2 Blue/Green 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.KEY }}
+          script_stop: true
           script: |
-            cd ~/infra
-            if [ -d ./nginx/conf.d ]; then
-              cat > ./nginx/conf.d/zzz-timeout.conf <<'EOF'
-            proxy_connect_timeout 1800s;
-            proxy_send_timeout 1800s;
-            proxy_read_timeout 1800s;
-            send_timeout 1800s;
-            EOF
-            fi
-            sudo docker compose down || true
-            sudo docker pull ${{ secrets.DOCKER_REPO }}
-            sudo docker compose up -d
-            sudo docker image prune -f
-            if command -v nginx >/dev/null 2>&1; then
-              sudo tee /etc/nginx/conf.d/zzz-ssd-timeout.conf >/dev/null <<'EOF'
-            proxy_connect_timeout 1800s;
-            proxy_send_timeout 1800s;
-            proxy_read_timeout 1800s;
-            send_timeout 1800s;
-            EOF
-              sudo nginx -t
-              sudo systemctl reload nginx
-            fi
+            chmod +x /tmp/deploy/ec2/install_infra.sh /tmp/deploy/ec2/blue_green_deploy.sh
+            export APP_NAME="ssd"
+            export DOCKER_REPO="${{ env.DOCKER_REPO }}"
+            export IMAGE_TAG="${{ github.sha }}"
+            export SPRING_PROFILES_ACTIVE="dev"
+            export APP_CONFIG_SOURCE="/tmp/.runtime/application-dev.yml"
+            export APP_CONFIG_FILE="/opt/ssd/config/application-dev.yml"
+            export HEALTH_PATH="/swagger-ui/index.html"
+            export NETWORK_NAME="ssd-net"
+            export NGINX_SERVER_NAME="dev-api.simsaimdang.shop"
+            export NGINX_UPSTREAM_FILE="/etc/nginx/conf.d/ssd-upstream.conf"
+            sudo -E /tmp/deploy/ec2/install_infra.sh
+            sudo -E /tmp/deploy/ec2/blue_green_deploy.sh

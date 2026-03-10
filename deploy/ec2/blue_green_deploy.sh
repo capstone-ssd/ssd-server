@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_NAME="${APP_NAME:-ssd}"
+DOCKER_REPO="${DOCKER_REPO:?DOCKER_REPO is required}"
+IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG is required}"
+IMAGE="${DOCKER_REPO}:${IMAGE_TAG}"
+
+LOCK_FILE="${LOCK_FILE:-/var/lock/${APP_NAME}-deploy.lock}"
+mkdir -p "$(dirname "${LOCK_FILE}")"
+exec 200>"${LOCK_FILE}"
+flock -n 200 || { echo "[ERROR] Another deployment is running"; exit 1; }
+
+SPRING_PROFILE="${SPRING_PROFILES_ACTIVE:-dev}"
+STATE_FILE="${STATE_FILE:-/opt/${APP_NAME}/active_color}"
+NETWORK_NAME="${NETWORK_NAME:-ssd-net}"
+APP_CONFIG_FILE="${APP_CONFIG_FILE:-/opt/${APP_NAME}/config/application-dev.yml}"
+SPRING_CONFIG_ADDITIONAL_LOCATION="${SPRING_CONFIG_ADDITIONAL_LOCATION:-optional:file:/config/}"
+TIME_ZONE="${APP_TIME_ZONE:-Asia/Seoul}"
+
+BLUE_PORT="${BLUE_PORT:-8080}"
+GREEN_PORT="${GREEN_PORT:-8081}"
+APP_PORT="${APP_PORT:-8080}"
+HEALTH_PATH="${HEALTH_PATH:-/swagger-ui/index.html}"
+HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-120}"
+HEALTH_REQUEST_TIMEOUT_SECONDS="${HEALTH_REQUEST_TIMEOUT_SECONDS:-5}"
+HEALTH_CONNECT_TIMEOUT_SECONDS="${HEALTH_CONNECT_TIMEOUT_SECONDS:-3}"
+HEALTH_RETRY_SLEEP_SECONDS="${HEALTH_RETRY_SLEEP_SECONDS:-2}"
+
+NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
+
+mkdir -p "$(dirname "${STATE_FILE}")"
+
+if [[ ! -f "${APP_CONFIG_FILE}" ]]; then
+  echo "[ERROR] application config not found: ${APP_CONFIG_FILE}" >&2
+  exit 1
+fi
+
+if [[ ! -f "${STATE_FILE}" ]]; then
+  echo "blue" > "${STATE_FILE}"
+fi
+
+CURRENT_COLOR="$(cat "${STATE_FILE}")"
+if [[ "${CURRENT_COLOR}" == "blue" ]]; then
+  NEXT_COLOR="green"
+  NEXT_PORT="${GREEN_PORT}"
+  CURRENT_PORT="${BLUE_PORT}"
+else
+  NEXT_COLOR="blue"
+  NEXT_PORT="${BLUE_PORT}"
+  CURRENT_PORT="${GREEN_PORT}"
+fi
+
+NEXT_CONTAINER="${APP_NAME}-${NEXT_COLOR}"
+CURRENT_CONTAINER="${APP_NAME}-${CURRENT_COLOR}"
+HEALTH_URL="http://127.0.0.1:${NEXT_PORT}${HEALTH_PATH}"
+
+echo "[INFO] Current=${CURRENT_COLOR}(${CURRENT_PORT}), Next=${NEXT_COLOR}(${NEXT_PORT})"
+echo "[INFO] Pull image: ${IMAGE}"
+docker pull "${IMAGE}"
+
+docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1 || docker network create "${NETWORK_NAME}"
+
+docker rm -f "${NEXT_CONTAINER}" >/dev/null 2>&1 || true
+
+echo "[INFO] Start ${NEXT_CONTAINER}"
+docker run -d \
+  --name "${NEXT_CONTAINER}" \
+  --restart unless-stopped \
+  --network "${NETWORK_NAME}" \
+  -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILE}" \
+  -e SPRING_CONFIG_ADDITIONAL_LOCATION="${SPRING_CONFIG_ADDITIONAL_LOCATION}" \
+  -e TZ="${TIME_ZONE}" \
+  -v "${APP_CONFIG_FILE}:/config/application-dev.yml:ro" \
+  -p "127.0.0.1:${NEXT_PORT}:${APP_PORT}" \
+  "${IMAGE}"
+
+echo "[INFO] Health check: ${HEALTH_URL}"
+ELAPSED=0
+ATTEMPT=0
+while true; do
+  ATTEMPT=$((ATTEMPT + 1))
+
+  if curl -fsS \
+    --connect-timeout "${HEALTH_CONNECT_TIMEOUT_SECONDS}" \
+    --max-time "${HEALTH_REQUEST_TIMEOUT_SECONDS}" \
+    "${HEALTH_URL}" >/dev/null 2>&1; then
+    break
+  fi
+
+  sleep "${HEALTH_RETRY_SLEEP_SECONDS}"
+  ELAPSED=$((ELAPSED + HEALTH_REQUEST_TIMEOUT_SECONDS + HEALTH_RETRY_SLEEP_SECONDS))
+
+  if (( ELAPSED >= HEALTH_TIMEOUT_SECONDS )); then
+    echo "[ERROR] Health check timeout (${HEALTH_TIMEOUT_SECONDS}s, attempts=${ATTEMPT})"
+    docker logs "${NEXT_CONTAINER}" --tail 200 || true
+    docker rm -f "${NEXT_CONTAINER}" >/dev/null 2>&1 || true
+    exit 1
+  fi
+done
+
+cat > "${NGINX_UPSTREAM_FILE}" <<EOF_UPSTREAM
+upstream ssd_backend {
+    server 127.0.0.1:${NEXT_PORT};
+    keepalive 32;
+}
+EOF_UPSTREAM
+
+nginx -t
+systemctl reload nginx
+
+echo "${NEXT_COLOR}" > "${STATE_FILE}"
+
+docker rm -f "${CURRENT_CONTAINER}" >/dev/null 2>&1 || true
+docker image prune -f >/dev/null 2>&1 || true
+
+echo "[INFO] Deploy success: active=${NEXT_COLOR}"

@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot'
     id 'java'
     id 'jacoco'
+    id 'com.google.cloud.tools.jib'
 }
 
 dependencies {
@@ -24,6 +25,18 @@ dependencies {
 
 jacoco {
     toolVersion = '0.8.12'
+}
+
+jib {
+    from {
+        image = 'eclipse-temurin:21-jre-alpine'
+    }
+    container {
+        mainClass = 'or.hyu.ssd.SsdApplication'
+        ports = ['8080']
+        jvmFlags = ['-Duser.timezone=Asia/Seoul']
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+    }
 }
 
 jacocoTestReport {
