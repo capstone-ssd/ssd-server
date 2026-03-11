@@ -1,0 +1,115 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+      "targets": [{"expr": "max(up{job=\"ssd-app\"})", "refId": "A"}],
+      "title": "JVM Up",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+      "targets": [{"expr": "max(process_uptime_seconds{job=\"ssd-app\"})", "refId": "A"}],
+      "title": "Process Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+      "targets": [{"expr": "sum(jvm_memory_used_bytes{job=\"ssd-app\",area=\"heap\"})", "refId": "A"}],
+      "title": "Heap Used",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name"},
+      "targets": [{"expr": "max(jvm_threads_live_threads{job=\"ssd-app\"})", "refId": "A"}],
+      "title": "Live Threads",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+      "id": 5,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {"expr": "sum(jvm_memory_used_bytes{job=\"ssd-app\",area=\"heap\"})", "legendFormat": "heap used", "refId": "A"},
+        {"expr": "sum(jvm_memory_max_bytes{job=\"ssd-app\",area=\"heap\"})", "legendFormat": "heap max", "refId": "B"},
+        {"expr": "sum(jvm_memory_used_bytes{job=\"ssd-app\",area=\"nonheap\"})", "legendFormat": "non-heap used", "refId": "C"}
+      ],
+      "title": "JVM Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+      "id": 6,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {"expr": "max(jvm_threads_live_threads{job=\"ssd-app\"})", "legendFormat": "live", "refId": "A"},
+        {"expr": "max(jvm_threads_daemon_threads{job=\"ssd-app\"})", "legendFormat": "daemon", "refId": "B"},
+        {"expr": "max(jvm_threads_peak_threads{job=\"ssd-app\"})", "legendFormat": "peak", "refId": "C"}
+      ],
+      "title": "JVM Threads",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+      "id": 7,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {"expr": "sum(rate(jvm_gc_pause_seconds_count{job=\"ssd-app\"}[5m]))", "legendFormat": "gc pause count/sec", "refId": "A"},
+        {"expr": "sum(rate(jvm_gc_pause_seconds_sum{job=\"ssd-app\"}[5m]))", "legendFormat": "gc pause sec/sec", "refId": "B"}
+      ],
+      "title": "JVM GC Activity",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+      "id": 8,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {"expr": "max(hikaricp_connections_active{job=\"ssd-app\"})", "legendFormat": "active", "refId": "A"},
+        {"expr": "max(hikaricp_connections_idle{job=\"ssd-app\"})", "legendFormat": "idle", "refId": "B"},
+        {"expr": "max(hikaricp_connections_pending{job=\"ssd-app\"})", "legendFormat": "pending", "refId": "C"}
+      ],
+      "title": "HikariCP",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["ssd", "loadtest", "jvm"],
+  "templating": {"list": []},
+  "time": {"from": "now-30m", "to": "now"},
+  "timezone": "browser",
+  "title": "SSD Load Test JVM Overview",
+  "uid": "ssd-loadtest-jvm-overview",
+  "version": 1,
+  "weekStart": ""
+}

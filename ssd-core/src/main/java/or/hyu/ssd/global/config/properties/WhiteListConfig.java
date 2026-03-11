@@ -17,6 +17,14 @@ public class WhiteListConfig {
         );
     }
 
+    public static final List<String> actuatorWhitelist() {
+        return List.of(
+                "/actuator/prometheus",
+                "/actuator/health",
+                "/actuator/health/**"
+        );
+    }
+
     // oauth 관련 인가 설정
     public static final List<String> oauthWhitelist() {
         return List.of(

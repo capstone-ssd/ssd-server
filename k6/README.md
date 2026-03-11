@@ -13,6 +13,7 @@
 - `k6/monitoring/grafana/dashboards`
   - 호스트/컨테이너 모니터링 대시보드
   - k6 메트릭 대시보드
+  - JVM 메트릭 대시보드
 
 ## 서버 설치
 `develop-cd`에서 `deploy/ec2/install_monitoring.sh`가 실행되면 자동으로 설치됩니다.
@@ -27,6 +28,16 @@ sudo /tmp/deploy/ec2/install_monitoring.sh
 - Grafana: `http://<SERVER_IP>:3000`
 - Prometheus: `http://<SERVER_IP>:9090`
 - k6 Web Dashboard: `http://<SERVER_IP>:5665`
+
+## JVM 메트릭
+- SSD 애플리케이션은 `/actuator/prometheus`를 공개해 Prometheus가 JVM 메트릭을 수집합니다.
+- Grafana의 `SSD Load Test JVM Overview` 대시보드에서 아래 항목을 확인할 수 있습니다.
+  - JVM Up
+  - Process Uptime
+  - Heap / Non-heap Memory
+  - Live / Daemon / Peak Threads
+  - GC Activity
+  - HikariCP Connections
 
 ## k6 메트릭을 Prometheus로 보내는 방법
 Prometheus는 remote write receiver를 활성화해 두었습니다.

@@ -49,8 +49,10 @@ install -m 644 "${MONITORING_SOURCE_DIR}/docker-compose.monitoring.yml" "${MONIT
 install -m 644 "${MONITORING_SOURCE_DIR}/prometheus/prometheus.yml" "${MONITORING_ROOT}/prometheus/prometheus.yml"
 install -m 644 "${MONITORING_SOURCE_DIR}/grafana/provisioning/datasources/prometheus.yml" "${MONITORING_ROOT}/grafana/provisioning/datasources/prometheus.yml"
 install -m 644 "${MONITORING_SOURCE_DIR}/grafana/provisioning/dashboards/dashboard.yml" "${MONITORING_ROOT}/grafana/provisioning/dashboards/dashboard.yml"
-install -m 644 "${MONITORING_SOURCE_DIR}/grafana/dashboards/ssd-loadtest-host-overview.json" "${MONITORING_ROOT}/grafana/dashboards/ssd-loadtest-host-overview.json"
-install -m 644 "${MONITORING_SOURCE_DIR}/grafana/dashboards/ssd-loadtest-k6-overview.json" "${MONITORING_ROOT}/grafana/dashboards/ssd-loadtest-k6-overview.json"
+find "${MONITORING_SOURCE_DIR}/grafana/dashboards" -maxdepth 1 -type f -name '*.json' -print0 | \
+  while IFS= read -r -d '' dashboard_file; do
+    install -m 644 "${dashboard_file}" "${MONITORING_ROOT}/grafana/dashboards/$(basename "${dashboard_file}")"
+  done
 
 if command -v docker >/dev/null 2>&1; then
   docker compose -f "${MONITORING_COMPOSE_FILE}" up -d

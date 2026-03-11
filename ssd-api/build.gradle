@@ -10,9 +10,11 @@ dependencies {
     implementation project(':ssd-core')
     implementation project(':ssd-infra')
 
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 

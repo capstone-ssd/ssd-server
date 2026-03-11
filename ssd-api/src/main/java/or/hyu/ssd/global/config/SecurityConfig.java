@@ -94,6 +94,7 @@ public class SecurityConfig {
         // 인가 경로 설정
         http.authorizeHttpRequests((auth)->auth
                 .requestMatchers(WhiteListConfig.swaggerWhitelist().toArray(new String[0])).permitAll()
+                .requestMatchers(WhiteListConfig.actuatorWhitelist().toArray(new String[0])).permitAll()
                 .requestMatchers(WhiteListConfig.oauthWhitelist().toArray(new String[0])).permitAll()
                 .anyRequest().authenticated());
 
