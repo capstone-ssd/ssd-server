@@ -28,10 +28,11 @@
   - 로컬 토큰 파일 보관 위치 (`.gitignore` 대상)
 
 ## 서버 모니터링 접속 주소
-- Grafana: `http://15.164.192.100:3000`
-- Prometheus: `http://15.164.192.100:9090`
-- Prometheus Targets: `http://15.164.192.100:9090/targets`
-- k6 Web Dashboard: `http://15.164.192.100:5665`
+- Grafana: 내부 모니터링 호스트의 `:3000`
+- Prometheus: 내부 모니터링 호스트의 `:9090`
+- Prometheus Targets: 내부 모니터링 호스트의 `/targets`
+- k6 Web Dashboard: 내부 모니터링 호스트의 `:5665`
+  - 실제 주소는 저장소에 기록하지 않고 내부 운영 문서 또는 시크릿 변수로 관리합니다.
   - 이 포트는 k6를 `K6_WEB_DASHBOARD=true`로 실행할 때만 열립니다.
 
 ## JVM 메트릭
@@ -161,7 +162,7 @@ k6 run k6/scenarios/cpu/stress.js
 BASE_URL=https://dev-api.simsaimdang.shop \
 ACCESS_TOKENS_FILE=k6/secrets/access_tokens.txt \
 RUN_LABEL=target-150vu \
-K6_PROMETHEUS_RW_SERVER_URL=http://15.164.192.100:9090/api/v1/write \
+K6_PROMETHEUS_RW_SERVER_URL=http://<monitoring-host>:9090/api/v1/write \
 K6_PROMETHEUS_RW_TREND_STATS=p(95),p(99),avg,max \
 K6_WEB_DASHBOARD=true \
 K6_WEB_DASHBOARD_HOST=0.0.0.0 \
