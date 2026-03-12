@@ -5,10 +5,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
 import or.hyu.ssd.domain.document.service.ExternalAiService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -157,13 +157,14 @@ public class ExternalAiController {
                     ### 요청
                     - Path: /api/v1/external-ai/check/new-text
                     - Body(JSON)
+                      - doc_id (string): 문서 식별자
                       - block_id (string): 블록 식별자
-                      - block (string): 평가할 블록 본문
+                      - block (string): 평가할 최신 블록 본문
 
                     ### 응답
                     - 200 OK
                     - data.blockId: 블록 ID
-                    - data.checkList: 블록 평가 결과
+                    - data.checkList: 문서에 누적 저장된 체크리스트 상태
 
                     ### 오류
                     - AI50201: 외부 AI 서버 호출 실패
@@ -171,7 +172,7 @@ public class ExternalAiController {
                     """
     )
     public ResponseEntity<ApiResponse<ExternalAiBlockCheckResponse>> checkNewText(
-            @Valid @RequestBody ExternalCheckNewTextRequest request,
+            @Valid @RequestBody ExternalAiBlockCheckRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiBlockCheckResponse response = externalAiService.checkNewText(request, user);

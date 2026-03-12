@@ -2,6 +2,7 @@ package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
@@ -18,6 +19,7 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRespo
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -66,13 +68,27 @@ public class ExternalAiService {
                 teamComposition.score()
         );
 
+        doc.updateExternalEvaluationMetrics(
+                totalScore,
+                problemRecognition.score(),
+                problemRecognition.review(),
+                feasibility.score(),
+                feasibility.review(),
+                growthStrategy.score(),
+                growthStrategy.review(),
+                businessModel.score(),
+                businessModel.review(),
+                teamComposition.score(),
+                teamComposition.review()
+        );
+        doc.overwriteExternalChecklist(response.checkList());
         doc.updateEvaluation(buildEvaluationReport(
                 problemRecognition,
                 feasibility,
                 growthStrategy,
                 businessModel,
                 teamComposition,
-                response.checkList()
+                doc.getExternalChecklistSnapshot()
         ));
 
         return ExternalAiEvaluationCardResponse.of(
@@ -83,7 +99,7 @@ public class ExternalAiService {
                 growthStrategy,
                 businessModel,
                 teamComposition,
-                response.checkList()
+                doc.getExternalChecklistSnapshot()
         );
     }
 
@@ -113,16 +129,19 @@ public class ExternalAiService {
         return ExternalAiKeywordResponse.of(doc.getId(), keyword);
     }
 
-    @Transactional(readOnly = true)
-    public ExternalAiBlockCheckResponse checkNewText(ExternalCheckNewTextRequest request, CustomUserDetails user) {
-        Long memberId = getMemberId(user);
+    public ExternalAiBlockCheckResponse checkNewText(ExternalAiBlockCheckRequest request, CustomUserDetails user) {
+        Document doc = getOwnedDocument(request.docId(), user);
         int blockId = parseBlockId(request.blockId());
-        boolean owned = documentParagraphRepository.existsByDocumentMemberIdAndBlockId(memberId, blockId);
-        if (!owned) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        ExternalCheckNewTextResponse response = externalAiPort.checkNewText(request);
-        return ExternalAiBlockCheckResponse.of(blockId, response.checkList());
+        DocumentParagraph paragraph = documentParagraphRepository.findByDocumentAndBlockId(doc, blockId)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND));
+
+        ExternalCheckNewTextRequest externalRequest = new ExternalCheckNewTextRequest(
+                String.valueOf(paragraph.getBlockId()),
+                request.block()
+        );
+        ExternalCheckNewTextResponse response = externalAiPort.checkNewText(externalRequest);
+        doc.mergeExternalChecklist(response.checkList());
+        return ExternalAiBlockCheckResponse.of(blockId, doc.getExternalChecklistSnapshot());
     }
 
     private Document getOwnedDocument(String rawDocId, CustomUserDetails user) {

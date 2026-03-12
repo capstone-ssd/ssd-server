@@ -7,11 +7,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationReportResponse;
@@ -20,6 +20,7 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluatorMetricResponse
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.entity.Member;
@@ -99,7 +100,7 @@ class ExternalAiServiceTest {
                                 new ExternalEvaluatorMetricResponse(60.0, "BM 리뷰"),
                                 new ExternalEvaluatorMetricResponse(50.0, "성장 리뷰")
                         ),
-                        Map.of("시장 문제 정의", true)
+                        Map.of("problem_is_clear", true)
                 )
         );
 
@@ -112,27 +113,45 @@ class ExternalAiServiceTest {
         assertThat(response.growthStrategy().score()).isEqualTo(50);
         assertThat(response.businessModel().score()).isEqualTo(60);
         assertThat(response.teamComposition().score()).isEqualTo(90);
+        assertThat(document.getExternalAiTotalScore()).isEqualTo(70);
+        assertThat(document.getExternalAiProblemRecognitionScore()).isEqualTo(70);
+        assertThat(document.getExternalAiProblemRecognitionReview()).isEqualTo("문제 리뷰");
+        assertThat(document.isChecklistDifferentiationIsClear()).isFalse();
+        assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.getEvaluation()).contains("## 문제 인식");
-        assertThat(document.getEvaluation()).contains("시장 문제 정의: 충족");
+        assertThat(document.getEvaluation()).contains("problem_is_clear: 충족");
     }
 
     @Test
-    @DisplayName("checkNewText()는 blockId 소유권을 검증한 뒤 도메인 응답으로 반환한다")
-    void checkNewText_mapsResponse() {
+    @DisplayName("checkNewText()는 문서 기준으로 블록을 검증하고 체크리스트를 OR-merge 한다")
+    void checkNewText_mergesChecklist() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
-        when(documentParagraphRepository.existsByDocumentMemberIdAndBlockId(1L, 3)).thenReturn(true);
+        Document document = document(7L, member);
+        document.overwriteExternalChecklist(Map.of(
+                "problem_is_clear", false,
+                "market_definition_is_correct", true
+        ));
+        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+        when(documentParagraphRepository.findByDocumentAndBlockId(document, 3))
+                .thenReturn(Optional.of(DocumentParagraph.of("기존 본문", "BODY", 1, 3, document)));
         when(externalAiPort.checkNewText(any())).thenReturn(
-                new ExternalCheckNewTextResponse("3", Map.of("사업개념", true))
+                new ExternalCheckNewTextResponse("3", Map.of(
+                        "problem_is_clear", true,
+                        "market_definition_is_correct", false
+                ))
         );
 
         ExternalAiBlockCheckResponse response = externalAiService.checkNewText(
-                new ExternalCheckNewTextRequest("3", "본문"),
+                new ExternalAiBlockCheckRequest("7", "3", "본문"),
                 user
         );
 
         assertThat(response.blockId()).isEqualTo(3);
-        assertThat(response.checkList()).containsEntry("사업개념", true);
+        assertThat(response.checkList()).containsEntry("problem_is_clear", true);
+        assertThat(response.checkList()).containsEntry("market_definition_is_correct", true);
+        assertThat(document.isChecklistProblemIsClear()).isTrue();
+        assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();
     }
 
     private Document document(Long id, Member member) {
