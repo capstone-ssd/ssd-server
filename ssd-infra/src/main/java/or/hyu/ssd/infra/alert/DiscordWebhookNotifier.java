@@ -1,6 +1,5 @@
 package or.hyu.ssd.infra.alert;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.global.alert.ErrorAlertContext;
@@ -27,7 +26,6 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final ObjectMapper objectMapper;
     private final DiscordProperties discordProperties;
     private final Environment environment;
 
@@ -43,7 +41,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
         }
 
         try {
-            String payload = objectMapper.writeValueAsString(new DiscordWebhookPayload(buildMessage(context)));
+            String payload = buildPayload(buildMessage(context));
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(discordProperties.getWebhookUrl()))
                     .timeout(REQUEST_TIMEOUT)
@@ -97,6 +95,15 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
         return String.join(",", Arrays.asList(activeProfiles));
     }
 
-    private record DiscordWebhookPayload(String content) {
+    private String buildPayload(String content) {
+        return "{\"content\":\"" + escapeJson(content) + "\"}";
+    }
+
+    private String escapeJson(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n");
     }
 }

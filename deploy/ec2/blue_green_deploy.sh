@@ -77,7 +77,7 @@ docker run -d \
   "${IMAGE}"
 
 echo "[INFO] Health check: ${HEALTH_URL}"
-ELAPSED=0
+STARTED_AT=$(date +%s)
 ATTEMPT=0
 while true; do
   ATTEMPT=$((ATTEMPT + 1))
@@ -90,7 +90,7 @@ while true; do
   fi
 
   sleep "${HEALTH_RETRY_SLEEP_SECONDS}"
-  ELAPSED=$((ELAPSED + HEALTH_REQUEST_TIMEOUT_SECONDS + HEALTH_RETRY_SLEEP_SECONDS))
+  ELAPSED=$(( $(date +%s) - STARTED_AT ))
 
   if (( ELAPSED >= HEALTH_TIMEOUT_SECONDS )); then
     echo "[ERROR] Health check timeout (${HEALTH_TIMEOUT_SECONDS}s, attempts=${ATTEMPT})"
