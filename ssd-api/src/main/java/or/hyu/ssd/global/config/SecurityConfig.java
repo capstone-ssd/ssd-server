@@ -29,6 +29,7 @@ public class SecurityConfig {
 
 
     private final JWTFilter jwtFilter;
+    private final AuthenticationEntryPointImpl authenticationEntryPoint;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder(){
@@ -104,6 +105,9 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.logout(AbstractHttpConfigurer::disable);
+
+        http.exceptionHandling(exception -> exception
+                .authenticationEntryPoint(authenticationEntryPoint));
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
