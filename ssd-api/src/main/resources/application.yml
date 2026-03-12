@@ -90,6 +90,16 @@ app:
       system: ${EVAL_CHECK_SYS_PROMPT}
       user: ${EVAL_CHECK_USER_PROMPT}
 
+discord:
+  webhook-url: ${DISCORD_WEBHOOK_URL:}
+
+sentry:
+  dsn: ${SENTRY_DSN:}
+  exception-resolver-order: -2147483647
+  max-request-body-size: always
+  send-default-pii: true
+  environment: ${SENTRY_ENVIRONMENT:${spring.application.name}}
+
 management:
   endpoints:
     web:
