@@ -47,6 +47,10 @@ public class Document extends BaseEntity {
     @Column(name = "evaluation", nullable = true, columnDefinition = "TEXT")
     private String evaluation;
 
+    @Comment("ai가 생성한 사업계획서 키워드")
+    @Column(name = "keywords", nullable = true, columnDefinition = "TEXT")
+    private String keywords;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
@@ -111,6 +115,14 @@ public class Document extends BaseEntity {
 
     public void updateDetails(String details) {
         this.details = details;
+    }
+
+    public void updateSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public void updateKeywords(String keywords) {
+        this.keywords = keywords;
     }
 
     public void updateReviewSummary(Double feasibilityAvg, Double differentiationAvg, Double financialAvg, Double totalAvg, Integer count) {

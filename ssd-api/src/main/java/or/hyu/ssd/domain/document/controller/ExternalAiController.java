@@ -4,12 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.service.ExternalAiService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
@@ -46,21 +46,24 @@ public class ExternalAiController {
                     ### 처리
                     - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
                       서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
+                    - 외부 평가 결과의 5개 축을 SSD 도메인 응답으로 가공하여 반환합니다.
 
                     ### 응답
                     - 200 OK
-                    - data: 외부 서버 EvaluationResponse 원문
+                    - data.documentId: 문서 ID
+                    - data.totalScore: 5개 평가 축 평균 점수
+                    - data.problemRecognition / feasibility / growthStrategy / businessModel / teamComposition
 
                     ### 오류
                     - AI50201: 외부 AI 서버 호출 실패
                     - AI50202: 외부 AI 서버 응답 처리 실패
                     """
     )
-    public ResponseEntity<ApiResponse<ExternalEvaluationResponse>> evaluate(
+    public ResponseEntity<ApiResponse<ExternalAiEvaluationCardResponse>> evaluate(
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalEvaluationResponse response = externalAiService.evaluate(request, user);
+        ExternalAiEvaluationCardResponse response = externalAiService.evaluate(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 종합평가를 성공적으로 호출했습니다"));
     }
 
@@ -82,21 +85,24 @@ public class ExternalAiController {
                     ### 처리
                     - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
                       서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
+                    - 생성된 요약을 문서에 저장한 뒤 SSD 기준 응답으로 반환합니다.
 
                     ### 응답
                     - 200 OK
-                    - data: 외부 서버 SummarizationResponse 원문
+                    - data.documentId: 문서 ID
+                    - data.summary: 저장된 요약
+                    - data.shortSummary: 외부 서버 short summary
 
                     ### 오류
                     - AI50201: 외부 AI 서버 호출 실패
                     - AI50202: 외부 AI 서버 응답 처리 실패
                     """
     )
-    public ResponseEntity<ApiResponse<ExternalSummarizationBasicResponse>> summarizeBasic(
+    public ResponseEntity<ApiResponse<ExternalAiSummaryResponse>> summarizeBasic(
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalSummarizationBasicResponse response = externalAiService.summarizeBasic(request, user);
+        ExternalAiSummaryResponse response = externalAiService.summarizeBasic(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 요약 API를 성공적으로 호출했습니다"));
     }
 
@@ -118,21 +124,23 @@ public class ExternalAiController {
                     ### 처리
                     - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
                       서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
+                    - 추출한 키워드를 SSD 도메인 응답으로 가공하여 반환합니다.
 
                     ### 응답
                     - 200 OK
-                    - data: 외부 서버 SummarizationKeywordResponse 원문
+                    - data.documentId: 문서 ID
+                    - data.keyword: 추출된 키워드
 
                     ### 오류
                     - AI50201: 외부 AI 서버 호출 실패
                     - AI50202: 외부 AI 서버 응답 처리 실패
                     """
     )
-    public ResponseEntity<ApiResponse<ExternalSummarizationKeywordResponse>> summarizeKeyword(
+    public ResponseEntity<ApiResponse<ExternalAiKeywordResponse>> summarizeKeyword(
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalSummarizationKeywordResponse response = externalAiService.summarizeKeyword(request, user);
+        ExternalAiKeywordResponse response = externalAiService.summarizeKeyword(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 키워드 API를 성공적으로 호출했습니다"));
     }
 
@@ -154,18 +162,19 @@ public class ExternalAiController {
 
                     ### 응답
                     - 200 OK
-                    - data: 외부 서버 CheckNewTextResponse 원문
+                    - data.blockId: 블록 ID
+                    - data.checkList: 블록 평가 결과
 
                     ### 오류
                     - AI50201: 외부 AI 서버 호출 실패
                     - AI50202: 외부 AI 서버 응답 처리 실패
                     """
     )
-    public ResponseEntity<ApiResponse<ExternalCheckNewTextResponse>> checkNewText(
+    public ResponseEntity<ApiResponse<ExternalAiBlockCheckResponse>> checkNewText(
             @Valid @RequestBody ExternalCheckNewTextRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalCheckNewTextResponse response = externalAiService.checkNewText(request, user);
+        ExternalAiBlockCheckResponse response = externalAiService.checkNewText(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 체크리스트 평가 API를 성공적으로 호출했습니다"));
     }
 }
