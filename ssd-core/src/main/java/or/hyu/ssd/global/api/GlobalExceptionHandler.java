@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(CustomException e, HttpServletRequest request) {
         ErrorCode errorCode = e.getErrorCode();
-        log.warn("Handled CustomException: {} - {}", errorCode.getCode(), errorCode.getMessage(), e);
+        log.warn("CustomException 처리 완료: {} - {}", errorCode.getCode(), errorCode.getMessage(), e);
         captureAndNotify(e, errorCode, request);
         ApiResponse<Void> response = ApiResponse.fail(errorCode);
 
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(NoHandlerFoundException e, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.REQUEST_API_NOT_FOUND;
-        log.warn("API not found: {} {}", e.getHttpMethod(), e.getRequestURL());
+        log.warn("존재하지 않는 API 요청: {} {}", e.getHttpMethod(), e.getRequestURL());
         captureAndNotify(e, errorCode, request);
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode));
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.REQUEST_METHOD_NOT_ALLOWED;
-        log.warn("Method not allowed: {}", e.getMessage());
+        log.warn("허용되지 않은 HTTP 메서드 요청: {}", e.getMessage());
         captureAndNotify(e, errorCode, request);
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode));
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnhandledException(Exception e, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.SERVER_EXCEPTION;
-        log.error("Unhandled exception", e);
+        log.error("처리되지 않은 예외가 발생했습니다", e);
         captureAndNotify(e, errorCode, request);
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode));
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(ObjectOptimisticLockingFailureException e, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.CHECKLIST_CONFLICT;
-        log.warn("Optimistic locking failure: {}", e.getMessage());
+        log.warn("낙관적 락 충돌이 발생했습니다: {}", e.getMessage());
         captureAndNotify(e, errorCode, request);
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode));
@@ -74,7 +74,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.REQUEST_BODY_INVALID_JSON;
-        log.warn("JSON parse error: {}", e.getMessage());
+        log.warn("JSON 파싱 오류가 발생했습니다: {}", e.getMessage());
         captureAndNotify(e, errorCode, request);
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode));

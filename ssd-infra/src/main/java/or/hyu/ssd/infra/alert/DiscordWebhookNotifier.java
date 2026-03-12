@@ -38,7 +38,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
     @Override
     public void notify(ErrorAlertContext context) {
         if (!discordProperties.hasWebhookUrl()) {
-            log.debug("Discord webhook URL is not configured. Skip sending.");
+            log.debug("Discord webhook URL이 설정되지 않아 전송을 건너뜁니다.");
             return;
         }
 
@@ -57,10 +57,10 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
             );
 
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.warn("Discord webhook failed. status={}, body={}", response.statusCode(), response.body());
+                log.warn("Discord webhook 전송에 실패했습니다. status={}, body={}", response.statusCode(), response.body());
             }
         } catch (Exception e) {
-            log.warn("Discord webhook failed.", e);
+            log.warn("Discord webhook 전송 중 예외가 발생했습니다.", e);
         }
     }
 
