@@ -2,6 +2,7 @@ package or.hyu.ssd.global.jwt;
 
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.domain.member.service.CustomUserDetailsService;
 import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.JWTConfig;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -39,66 +41,52 @@ public class JWTFilter extends OncePerRequestFilter{
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String accessToken = null;
-
         String authorizationHeader = request.getHeader(jwtConfig.getHeader());
 
-        // Authorization 헤더가 없거나 Bearer 스킴이 없으면 다음 필터로 이동
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+        // Authorization 헤더가 없으면 Security EntryPoint에서 401을 반환합니다.
+        if (authorizationHeader == null) {
             filterChain.doFilter(request, response);
             return;
         }
+        if (!authorizationHeader.startsWith("Bearer ")) {
+            setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
+            return;
+        }
         // Bearer 뒤의 토큰을 추출
-        accessToken = authorizationHeader.substring(7).trim();
+        String accessToken = authorizationHeader.substring(7).trim();
 
-
-        /**
-         * 토큰의 유효시간을 검증하고
-         * 토큰의 헤더가 access인지 확인해서 액세스토큰이 맞는지 검증한다
-         * */
         try {
-
             jwtUtil.isExpired(accessToken);
-
-
             String category = jwtUtil.getCategory(accessToken);
             if (!"access".equals(category)) {
                 setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
                 return;
             }
+            Long id = jwtUtil.getId(accessToken);
+            String roleString = jwtUtil.getRole(accessToken);
+            Role.valueOf(roleString);
+            CustomUserDetails customUserDetails = customUserDetailsService.loadUserById(id);
 
+            Authentication authToken = new UsernamePasswordAuthenticationToken(
+                    customUserDetails,
+                    null,
+                    customUserDetails.getAuthorities()
+            );
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+            filterChain.doFilter(request, response);
         } catch (ExpiredJwtException e) {
             setErrorResponse(response, ErrorCode.ACCESS_TOKEN_EXPIRED);
-            return;
-        }
-
-        //토큰에서 id와 role 획득
-        Long id = jwtUtil.getId(accessToken);
-        String roleString = jwtUtil.getRole(accessToken);
-
-        // String role을 Role enum으로 변환
-        Role role;
-        try {
-                role = Role.valueOf(roleString);
-            } catch (IllegalArgumentException e) {
-                setErrorResponse(response, ErrorCode.ROLE_INVALID_TYPE);
+        } catch (IllegalArgumentException e) {
+            setErrorResponse(response, ErrorCode.ROLE_INVALID_TYPE);
+        } catch (UserExceptionHandler e) {
+            if (e.getErrorCode() == ErrorCode.MEMBER_NOT_FOUND) {
+                setErrorResponse(response, ErrorCode.TOKEN_MEMBER_NOT_FOUND);
                 return;
             }
-
-
-        /**
-         * UserDetails에 회원 정보 객체 담아서 요청에 회원정보가 필요한 경우 가져다 쓴다
-         *
-         * 해당 객체의 생명주기는 한 요청이기 때문에 세션유지와는 차이가 존재한다
-         * */
-        CustomUserDetails customUserDetails = customUserDetailsService.loadUserById(id);
-
-        //스프링 시큐리티 인증 토큰 생성
-        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
-        //세션에 사용자 등록
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-
-        filterChain.doFilter(request, response);
+            throw e;
+        } catch (JwtException e) {
+            setErrorResponse(response, resolveJwtErrorCode(e));
+        }
     }
 
 
@@ -110,9 +98,17 @@ public class JWTFilter extends OncePerRequestFilter{
         response.setStatus(errorCode.getStatus().value());
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(String.format(
-                "{\"code\":%d, \"message\":\"%s\"}",
+                "{\"code\":\"%s\", \"msg\":\"%s\"}",
                 errorCode.getCode(), errorCode.getMessage()
         ));
+    }
+
+    private ErrorCode resolveJwtErrorCode(JwtException e) {
+        String simpleName = e.getClass().getSimpleName();
+        if ("SignatureException".equals(simpleName) || "MalformedJwtException".equals(simpleName)) {
+            return ErrorCode.INVALID_SIGNATURE;
+        }
+        return ErrorCode.INVALID_TOKEN;
     }
 
 }
