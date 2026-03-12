@@ -32,7 +32,7 @@
 
 ## 결과 요약
 ### Smoke
-- 결과 파일: `/Users/jeonjaeyeon/Desktop/capstone/ssd/k6/results/document-create-smoke-1st-smoke-2026-03-11T02-51-11-783Z.json`
+- 결과 파일: `/Users/jeonjaeyeon/Desktop/capstone/ssd/k6/results/document-create/1st-test/smoke/result.json`
 - 요청 수: `162`
 - 성공률: `100%`
 - `http_req_duration avg`: `118.44ms`
@@ -41,7 +41,7 @@
 - 해석: 기본 연결과 토큰, 요청 포맷 모두 정상
 
 ### Payload Curve
-- 결과 파일: `/Users/jeonjaeyeon/Desktop/capstone/ssd/k6/results/document-create-payload-curve-1st-payload-curve-2026-03-11T02-57-55-943Z.json`
+- 결과 파일: `/Users/jeonjaeyeon/Desktop/capstone/ssd/k6/results/document-create/1st-test/payload-curve/result.json`
 - 총 요청 수: `1114`
 - 성공률: `100%`
 - 전체 `http_req_duration avg`: `86.09ms`
@@ -59,7 +59,7 @@
   - payload 크기 자체가 즉시 p95 병목으로 드러나는 상태는 아님
 
 ### Target
-- 결과 파일: `/Users/jeonjaeyeon/Desktop/capstone/ssd/k6/results/document-create-target-1st-target-2026-03-11T04-26-39-813Z.json`
+- 결과 파일: `/Users/jeonjaeyeon/Desktop/capstone/ssd/k6/results/document-create/1st-test/target/result.json`
 - 총 요청 수: `20551`
 - 성공률: `100%`
 - 최대 동시 VU: `149`

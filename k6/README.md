@@ -23,7 +23,11 @@
   - `target.js`
   - `stress.js`
 - `k6/results`
-  - 실행 결과 JSON/TXT 저장 위치
+  - 시나리오별 결과와 보고서 저장 위치
+  - 예시
+    - `k6/results/document-create/1st-test/report.md`
+    - `k6/results/document-create/1st-test/smoke/result.json`
+    - `k6/results/external-ai/canary/pass-1/result.json`
 - `k6/secrets`
   - 로컬 토큰 파일 보관 위치 (`.gitignore` 대상)
 
@@ -171,9 +175,14 @@ k6 run -o experimental-prometheus-rw k6/scenarios/cpu/target.js
 ```
 
 ## 결과 파일
-각 시나리오는 실행 후 아래 파일을 남깁니다.
-- `k6/results/<scenario>-<runLabel>-<timestamp>.json`
-- `k6/results/<scenario>-<runLabel>-<timestamp>.txt`
+각 시나리오는 실행 후 주제별 하위 디렉터리에 결과를 정리합니다.
+- 문서 생성 예시
+  - `k6/results/document-create/<test-name>/<scenario>/result.json`
+  - `k6/results/document-create/<test-name>/<scenario>/result.txt`
+- 외부 AI 예시
+  - `k6/results/external-ai/<test-name>/<scenario>/result.json`
+  - `k6/results/external-ai/<test-name>/<scenario>/result.txt`
+- 상세 구조는 `k6/results/README.md`를 기준으로 맞춥니다.
 
 ## 해석 기준
 - 앱 CPU 상승 + 응답시간 증가
