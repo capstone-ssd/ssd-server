@@ -7,12 +7,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.MethodParameter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import or.hyu.ssd.global.alert.ErrorAlertContext;
 import or.hyu.ssd.global.alert.ErrorAlertNotifier;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,9 +58,71 @@ class GlobalExceptionHandlerTest {
         verify(errorAlertNotifier, never()).notify(org.mockito.ArgumentMatchers.any());
     }
 
+    @Test
+    @DisplayName("handleMethodArgumentNotValid()는 첫 번째 검증 메시지를 반환한다")
+    void handleMethodArgumentNotValid_returnsFieldValidationMessage() throws NoSuchMethodException {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
+        HttpServletRequest request = request("POST", "/api/v1/folders");
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
+        bindingResult.addError(new FieldError("request", "name", "폴더명은 필수입니다"));
+        Method method = TestController.class.getDeclaredMethod("create", String.class);
+        MethodParameter methodParameter = new MethodParameter(method, 0);
+        MethodArgumentNotValidException exception = new MethodArgumentNotValidException(methodParameter, bindingResult);
+
+        var response = handler.handleMethodArgumentNotValid(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_BODY_INVALID_VALUE.getStatus());
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().msg()).isEqualTo("폴더명은 필수입니다");
+        verify(errorAlertNotifier, never()).notify(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("handleTypeMismatch()는 파라미터 이름을 포함한 메시지를 반환한다")
+    void handleTypeMismatch_returnsReadableMessage() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
+        HttpServletRequest request = request("GET", "/api/v1/documents");
+        MethodArgumentTypeMismatchException exception = new MethodArgumentTypeMismatchException(
+                "INVALID",
+                Long.class,
+                "folderId",
+                null,
+                new IllegalArgumentException("bad request")
+        );
+
+        var response = handler.handleTypeMismatch(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_PARAMETER_INVALID.getStatus());
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().msg()).isEqualTo("'folderId' 파라미터 형식이 올바르지 않습니다");
+    }
+
+    @Test
+    @DisplayName("handleNotReadable()는 trailing token JSON 오류를 사람이 읽을 수 있게 변환한다")
+    void handleNotReadable_returnsReadableJsonMessage() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
+        HttpServletRequest request = request("POST", "/api/v1/documents");
+        HttpMessageNotReadableException exception = new HttpMessageNotReadableException(
+                "JSON parse error: Trailing token (`JsonToken.START_OBJECT`) found after value",
+                new MockHttpInputMessage(new byte[0])
+        );
+
+        var response = handler.handleNotReadable(exception, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_BODY_INVALID_JSON.getStatus());
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().msg()).isEqualTo("요청 본문에는 JSON 객체 하나만 포함되어야 합니다");
+    }
+
     private HttpServletRequest request(String method, String uri) {
         MockHttpServletRequest request = new MockHttpServletRequest(method, uri);
         request.setRemoteAddr("127.0.0.1");
         return request;
+    }
+
+    @SuppressWarnings("unused")
+    private static class TestController {
+        private void create(String value) {
+        }
     }
 }

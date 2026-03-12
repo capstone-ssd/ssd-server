@@ -52,6 +52,12 @@ public enum ErrorCode {
     // 요청/라우팅 예외
     REQUEST_API_NOT_FOUND(HttpStatus.NOT_FOUND, "REQ40401", "요청하신 API를 찾지 못했습니다"),
     REQUEST_METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "REQ40501", "지원하지 않는 HTTP 메서드입니다"),
+    REQUEST_BODY_INVALID_VALUE(HttpStatus.BAD_REQUEST, "REQ40002", "요청 값 검증에 실패했습니다"),
+    REQUEST_PARAMETER_INVALID(HttpStatus.BAD_REQUEST, "REQ40003", "요청 파라미터 형식이 올바르지 않습니다"),
+    REQUEST_PARAMETER_MISSING(HttpStatus.BAD_REQUEST, "REQ40004", "필수 요청 파라미터가 누락되었습니다"),
+    REQUEST_HEADER_MISSING(HttpStatus.BAD_REQUEST, "REQ40005", "필수 요청 헤더가 누락되었습니다"),
+    REQUEST_MEDIA_TYPE_NOT_SUPPORTED(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "REQ41501", "지원하지 않는 Content-Type입니다"),
+    REQUEST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "REQ40301", "해당 요청을 수행할 권한이 없습니다"),
 
 
     // 토큰 예외

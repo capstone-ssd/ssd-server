@@ -14,8 +14,11 @@ import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
@@ -25,6 +28,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Validated
 @Tag(
         name = "문서 API",
         description = "문서 CRUD와 즐겨찾기 토글 엔드포인트"
@@ -102,8 +106,8 @@ public class DocumentController {
     )
     public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
             @Parameter(description = "수정할 문서 ID", example = "42")
-            @PathVariable("id") Long id,
-            @RequestBody UpdateDocumentRequest request,
+            @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
+            @Valid @RequestBody UpdateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateDocumentResponse dto = documentService.updateDocument(id, user, request);
@@ -136,7 +140,7 @@ public class DocumentController {
     )
     public ResponseEntity<ApiResponse<String>> deleteDocument(
             @Parameter(description = "삭제할 문서 ID", example = "42")
-            @PathVariable("id") Long id,
+            @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         documentService.deleteDocument(id, user);
@@ -171,7 +175,7 @@ public class DocumentController {
     )
     public ResponseEntity<ApiResponse<GetDocumentResponse>> getDocument(
             @Parameter(description = "조회할 문서 ID", example = "42")
-            @PathVariable("id") Long id,
+            @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         GetDocumentResponse dto = documentService.getDocument(id, user);
@@ -217,7 +221,7 @@ public class DocumentController {
             @Parameter(description = "정렬 옵션", schema = @Schema(allowableValues = {"LATEST","OLDEST","NAME","MODIFIED"}))
             @RequestParam(name = "sort", defaultValue = "LATEST") DocumentSort sort,
             @Parameter(description = "폴더 ID (없으면 전체, 0이면 루트)")
-            @RequestParam(name = "folderId", required = false) Long folderId
+            @RequestParam(name = "folderId", required = false) @PositiveOrZero(message = "folderId는 0 이상이어야 합니다") Long folderId
     ) {
         List<DocumentListItemResponse> list = documentService.listDocuments(user, sort, folderId);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
@@ -251,7 +255,7 @@ public class DocumentController {
     )
     public ResponseEntity<ApiResponse<DocumentBookmarkResponse>> toggleBookmark(
             @Parameter(description = "즐겨찾기 토글 대상 문서 ID", example = "42")
-            @PathVariable("id") Long id,
+            @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         DocumentBookmarkResponse dto = documentService.toggleBookmark(id, user);

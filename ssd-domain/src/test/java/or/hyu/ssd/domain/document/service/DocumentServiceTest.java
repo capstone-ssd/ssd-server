@@ -6,6 +6,7 @@ import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
@@ -26,8 +27,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +44,8 @@ class DocumentServiceTest {
     private CheckListRepository checkListRepository;
     @Mock
     private EvaluatorCheckListRepository evaluatorCheckListRepository;
+    @Mock
+    private DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     @Mock
     private DocumentParagraphRepository documentParagraphRepository;
     @Mock
@@ -108,6 +113,64 @@ class DocumentServiceTest {
                 .extracting(DocumentParagraph::getBlockId)
                 .containsExactly(1, 2);
         assertThat(response.id()).isEqualTo(42L);
+    }
+
+    @Test
+    @DisplayName("updateDocument()는 수정할 값이 하나도 없으면 예외를 던진다")
+    void updateDocument_throwsWhenRequestHasNoChanges() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Document document = document(42L, member);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+
+        assertThatThrownBy(() -> documentService.updateDocument(
+                42L,
+                user,
+                new or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest(
+                        null, null, null, null, null, null, null
+                )
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("수정할 값을 하나 이상 입력해 주세요");
+    }
+
+    @Test
+    @DisplayName("updateDocument()는 공백 제목이나 공백 본문을 거부한다")
+    void updateDocument_rejectsBlankFields() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Document document = document(42L, member);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+
+        assertThatThrownBy(() -> documentService.updateDocument(
+                42L,
+                user,
+                new or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest(
+                        "   ", null, null, null, null, null, null
+                )
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("제목은 공백일 수 없습니다");
+
+        assertThatThrownBy(() -> documentService.updateDocument(
+                42L,
+                user,
+                new or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest(
+                        null, "   ", null, null, null, null, null
+                )
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("내용은 공백일 수 없습니다");
+    }
+
+    private Document document(Long id, Member member) {
+        return Document.builder()
+                .id(id)
+                .title("문서 제목")
+                .content("문서 본문")
+                .bookmark(false)
+                .member(member)
+                .build();
     }
 
     private Member member(Long id) {
