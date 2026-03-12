@@ -33,6 +33,7 @@ public class DocumentCommentService {
     public DocumentCommentResponse create(Long documentId, CustomUserDetails user, DocumentCommentRequest request) {
         Document doc = getDocument(documentId);
         ensureAuthenticated(user);
+        ensureDocumentOwner(doc, user);
         int blockId = request.blockId();
 
         // 문서와 blockId를 통해서 지정된 blockId를 조회합니다
@@ -66,6 +67,7 @@ public class DocumentCommentService {
         // 문서 ID로 문서를 가져옵니다
         Document doc = getDocument(documentId);
         ensureAuthenticated(user);
+        ensureDocumentOwner(doc, user);
 
         // 문서에 매핑된 DocumentParagraph를 blockId순으로 정렬하여 가져옵니다 -> 주석의 본문 내용을 가져오기 위함
         Map<Integer, String> blockContentMap = documentParagraphRepository
@@ -110,6 +112,15 @@ public class DocumentCommentService {
         }
         if (!comment.getMember().getId().equals(user.getMember().getId())) {
             throw new UserExceptionHandler(ErrorCode.COMMENT_FORBIDDEN);
+        }
+    }
+
+    private void ensureDocumentOwner(Document document, CustomUserDetails user) {
+        if (document.getMember() == null || user.getMember() == null) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!document.getMember().getId().equals(user.getMember().getId())) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
     }
 

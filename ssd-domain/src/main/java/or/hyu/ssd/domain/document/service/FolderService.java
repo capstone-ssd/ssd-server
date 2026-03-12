@@ -33,6 +33,7 @@ public class FolderService {
 
     public CreateFolderResponse create(CustomUserDetails user, CreateFolderRequest request) {
         ensureAuthenticated(user);
+        validateParentId(request.parentId());
 
         String name = request.name().trim();
         String color = trimOrNull(request.color());
@@ -44,6 +45,7 @@ public class FolderService {
 
     public UpdateFolderResponse update(Long folderId, CustomUserDetails user, UpdateFolderRequest request) {
         Folder folder = getFolderOwned(folderId, user);
+        validateUpdateRequest(request);
 
         String name = trimOrNull(request.name());
         String color = trimOrNull(request.color());
@@ -176,6 +178,25 @@ public class FolderService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void validateUpdateRequest(UpdateFolderRequest request) {
+        if (request == null) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
+        }
+        if (request.name() != null && request.name().trim().isEmpty()) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더명은 공백일 수 없습니다");
+        }
+        validateParentId(request.parentId());
+        if (request.name() == null && request.color() == null && request.parentId() == null) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정할 값을 하나 이상 입력해 주세요");
+        }
+    }
+
+    private void validateParentId(Long parentId) {
+        if (parentId != null && parentId < 0L) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "상위 폴더 ID는 0 이상이어야 합니다");
+        }
     }
 
     private List<FolderListItemResponse> toFolderItems(Long memberId, List<Folder> folders) {

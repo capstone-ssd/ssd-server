@@ -53,6 +53,7 @@ public class DocumentService {
         if (user == null || user.getMember() == null) {
             throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
         }
+        validateFolderId(req.folderId());
 
         String title = resolveTitle(req.title(), req.text(), req.paragraphs());
         Folder folder = resolveFolderOrNull(user, req.folderId());
@@ -73,6 +74,7 @@ public class DocumentService {
         if (!doc.getMember().getId().equals(user.getMember().getId())) {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
+        validateUpdateRequest(req);
 
         doc.updateIfPresent(req.title(), req.text(), req.summary(), req.details(), req.bookmark());
         if (req.folderId() != null) {
@@ -209,6 +211,42 @@ public class DocumentService {
             return fromText;
         }
         return "Untitled";
+    }
+
+    private void validateUpdateRequest(UpdateDocumentRequest req) {
+        if (req == null) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
+        }
+        if (isBlankProvided(req.title())) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "제목은 공백일 수 없습니다");
+        }
+        if (isBlankProvided(req.text())) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
+        }
+        validateFolderId(req.folderId());
+        if (!hasChanges(req)) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정할 값을 하나 이상 입력해 주세요");
+        }
+    }
+
+    private boolean hasChanges(UpdateDocumentRequest req) {
+        return req.title() != null
+                || req.text() != null
+                || req.summary() != null
+                || req.details() != null
+                || req.folderId() != null
+                || req.bookmark() != null
+                || req.paragraphs() != null;
+    }
+
+    private void validateFolderId(Long folderId) {
+        if (folderId != null && folderId < 0L) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더 ID는 0 이상이어야 합니다");
+        }
+    }
+
+    private boolean isBlankProvided(String value) {
+        return value != null && value.trim().isEmpty();
     }
 
     private String trimOrNull(String value) {

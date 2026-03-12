@@ -17,8 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -89,6 +91,40 @@ class FolderServiceTest {
         assertThat(result.folders().get(1).parentId()).isEqualTo(1L);
         assertThat(result.documents().get(0).folderId()).isEqualTo(1L);
         assertThat(result.documents().get(1).folderId()).isEqualTo(11L);
+    }
+
+    @Test
+    @DisplayName("update()는 수정할 값이 하나도 없으면 예외를 던진다")
+    void update_throwsWhenNoChangesProvided() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Folder folder = folder(1L, "작성하기", null, member);
+        when(folderRepository.findById(1L)).thenReturn(Optional.of(folder));
+
+        assertThatThrownBy(() -> folderService.update(
+                1L,
+                user,
+                new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest(null, null, null)
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("수정할 값을 하나 이상 입력해 주세요");
+    }
+
+    @Test
+    @DisplayName("update()는 공백 폴더명을 거부한다")
+    void update_rejectsBlankName() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Folder folder = folder(1L, "작성하기", null, member);
+        when(folderRepository.findById(1L)).thenReturn(Optional.of(folder));
+
+        assertThatThrownBy(() -> folderService.update(
+                1L,
+                user,
+                new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest("   ", null, null)
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("폴더명은 공백일 수 없습니다");
     }
 
     private Member member(Long id) {

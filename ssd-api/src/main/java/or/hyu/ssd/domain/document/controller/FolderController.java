@@ -16,11 +16,15 @@ import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Validated
 @Tag(
         name = "폴더 API",
         description = "폴더 CRUD 엔드포인트"
@@ -81,8 +85,8 @@ public class FolderController {
     )
     public ResponseEntity<ApiResponse<UpdateFolderResponse>> updateFolder(
             @Parameter(description = "수정할 폴더 ID", example = "42")
-            @PathVariable("id") Long id,
-            @RequestBody UpdateFolderRequest request,
+            @PathVariable("id") @Positive(message = "폴더 ID는 1 이상이어야 합니다") Long id,
+            @Valid @RequestBody UpdateFolderRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateFolderResponse dto = folderService.update(id, user, request);
@@ -109,7 +113,7 @@ public class FolderController {
     )
     public ResponseEntity<ApiResponse<String>> deleteFolder(
             @Parameter(description = "삭제할 폴더 ID", example = "42")
-            @PathVariable("id") Long id,
+            @PathVariable("id") @Positive(message = "폴더 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         folderService.delete(id, user);
@@ -141,7 +145,7 @@ public class FolderController {
     public ResponseEntity<ApiResponse<FolderContentResponse>> listFolders(
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "부모 폴더 ID (없으면 루트)", schema = @Schema(type = "integer", example = "0"))
-            @RequestParam(name = "parentId", required = false) Long parentId
+            @RequestParam(name = "parentId", required = false) @PositiveOrZero(message = "parentId는 0 이상이어야 합니다") Long parentId
     ) {
         FolderContentResponse data = folderService.listContent(user, parentId);
         return ResponseEntity.ok(ApiResponse.ok(data, "폴더 내용이 조회되었습니다"));

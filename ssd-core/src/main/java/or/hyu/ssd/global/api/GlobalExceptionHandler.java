@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         log.warn("CustomException 처리 완료: {} - {}", errorCode.getCode(), errorCode.getMessage(), e);
         captureAndNotify(e, errorCode, request);
-        ApiResponse<Void> response = ApiResponse.fail(errorCode);
+        ApiResponse<Void> response = ApiResponse.fail(errorCode, e.getDetailMessage());
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }

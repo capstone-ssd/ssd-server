@@ -199,7 +199,7 @@ public class ExternalAiService {
             }
             return docId;
         } catch (Exception e) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND);
+            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "docId는 1 이상의 숫자여야 합니다");
         }
     }
 

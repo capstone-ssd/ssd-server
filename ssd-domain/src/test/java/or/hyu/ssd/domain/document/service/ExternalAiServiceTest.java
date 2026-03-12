@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -165,6 +166,17 @@ class ExternalAiServiceTest {
         assertThat(response.checkList()).containsEntry("market_definition_is_correct", true);
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();
+    }
+
+    @Test
+    @DisplayName("evaluate()는 숫자가 아닌 docId를 400 예외로 거부한다")
+    void evaluate_rejectsInvalidDocId() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+
+        assertThatThrownBy(() -> externalAiService.evaluate(new ExternalDocumentIdRequest("abc"), user))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("docId는 1 이상의 숫자여야 합니다");
     }
 
     private Document document(Long id, Member member) {

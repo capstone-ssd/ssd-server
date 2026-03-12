@@ -13,6 +13,7 @@ import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,10 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.List;
+import jakarta.validation.constraints.Positive;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "주석 API", description = "문단 주석 생성/조회")
 public class DocumentCommentController {
 
@@ -59,7 +62,7 @@ public class DocumentCommentController {
                     """
     )
     public ResponseEntity<ApiResponse<DocumentCommentResponse>> create(
-            @PathVariable Long documentId,
+            @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @Valid @RequestBody DocumentCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
@@ -93,7 +96,7 @@ public class DocumentCommentController {
                     """
     )
     public ResponseEntity<ApiResponse<DocumentCommentResponse>> update(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "주석 ID는 1 이상이어야 합니다") Long id,
             @Valid @RequestBody DocumentCommentUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
@@ -125,7 +128,7 @@ public class DocumentCommentController {
                     """
     )
     public ResponseEntity<ApiResponse<String>> delete(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "주석 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         documentCommentService.delete(id, user);
@@ -155,7 +158,7 @@ public class DocumentCommentController {
                     """
     )
     public ResponseEntity<ApiResponse<List<DocumentCommentItemResponse>>> list(
-            @PathVariable Long documentId,
+            @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         List<DocumentCommentItemResponse> items = documentCommentService.list(documentId, user);
