@@ -1,15 +1,13 @@
 package or.hyu.ssd.domain.document.controller.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
+
+import java.util.List;
 
 public record ExternalCheckNewTextRequest(
-        @NotBlank
+        @JsonProperty("doc_id")
+        String docId,
         @JsonProperty("block_id")
-        @JsonAlias("blockId")
-        String blockId,
-        @NotBlank
-        String block
+        List<ExternalCheckNewTextBlockRequest> blocks
 ) {
 }

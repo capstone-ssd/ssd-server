@@ -7,8 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
@@ -20,13 +19,16 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluatorMetricResponse
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
+import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -41,6 +43,8 @@ class ExternalAiServiceTest {
     private ExternalAiPort externalAiPort;
     @Mock
     private DocumentRepository documentRepository;
+    @Mock
+    private DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     @Mock
     private DocumentParagraphRepository documentParagraphRepository;
 
@@ -133,8 +137,16 @@ class ExternalAiServiceTest {
                 "market_definition_is_correct", true
         ));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findByDocumentAndBlockId(document, 3))
-                .thenReturn(Optional.of(DocumentParagraph.of("기존 본문", "BODY", 1, 3, document)));
+        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+                .thenReturn(List.of(
+                        DocumentParagraph.of("블록1", "BODY", 1, 1, document),
+                        DocumentParagraph.of("본문", "BODY", 1, 3, document)
+                ));
+        when(documentAiCheckSnapshotRepository.findAllByDocument(document))
+                .thenReturn(List.of(
+                        DocumentAiCheckSnapshot.of(document, 1, "블록1"),
+                        DocumentAiCheckSnapshot.of(document, 3, "기존 본문")
+                ));
         when(externalAiPort.checkNewText(any())).thenReturn(
                 new ExternalCheckNewTextResponse("3", Map.of(
                         "problem_is_clear", true,
@@ -142,12 +154,13 @@ class ExternalAiServiceTest {
                 ))
         );
 
-        ExternalAiBlockCheckResponse response = externalAiService.checkNewText(
-                new ExternalAiBlockCheckRequest("7", "3", "본문"),
+        ExternalAiDocumentCheckResponse response = externalAiService.checkNewText(
+                new ExternalDocumentIdRequest("7"),
                 user
         );
 
-        assertThat(response.blockId()).isEqualTo(3);
+        assertThat(response.documentId()).isEqualTo(7L);
+        assertThat(response.changedBlockIds()).containsExactly(3);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
         assertThat(response.checkList()).containsEntry("market_definition_is_correct", true);
         assertThat(document.isChecklistProblemIsClear()).isTrue();

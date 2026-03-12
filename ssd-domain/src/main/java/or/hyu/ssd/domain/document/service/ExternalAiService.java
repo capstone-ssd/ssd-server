@@ -2,12 +2,12 @@ package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextBlockRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
@@ -19,7 +19,9 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRespo
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
+import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -29,8 +31,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -39,6 +44,7 @@ public class ExternalAiService {
 
     private final ExternalAiPort externalAiPort;
     private final DocumentRepository documentRepository;
+    private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
 
     public ExternalAiEvaluationCardResponse evaluate(ExternalDocumentIdRequest request, CustomUserDetails user) {
@@ -82,6 +88,7 @@ public class ExternalAiService {
                 teamComposition.review()
         );
         doc.overwriteExternalChecklist(response.checkList());
+        refreshAiCheckSnapshots(doc);
         doc.updateEvaluation(buildEvaluationReport(
                 problemRecognition,
                 feasibility,
@@ -129,19 +136,38 @@ public class ExternalAiService {
         return ExternalAiKeywordResponse.of(doc.getId(), keyword);
     }
 
-    public ExternalAiBlockCheckResponse checkNewText(ExternalAiBlockCheckRequest request, CustomUserDetails user) {
+    public ExternalAiDocumentCheckResponse checkNewText(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
-        int blockId = parseBlockId(request.blockId());
-        DocumentParagraph paragraph = documentParagraphRepository.findByDocumentAndBlockId(doc, blockId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND));
+        List<DocumentParagraph> currentParagraphs =
+                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
+        if (currentParagraphs.isEmpty()) {
+            throw new UserExceptionHandler(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
+        }
+
+        List<DocumentParagraph> changedParagraphs = findChangedParagraphs(doc, currentParagraphs);
+        if (changedParagraphs.isEmpty()) {
+            return ExternalAiDocumentCheckResponse.of(doc.getId(), List.of(), doc.getExternalChecklistSnapshot());
+        }
 
         ExternalCheckNewTextRequest externalRequest = new ExternalCheckNewTextRequest(
-                String.valueOf(paragraph.getBlockId()),
-                request.block()
+                String.valueOf(doc.getId()),
+                changedParagraphs.stream()
+                        .map(paragraph -> new ExternalCheckNewTextBlockRequest(
+                                String.valueOf(paragraph.getBlockId()),
+                                paragraph.getContent()
+                        ))
+                        .toList()
         );
         ExternalCheckNewTextResponse response = externalAiPort.checkNewText(externalRequest);
         doc.mergeExternalChecklist(response.checkList());
-        return ExternalAiBlockCheckResponse.of(blockId, doc.getExternalChecklistSnapshot());
+        refreshAiCheckSnapshots(doc, currentParagraphs);
+        return ExternalAiDocumentCheckResponse.of(
+                doc.getId(),
+                changedParagraphs.stream()
+                        .map(DocumentParagraph::getBlockId)
+                        .toList(),
+                doc.getExternalChecklistSnapshot()
+        );
     }
 
     private Document getOwnedDocument(String rawDocId, CustomUserDetails user) {
@@ -177,16 +203,35 @@ public class ExternalAiService {
         }
     }
 
-    private int parseBlockId(String rawBlockId) {
-        try {
-            int blockId = Integer.parseInt(rawBlockId);
-            if (blockId <= 0) {
-                throw new NumberFormatException("block_id must be positive");
-            }
-            return blockId;
-        } catch (Exception e) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
+    private List<DocumentParagraph> findChangedParagraphs(Document doc, List<DocumentParagraph> currentParagraphs) {
+        Map<Integer, String> snapshotContentByBlockId = new HashMap<>();
+        for (DocumentAiCheckSnapshot snapshot : documentAiCheckSnapshotRepository.findAllByDocument(doc)) {
+            snapshotContentByBlockId.put(snapshot.getBlockId(), snapshot.getContent());
         }
+        return currentParagraphs.stream()
+                .filter(paragraph -> {
+                    String previous = snapshotContentByBlockId.get(paragraph.getBlockId());
+                    return previous == null || !Objects.equals(previous, paragraph.getContent());
+                })
+                .sorted(Comparator.comparingInt(DocumentParagraph::getBlockId))
+                .toList();
+    }
+
+    private void refreshAiCheckSnapshots(Document doc) {
+        List<DocumentParagraph> currentParagraphs =
+                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
+        refreshAiCheckSnapshots(doc, currentParagraphs);
+    }
+
+    private void refreshAiCheckSnapshots(Document doc, List<DocumentParagraph> currentParagraphs) {
+        documentAiCheckSnapshotRepository.deleteAllByDocument(doc);
+        if (currentParagraphs == null || currentParagraphs.isEmpty()) {
+            return;
+        }
+        List<DocumentAiCheckSnapshot> snapshots = currentParagraphs.stream()
+                .map(paragraph -> DocumentAiCheckSnapshot.of(doc, paragraph.getBlockId(), paragraph.getContent()))
+                .toList();
+        documentAiCheckSnapshotRepository.saveAll(snapshots);
     }
 
     private ExternalAiEvaluationMetricResponse toMetric(String label, ExternalEvaluatorMetricResponse metric) {

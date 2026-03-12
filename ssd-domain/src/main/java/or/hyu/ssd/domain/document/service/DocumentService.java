@@ -15,6 +15,7 @@ import or.hyu.ssd.domain.document.entity.DocumentLog;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
@@ -42,6 +43,7 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final CheckListRepository checkListRepository;
     private final EvaluatorCheckListRepository evaluatorCheckListRepository;
+    private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
     private final DocumentCommentRepository documentCommentRepository;
     private final DocumentLogRepository documentLogRepository;
@@ -99,6 +101,7 @@ public class DocumentService {
 
         checkListRepository.deleteAllByDocument(doc);
         evaluatorCheckListRepository.deleteAllByDocument(doc);
+        documentAiCheckSnapshotRepository.deleteAllByDocument(doc);
         documentParagraphRepository.deleteAllByDocument(doc);
         documentCommentRepository.deleteAllByDocument(doc);
         documentLogRepository.deleteAllByDocument(doc);

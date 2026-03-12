@@ -4,8 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBlockCheckRequest;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
@@ -149,7 +148,7 @@ public class ExternalAiController {
             summary = "외부 체크리스트 평가 호출",
             description = """
                     ### 개요
-                    - 외부 AI 서버의 `/check/new-text` API를 호출해 블록 단위 체크리스트 평가를 반환합니다.
+                    - 외부 AI 서버의 `/check/new-text` API를 호출해 문서의 변경 블록 기준 체크리스트 평가를 반환합니다.
 
                     ### 인증
                     - Authorization: Bearer {accessToken}
@@ -157,13 +156,17 @@ public class ExternalAiController {
                     ### 요청
                     - Path: /api/v1/external-ai/check/new-text
                     - Body(JSON)
-                      - doc_id (string): 문서 식별자
-                      - block_id (string): 블록 식별자
-                      - block (string): 평가할 최신 블록 본문
+                      - docId (string): 문서 식별자
+
+                    ### 처리
+                    - 요청받은 `docId`로 문서 소유권을 검증합니다.
+                    - 서버가 마지막 AI 체크 스냅샷과 현재 문단 목록을 비교해 변경된 블록만 추출합니다.
+                    - 변경된 블록 목록만 외부 AI 서버에 전달한 뒤, 응답 체크리스트를 누적 저장합니다.
 
                     ### 응답
                     - 200 OK
-                    - data.blockId: 블록 ID
+                    - data.documentId: 문서 ID
+                    - data.changedBlockIds: 외부 AI 서버로 전달된 변경 블록 ID 목록
                     - data.checkList: 문서에 누적 저장된 체크리스트 상태
 
                     ### 오류
@@ -171,11 +174,11 @@ public class ExternalAiController {
                     - AI50202: 외부 AI 서버 응답 처리 실패
                     """
     )
-    public ResponseEntity<ApiResponse<ExternalAiBlockCheckResponse>> checkNewText(
-            @Valid @RequestBody ExternalAiBlockCheckRequest request,
+    public ResponseEntity<ApiResponse<ExternalAiDocumentCheckResponse>> checkNewText(
+            @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiBlockCheckResponse response = externalAiService.checkNewText(request, user);
+        ExternalAiDocumentCheckResponse response = externalAiService.checkNewText(request, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 체크리스트 평가 API를 성공적으로 호출했습니다"));
     }
 }
