@@ -18,4 +18,8 @@ public record ApiResponse<T>(String code, String msg, T data) {
     public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
         return new ApiResponse<T>(errorCode.getCode(), errorCode.getMessage(), null);
     }
+
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode, String msg) {
+        return new ApiResponse<T>(errorCode.getCode(), msg, null);
+    }
 }

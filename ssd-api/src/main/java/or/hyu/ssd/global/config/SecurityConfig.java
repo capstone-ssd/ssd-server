@@ -30,6 +30,7 @@ public class SecurityConfig {
 
     private final JWTFilter jwtFilter;
     private final AuthenticationEntryPointImpl authenticationEntryPoint;
+    private final AccessDeniedHandlerImpl accessDeniedHandler;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder(){
@@ -107,7 +108,8 @@ public class SecurityConfig {
         http.logout(AbstractHttpConfigurer::disable);
 
         http.exceptionHandling(exception -> exception
-                .authenticationEntryPoint(authenticationEntryPoint));
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler));
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
