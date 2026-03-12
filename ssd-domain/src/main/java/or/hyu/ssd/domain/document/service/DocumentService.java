@@ -4,7 +4,6 @@ import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentLogResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentParagraphDto;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
@@ -121,21 +120,6 @@ public class DocumentService {
 
         List<DocumentParagraphDto> paragraphs = fetchParagraphs(doc);
         return GetDocumentResponse.of(doc, paragraphs);
-    }
-
-    @Transactional(readOnly = true)
-    public DocumentLogResponse listDocumentLogs(Long documentId, CustomUserDetails user) {
-        Document doc = getDocument(documentId);
-
-        if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-
-        List<DocumentLog> logs = documentLogRepository.findAllByDocumentOrderByCreatedAtAsc(doc);
-        return DocumentLogResponse.of(doc.getId(), logs);
     }
 
     @Transactional(readOnly = true)

@@ -73,22 +73,6 @@ app:
       - http://localhost:8080
   external-ai:
     base-url: ${EXTERNAL_AI_BASE_URL}
-  prompts:
-    checklist:
-      system: ${CHECK_SYS_PROMPT}
-      user: ${CHECK_USER_PROMPT}
-    summary:
-      system: ${SUMMARY_SYS_PROMPT}
-      user: ${SUMMARY_USER_PROMPT}
-    evaluation:
-      system: ${EVALUATION_SYS_PROMPT}
-      user: ${EVALUATION_USER_PROMPT}
-    details:
-      system: ${DETAILS_SYS_PROMPT}
-      user: ${DETAILS_USER_PROMPT}
-    evaluator-checklist:
-      system: ${EVAL_CHECK_SYS_PROMPT}
-      user: ${EVAL_CHECK_USER_PROMPT}
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
@@ -110,13 +94,3 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-
----
-spring:
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY}
-      chat:
-        options:
-          model: gpt-4o-mini
-          temperature: 0.7
