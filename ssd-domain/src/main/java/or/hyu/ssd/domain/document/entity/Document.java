@@ -22,7 +22,7 @@ public class Document extends BaseEntity {
     private Long id;
 
     @Comment("사업계획서 제목 (입력: title, 없으면 text/paragraphs에서 생성)")
-    @Column(name = "title", nullable = false)
+    @Column(name = "title", nullable = false, columnDefinition = "TEXT")
     private String title;
 
     @Comment("사업계획서 본문 (입력: text)")
