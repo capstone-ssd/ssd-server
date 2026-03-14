@@ -52,7 +52,7 @@ export function buildCreateDocumentPayload({ size = 'large', folderId = 0, title
       {
         blockId: 1,
         content: `대 본 1 (${payloadSize})`,
-        role: 'BODY',
+        role: '',
       },
     ],
     folderId,

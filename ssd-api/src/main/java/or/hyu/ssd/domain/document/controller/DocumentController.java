@@ -51,6 +51,7 @@ public class DocumentController {
                     - title (string, optional): 제목. 없으면 text/paragraphs 첫 항목으로 자동 생성
                     - text (string, required): 공백 불가 본문. 줄바꿈은 \\n 으로 이스케이프
                     - paragraphs (array, optional): 문단 메타데이터 배열 (content, role, blockId만 입력. pageNumber는 생성 API에서 받지 않으며 1로 저장)
+                      - role 허용값: "", "#", "##", "###", "####", "#####", "######"
                     - folderId (number, optional): 폴더 ID (없으면 루트)
 
                     ### 응답
@@ -92,6 +93,7 @@ public class DocumentController {
                       - folderId (number): 폴더 ID (0이면 루트로 이동)
                       - bookmark (boolean): 즐겨찾기 여부
                       - paragraphs (array): 문단 메타데이터 배열 (blockId는 서버가 1..n으로 자동 부여)
+                        - role 허용값: "", "#", "##", "###", "####", "#####", "######"
 
                     ### 응답
                     - 200 OK
