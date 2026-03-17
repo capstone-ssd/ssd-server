@@ -44,6 +44,8 @@ public enum ErrorCode {
 
     // 평가자 리뷰 예외
     REVIEW_INVALID_SCORE(HttpStatus.BAD_REQUEST, "REV40001", "리뷰 점수는 0~100 범위여야 합니다"),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REV40401", "리뷰를 찾지 못했습니다"),
+    REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "REV40901", "이미 작성한 리뷰가 존재합니다"),
 
     // 외부 AI 연동 예외
     EXTERNAL_AI_CALL_FAILED(HttpStatus.BAD_GATEWAY, "AI50201", "외부 AI 서버 호출에 실패했습니다"),

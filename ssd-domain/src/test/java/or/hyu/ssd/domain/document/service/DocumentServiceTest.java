@@ -12,6 +12,7 @@ import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
+import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
@@ -52,6 +53,8 @@ class DocumentServiceTest {
     private DocumentCommentRepository documentCommentRepository;
     @Mock
     private DocumentLogRepository documentLogRepository;
+    @Mock
+    private EvaluatorReviewRepository evaluatorReviewRepository;
     @Mock
     private FolderRepository folderRepository;
     @Mock

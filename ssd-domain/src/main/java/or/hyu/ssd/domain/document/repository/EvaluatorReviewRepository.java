@@ -12,7 +12,13 @@ public interface EvaluatorReviewRepository {
 
     List<EvaluatorReview> findAllByDocument(Document document);
 
+    List<EvaluatorReview> findAllByDocumentOrderByUpdatedAtDesc(Document document);
+
     boolean existsByDocumentAndReviewer(Document document, Member reviewer);
 
     EvaluatorReview save(EvaluatorReview review);
+
+    void delete(EvaluatorReview review);
+
+    void deleteAllByDocument(Document document);
 }

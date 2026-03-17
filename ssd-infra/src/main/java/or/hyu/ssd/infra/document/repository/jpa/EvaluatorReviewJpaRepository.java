@@ -13,5 +13,9 @@ public interface EvaluatorReviewJpaRepository extends JpaRepository<EvaluatorRev
 
     List<EvaluatorReview> findAllByDocument(Document document);
 
+    List<EvaluatorReview> findAllByDocumentOrderByUpdatedAtDesc(Document document);
+
     boolean existsByDocumentAndReviewer(Document document, Member reviewer);
+
+    void deleteAllByDocument(Document document);
 }
