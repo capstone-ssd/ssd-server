@@ -2,6 +2,7 @@ package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiChecklistResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
@@ -38,22 +39,24 @@ import java.util.Map;
 import java.util.Objects;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class ExternalAiService {
 
     private final ExternalAiPort externalAiPort;
+    private final ExternalAiPersistenceService externalAiPersistenceService;
     private final DocumentRepository documentRepository;
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
 
     public ExternalAiEvaluationCardResponse evaluate(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
-        ExternalEvaluationRequest externalRequest = new ExternalEvaluationRequest(
+        List<DocumentParagraph> currentParagraphs =
+                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
+
+        ExternalEvaluationResponse response = externalAiPort.evaluate(new ExternalEvaluationRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
-        );
-        ExternalEvaluationResponse response = externalAiPort.evaluate(externalRequest);
+        ));
 
         ExternalAiEvaluationMetricResponse problemRecognition =
                 toMetric("문제 인식", response.evaluationReport() != null ? response.evaluationReport().problemEvaluator() : null);
@@ -74,66 +77,39 @@ public class ExternalAiService {
                 teamComposition.score()
         );
 
-        doc.updateExternalEvaluationMetrics(
-                totalScore,
-                problemRecognition.score(),
-                problemRecognition.review(),
-                feasibility.score(),
-                feasibility.review(),
-                growthStrategy.score(),
-                growthStrategy.review(),
-                businessModel.score(),
-                businessModel.review(),
-                teamComposition.score(),
-                teamComposition.review()
-        );
-        doc.overwriteExternalChecklist(response.checkList());
-        refreshAiCheckSnapshots(doc);
-        doc.updateEvaluation(buildEvaluationReport(
-                problemRecognition,
-                feasibility,
-                growthStrategy,
-                businessModel,
-                teamComposition,
-                doc.getExternalChecklistSnapshot()
-        ));
-
-        return ExternalAiEvaluationCardResponse.of(
+        return externalAiPersistenceService.saveEvaluation(
                 doc.getId(),
-                totalScore,
                 problemRecognition,
                 feasibility,
                 growthStrategy,
                 businessModel,
                 teamComposition,
-                doc.getExternalChecklistSnapshot()
+                totalScore,
+                response.checkList(),
+                currentParagraphs
         );
     }
 
     public ExternalAiSummaryResponse summarizeBasic(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
-        ExternalSummarizationBasicRequest externalRequest = new ExternalSummarizationBasicRequest(
+        ExternalSummarizationBasicResponse response = externalAiPort.summarizeBasic(new ExternalSummarizationBasicRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
-        );
-        ExternalSummarizationBasicResponse response = externalAiPort.summarizeBasic(externalRequest);
+        ));
 
         String summary = firstNonBlank(response.summary(), response.small());
-        doc.updateSummary(summary);
-
-        return ExternalAiSummaryResponse.of(doc.getId(), summary, response.small());
+        String shortSummary = normalize(response.small());
+        return externalAiPersistenceService.saveSummary(doc.getId(), summary, shortSummary);
     }
 
     public ExternalAiKeywordResponse summarizeKeyword(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
-        ExternalSummarizationKeywordRequest externalRequest = new ExternalSummarizationKeywordRequest(
+        ExternalSummarizationKeywordResponse response = externalAiPort.summarizeKeyword(new ExternalSummarizationKeywordRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
-        );
-        ExternalSummarizationKeywordResponse response = externalAiPort.summarizeKeyword(externalRequest);
-        String keyword = normalize(response.keyword());
-        doc.updateKeywords(keyword);
-        return ExternalAiKeywordResponse.of(doc.getId(), keyword);
+        ));
+
+        return externalAiPersistenceService.saveKeyword(doc.getId(), normalize(response.keyword()));
     }
 
     public ExternalAiDocumentCheckResponse checkNewText(ExternalDocumentIdRequest request, CustomUserDetails user) {
@@ -149,7 +125,7 @@ public class ExternalAiService {
             return ExternalAiDocumentCheckResponse.of(doc.getId(), List.of(), doc.getExternalChecklistSnapshot());
         }
 
-        ExternalCheckNewTextRequest externalRequest = new ExternalCheckNewTextRequest(
+        ExternalCheckNewTextResponse response = externalAiPort.checkNewText(new ExternalCheckNewTextRequest(
                 String.valueOf(doc.getId()),
                 changedParagraphs.stream()
                         .map(paragraph -> new ExternalCheckNewTextBlockRequest(
@@ -157,24 +133,56 @@ public class ExternalAiService {
                                 paragraph.getContent()
                         ))
                         .toList()
-        );
-        ExternalCheckNewTextResponse response = externalAiPort.checkNewText(externalRequest);
-        doc.mergeExternalChecklist(response.checkList());
-        refreshAiCheckSnapshots(doc, currentParagraphs);
-        return ExternalAiDocumentCheckResponse.of(
+        ));
+
+        return externalAiPersistenceService.mergeChecklist(
                 doc.getId(),
-                changedParagraphs.stream()
-                        .map(DocumentParagraph::getBlockId)
-                        .toList(),
+                changedParagraphs.stream().map(DocumentParagraph::getBlockId).toList(),
+                response.checkList(),
+                currentParagraphs
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ExternalAiEvaluationCardResponse getEvaluation(Long documentId, CustomUserDetails user) {
+        Document doc = getOwnedDocument(documentId, getMemberId(user));
+        return ExternalAiEvaluationCardResponse.of(
+                doc.getId(),
+                doc.getExternalAiTotalScore(),
+                ExternalAiEvaluationMetricResponse.of("문제 인식", doc.getExternalAiProblemRecognitionScore(), doc.getExternalAiProblemRecognitionReview()),
+                ExternalAiEvaluationMetricResponse.of("실현 가능성", doc.getExternalAiFeasibilityScore(), doc.getExternalAiFeasibilityReview()),
+                ExternalAiEvaluationMetricResponse.of("성장 전략", doc.getExternalAiGrowthStrategyScore(), doc.getExternalAiGrowthStrategyReview()),
+                ExternalAiEvaluationMetricResponse.of("Business Model", doc.getExternalAiBusinessModelScore(), doc.getExternalAiBusinessModelReview()),
+                ExternalAiEvaluationMetricResponse.of("팀 구성", doc.getExternalAiTeamCompositionScore(), doc.getExternalAiTeamCompositionReview()),
                 doc.getExternalChecklistSnapshot()
         );
     }
 
+    @Transactional(readOnly = true)
+    public ExternalAiSummaryResponse getSummary(Long documentId, CustomUserDetails user) {
+        Document doc = getOwnedDocument(documentId, getMemberId(user));
+        return ExternalAiSummaryResponse.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
+    }
+
+    @Transactional(readOnly = true)
+    public ExternalAiKeywordResponse getKeyword(Long documentId, CustomUserDetails user) {
+        Document doc = getOwnedDocument(documentId, getMemberId(user));
+        return ExternalAiKeywordResponse.of(doc.getId(), doc.getKeywords());
+    }
+
+    @Transactional(readOnly = true)
+    public ExternalAiChecklistResponse getChecklist(Long documentId, CustomUserDetails user) {
+        Document doc = getOwnedDocument(documentId, getMemberId(user));
+        return ExternalAiChecklistResponse.of(doc.getId(), doc.getExternalChecklistSnapshot());
+    }
+
     private Document getOwnedDocument(String rawDocId, CustomUserDetails user) {
-        Long docId = parseDocumentId(rawDocId);
+        return getOwnedDocument(parseDocumentId(rawDocId), getMemberId(user));
+    }
+
+    private Document getOwnedDocument(Long docId, Long memberId) {
         Document doc = documentRepository.findById(docId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
-        Long memberId = getMemberId(user);
         if (doc.getMember() == null || doc.getMember().getId() == null) {
             throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
         }
@@ -217,23 +225,6 @@ public class ExternalAiService {
                 .toList();
     }
 
-    private void refreshAiCheckSnapshots(Document doc) {
-        List<DocumentParagraph> currentParagraphs =
-                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
-        refreshAiCheckSnapshots(doc, currentParagraphs);
-    }
-
-    private void refreshAiCheckSnapshots(Document doc, List<DocumentParagraph> currentParagraphs) {
-        documentAiCheckSnapshotRepository.deleteAllByDocument(doc);
-        if (currentParagraphs == null || currentParagraphs.isEmpty()) {
-            return;
-        }
-        List<DocumentAiCheckSnapshot> snapshots = currentParagraphs.stream()
-                .map(paragraph -> DocumentAiCheckSnapshot.of(doc, paragraph.getBlockId(), paragraph.getContent()))
-                .toList();
-        documentAiCheckSnapshotRepository.saveAll(snapshots);
-    }
-
     private ExternalAiEvaluationMetricResponse toMetric(String label, ExternalEvaluatorMetricResponse metric) {
         if (metric == null) {
             return ExternalAiEvaluationMetricResponse.of(label, null, "");
@@ -267,47 +258,6 @@ public class ExternalAiService {
         }
         double average = available.stream().mapToInt(Integer::intValue).average().orElse(0);
         return (int) Math.round(average);
-    }
-
-    private String buildEvaluationReport(
-            ExternalAiEvaluationMetricResponse problemRecognition,
-            ExternalAiEvaluationMetricResponse feasibility,
-            ExternalAiEvaluationMetricResponse growthStrategy,
-            ExternalAiEvaluationMetricResponse businessModel,
-            ExternalAiEvaluationMetricResponse teamComposition,
-            Map<String, Boolean> checkList
-    ) {
-        StringBuilder builder = new StringBuilder();
-        appendMetric(builder, problemRecognition);
-        appendMetric(builder, feasibility);
-        appendMetric(builder, growthStrategy);
-        appendMetric(builder, businessModel);
-        appendMetric(builder, teamComposition);
-
-        if (checkList != null && !checkList.isEmpty()) {
-            if (!builder.isEmpty()) {
-                builder.append("\n\n");
-            }
-            builder.append("## 체크리스트\n");
-            checkList.forEach((key, value) ->
-                    builder.append("- ").append(key).append(": ").append(Boolean.TRUE.equals(value) ? "충족" : "미충족").append("\n")
-            );
-        }
-        return builder.toString().trim();
-    }
-
-    private void appendMetric(StringBuilder builder, ExternalAiEvaluationMetricResponse metric) {
-        if (metric == null) {
-            return;
-        }
-        if (!builder.isEmpty()) {
-            builder.append("\n\n");
-        }
-        builder.append("## ").append(metric.label()).append("\n");
-        builder.append("- 점수: ").append(metric.score() == null ? "-" : metric.score()).append("\n");
-        if (!normalize(metric.review()).isEmpty()) {
-            builder.append(metric.review());
-        }
     }
 
     private String firstNonBlank(String first, String second) {

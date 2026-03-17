@@ -7,8 +7,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiChecklistResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
@@ -17,7 +19,6 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationReportRespons
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluatorMetricResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +44,8 @@ class ExternalAiServiceTest {
 
     @Mock
     private ExternalAiPort externalAiPort;
+    @Mock
+    private ExternalAiPersistenceService externalAiPersistenceService;
     @Mock
     private DocumentRepository documentRepository;
     @Mock
@@ -53,8 +57,8 @@ class ExternalAiServiceTest {
     private ExternalAiService externalAiService;
 
     @Test
-    @DisplayName("summarizeBasic()는 외부 요약 결과를 문서 summary에 저장한다")
-    void summarizeBasic_savesSummary() {
+    @DisplayName("summarizeBasic()는 외부 요약 결과를 DB 반영 서비스에 위임한다")
+    void summarizeBasic_delegatesPersistence() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
@@ -62,39 +66,28 @@ class ExternalAiServiceTest {
         when(externalAiPort.summarizeBasic(any())).thenReturn(
                 new ExternalSummarizationBasicResponse("7", "핵심 요약", "짧은 요약")
         );
+        when(externalAiPersistenceService.saveSummary(7L, "핵심 요약", "짧은 요약"))
+                .thenReturn(ExternalAiSummaryResponse.of(7L, "핵심 요약", "짧은 요약"));
 
         ExternalAiSummaryResponse response = externalAiService.summarizeBasic(new ExternalDocumentIdRequest("7"), user);
 
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.summary()).isEqualTo("핵심 요약");
-        assertThat(document.getSummary()).isEqualTo("핵심 요약");
+        assertThat(response.shortSummary()).isEqualTo("짧은 요약");
     }
 
     @Test
-    @DisplayName("summarizeKeyword()는 외부 키워드 결과를 문서 keywords에 저장한다")
-    void summarizeKeyword_savesKeyword() {
+    @DisplayName("evaluate()는 외부 평가 결과를 DB 반영 서비스에 위임한다")
+    void evaluate_delegatesPersistence() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
-        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
-        when(externalAiPort.summarizeKeyword(any())).thenReturn(
-                new ExternalSummarizationKeywordResponse("7", "AI, 물류, 자동화")
+        List<DocumentParagraph> currentParagraphs = List.of(
+                DocumentParagraph.of("문단1", "", 1, 1, document)
         );
-
-        ExternalAiKeywordResponse response = externalAiService.summarizeKeyword(new ExternalDocumentIdRequest("7"), user);
-
-        assertThat(response.documentId()).isEqualTo(7L);
-        assertThat(response.keyword()).isEqualTo("AI, 물류, 자동화");
-        assertThat(document.getKeywords()).isEqualTo("AI, 물류, 자동화");
-    }
-
-    @Test
-    @DisplayName("evaluate()는 평가 축을 점수 카드 응답으로 가공하고 evaluation 필드에 저장한다")
-    void evaluate_mapsMetricsAndStoresEvaluation() {
-        Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
-        Document document = document(7L, member);
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+                .thenReturn(currentParagraphs);
         when(externalAiPort.evaluate(any())).thenReturn(
                 new ExternalEvaluationResponse(
                         "7",
@@ -108,64 +101,73 @@ class ExternalAiServiceTest {
                         Map.of("problem_is_clear", true)
                 )
         );
+        when(externalAiPersistenceService.saveEvaluation(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(ExternalAiEvaluationCardResponse.of(
+                        7L,
+                        70,
+                        ExternalAiEvaluationMetricResponse.of("문제 인식", 70, "문제 리뷰"),
+                        ExternalAiEvaluationMetricResponse.of("실현 가능성", 80, "실현 가능성 리뷰"),
+                        ExternalAiEvaluationMetricResponse.of("성장 전략", 50, "성장 리뷰"),
+                        ExternalAiEvaluationMetricResponse.of("Business Model", 60, "BM 리뷰"),
+                        ExternalAiEvaluationMetricResponse.of("팀 구성", 90, "팀 리뷰"),
+                        Map.of("problem_is_clear", true)
+                ));
 
         ExternalAiEvaluationCardResponse response = externalAiService.evaluate(new ExternalDocumentIdRequest("7"), user);
 
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.totalScore()).isEqualTo(70);
-        assertThat(response.problemRecognition().score()).isEqualTo(70);
-        assertThat(response.feasibility().score()).isEqualTo(80);
-        assertThat(response.growthStrategy().score()).isEqualTo(50);
-        assertThat(response.businessModel().score()).isEqualTo(60);
-        assertThat(response.teamComposition().score()).isEqualTo(90);
-        assertThat(document.getExternalAiTotalScore()).isEqualTo(70);
-        assertThat(document.getExternalAiProblemRecognitionScore()).isEqualTo(70);
-        assertThat(document.getExternalAiProblemRecognitionReview()).isEqualTo("문제 리뷰");
-        assertThat(document.isChecklistDifferentiationIsClear()).isFalse();
-        assertThat(document.isChecklistProblemIsClear()).isTrue();
-        assertThat(document.getEvaluation()).contains("## 문제 인식");
-        assertThat(document.getEvaluation()).contains("problem_is_clear: 충족");
+        assertThat(response.checkList()).containsEntry("problem_is_clear", true);
     }
 
     @Test
-    @DisplayName("checkNewText()는 문서 기준으로 블록을 검증하고 체크리스트를 OR-merge 한다")
-    void checkNewText_mergesChecklist() {
+    @DisplayName("checkNewText()는 변경 블록이 없으면 외부 AI를 호출하지 않는다")
+    void checkNewText_returnsStoredChecklistWhenNoChangedBlock() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
-        document.overwriteExternalChecklist(Map.of(
-                "problem_is_clear", false,
-                "market_definition_is_correct", true
-        ));
+        document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
         when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
-                .thenReturn(List.of(
-                        DocumentParagraph.of("블록1", "BODY", 1, 1, document),
-                        DocumentParagraph.of("본문", "BODY", 1, 3, document)
-                ));
+                .thenReturn(List.of(DocumentParagraph.of("본문", "", 1, 1, document)));
         when(documentAiCheckSnapshotRepository.findAllByDocument(document))
-                .thenReturn(List.of(
-                        DocumentAiCheckSnapshot.of(document, 1, "블록1"),
-                        DocumentAiCheckSnapshot.of(document, 3, "기존 본문")
-                ));
-        when(externalAiPort.checkNewText(any())).thenReturn(
-                new ExternalCheckNewTextResponse("3", Map.of(
-                        "problem_is_clear", true,
-                        "market_definition_is_correct", false
-                ))
-        );
+                .thenReturn(List.of(DocumentAiCheckSnapshot.of(document, 1, "본문")));
 
-        ExternalAiDocumentCheckResponse response = externalAiService.checkNewText(
-                new ExternalDocumentIdRequest("7"),
-                user
-        );
+        ExternalAiDocumentCheckResponse response = externalAiService.checkNewText(new ExternalDocumentIdRequest("7"), user);
+
+        assertThat(response.changedBlockIds()).isEmpty();
+        assertThat(response.checkList()).containsEntry("problem_is_clear", true);
+        verifyNoInteractions(externalAiPort);
+    }
+
+    @Test
+    @DisplayName("getSummary()는 저장된 summary와 shortSummary를 반환한다")
+    void getSummary_returnsStoredValues() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Document document = document(7L, member);
+        document.updateSummary("저장된 요약", "짧은 요약");
+        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+
+        ExternalAiSummaryResponse response = externalAiService.getSummary(7L, user);
+
+        assertThat(response.summary()).isEqualTo("저장된 요약");
+        assertThat(response.shortSummary()).isEqualTo("짧은 요약");
+    }
+
+    @Test
+    @DisplayName("getChecklist()는 저장된 체크리스트만 반환한다")
+    void getChecklist_returnsStoredChecklist() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Document document = document(7L, member);
+        document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
+        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+
+        ExternalAiChecklistResponse response = externalAiService.getChecklist(7L, user);
 
         assertThat(response.documentId()).isEqualTo(7L);
-        assertThat(response.changedBlockIds()).containsExactly(3);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
-        assertThat(response.checkList()).containsEntry("market_definition_is_correct", true);
-        assertThat(document.isChecklistProblemIsClear()).isTrue();
-        assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();
     }
 
     @Test

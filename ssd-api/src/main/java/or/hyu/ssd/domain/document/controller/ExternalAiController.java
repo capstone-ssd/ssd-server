@@ -1,9 +1,11 @@
 package or.hyu.ssd.domain.document.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiChecklistResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
@@ -14,6 +16,8 @@ import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,10 +33,10 @@ public class ExternalAiController {
 
     @PostMapping("/v1/external-ai/evaluate")
     @Operation(
-            summary = "외부 사업계획서 종합평가 호출",
+            summary = "외부 사업계획서 종합평가 반영",
             description = """
                     ### 개요
-                    - 외부 AI 서버의 `/evaluate` API를 호출해 종합평가 결과를 반환합니다.
+                    - 외부 AI 서버의 `/evaluate` API를 호출하고 결과를 DB에 반영합니다.
 
                     ### 인증
                     - Authorization: Bearer {accessToken}
@@ -43,19 +47,12 @@ public class ExternalAiController {
                       - docId (string): 문서 식별자
 
                     ### 처리
-                    - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
-                      서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
-                    - 외부 평가 결과의 5개 축을 SSD 도메인 응답으로 가공하여 반환합니다.
+                    - 요청받은 `docId`로 문서 소유권을 검증합니다.
+                    - 외부 AI 서버를 호출해 종합평가 결과를 받은 뒤, DB에 저장합니다.
 
                     ### 응답
                     - 200 OK
-                    - data.documentId: 문서 ID
-                    - data.totalScore: 5개 평가 축 평균 점수
-                    - data.problemRecognition / feasibility / growthStrategy / businessModel / teamComposition
-
-                    ### 오류
-                    - AI50201: 외부 AI 서버 호출 실패
-                    - AI50202: 외부 AI 서버 응답 처리 실패
+                    - data: DB에 반영된 최신 종합평가 결과
                     """
     )
     public ResponseEntity<ApiResponse<ExternalAiEvaluationCardResponse>> evaluate(
@@ -63,15 +60,33 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiEvaluationCardResponse response = externalAiService.evaluate(request, user);
-        return ResponseEntity.ok(ApiResponse.ok(response, "외부 종합평가를 성공적으로 호출했습니다"));
+        return ResponseEntity.ok(ApiResponse.ok(response, "외부 종합평가를 성공적으로 반영했습니다"));
+    }
+
+    @GetMapping("/v1/external-ai/evaluate/{documentId}")
+    @Operation(
+            summary = "저장된 외부 사업계획서 종합평가 조회",
+            description = """
+                    ### 개요
+                    - 현재 DB에 저장된 종합평가 결과만 조회합니다.
+                    - 외부 AI 서버는 호출하지 않습니다.
+                    """
+    )
+    public ResponseEntity<ApiResponse<ExternalAiEvaluationCardResponse>> getEvaluation(
+            @Parameter(description = "문서 ID", required = true)
+            @PathVariable Long documentId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ExternalAiEvaluationCardResponse response = externalAiService.getEvaluation(documentId, user);
+        return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 종합평가가 조회되었습니다"));
     }
 
     @PostMapping("/v1/external-ai/summarization/basic")
     @Operation(
-            summary = "외부 사업계획서 요약 호출",
+            summary = "외부 사업계획서 요약 반영",
             description = """
                     ### 개요
-                    - 외부 AI 서버의 `/summarization/Basic` API를 호출해 요약 결과를 반환합니다.
+                    - 외부 AI 서버의 `/summarization/Basic` API를 호출하고 요약 결과를 DB에 반영합니다.
 
                     ### 인증
                     - Authorization: Bearer {accessToken}
@@ -81,20 +96,10 @@ public class ExternalAiController {
                     - Body(JSON)
                       - docId (string): 문서 식별자
 
-                    ### 처리
-                    - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
-                      서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
-                    - 생성된 요약을 문서에 저장한 뒤 SSD 기준 응답으로 반환합니다.
-
                     ### 응답
                     - 200 OK
-                    - data.documentId: 문서 ID
                     - data.summary: 저장된 요약
-                    - data.shortSummary: 외부 서버 short summary
-
-                    ### 오류
-                    - AI50201: 외부 AI 서버 호출 실패
-                    - AI50202: 외부 AI 서버 응답 처리 실패
+                    - data.shortSummary: 저장된 짧은 요약
                     """
     )
     public ResponseEntity<ApiResponse<ExternalAiSummaryResponse>> summarizeBasic(
@@ -102,37 +107,33 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiSummaryResponse response = externalAiService.summarizeBasic(request, user);
-        return ResponseEntity.ok(ApiResponse.ok(response, "외부 요약 API를 성공적으로 호출했습니다"));
+        return ResponseEntity.ok(ApiResponse.ok(response, "외부 요약 API를 성공적으로 반영했습니다"));
+    }
+
+    @GetMapping("/v1/external-ai/summarization/basic/{documentId}")
+    @Operation(
+            summary = "저장된 외부 사업계획서 요약 조회",
+            description = """
+                    ### 개요
+                    - 현재 DB에 저장된 요약과 짧은 요약만 조회합니다.
+                    - 외부 AI 서버는 호출하지 않습니다.
+                    """
+    )
+    public ResponseEntity<ApiResponse<ExternalAiSummaryResponse>> getSummary(
+            @Parameter(description = "문서 ID", required = true)
+            @PathVariable Long documentId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ExternalAiSummaryResponse response = externalAiService.getSummary(documentId, user);
+        return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 요약이 조회되었습니다"));
     }
 
     @PostMapping("/v1/external-ai/summarization/keyword")
     @Operation(
-            summary = "외부 사업계획서 키워드 추출 호출",
+            summary = "외부 사업계획서 키워드 추출 반영",
             description = """
                     ### 개요
-                    - 외부 AI 서버의 `/summarization/Keyword` API를 호출해 키워드를 반환합니다.
-
-                    ### 인증
-                    - Authorization: Bearer {accessToken}
-
-                    ### 요청
-                    - Path: /api/v1/external-ai/summarization/keyword
-                    - Body(JSON)
-                      - docId (string): 문서 식별자
-
-                    ### 처리
-                    - 요청받은 `docId`로 문서 소유권을 검증한 뒤,
-                      서버가 DB에서 본문을 조회하여 외부 API에 전달합니다.
-                    - 추출한 키워드를 SSD 도메인 응답으로 가공하여 반환합니다.
-
-                    ### 응답
-                    - 200 OK
-                    - data.documentId: 문서 ID
-                    - data.keyword: 추출된 키워드
-
-                    ### 오류
-                    - AI50201: 외부 AI 서버 호출 실패
-                    - AI50202: 외부 AI 서버 응답 처리 실패
+                    - 외부 AI 서버의 `/summarization/Keyword` API를 호출하고 키워드를 DB에 반영합니다.
                     """
     )
     public ResponseEntity<ApiResponse<ExternalAiKeywordResponse>> summarizeKeyword(
@@ -140,40 +141,39 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiKeywordResponse response = externalAiService.summarizeKeyword(request, user);
-        return ResponseEntity.ok(ApiResponse.ok(response, "외부 키워드 API를 성공적으로 호출했습니다"));
+        return ResponseEntity.ok(ApiResponse.ok(response, "외부 키워드 API를 성공적으로 반영했습니다"));
+    }
+
+    @GetMapping("/v1/external-ai/summarization/keyword/{documentId}")
+    @Operation(
+            summary = "저장된 외부 사업계획서 키워드 조회",
+            description = """
+                    ### 개요
+                    - 현재 DB에 저장된 키워드만 조회합니다.
+                    - 외부 AI 서버는 호출하지 않습니다.
+                    """
+    )
+    public ResponseEntity<ApiResponse<ExternalAiKeywordResponse>> getKeyword(
+            @Parameter(description = "문서 ID", required = true)
+            @PathVariable Long documentId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ExternalAiKeywordResponse response = externalAiService.getKeyword(documentId, user);
+        return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 키워드가 조회되었습니다"));
     }
 
     @PostMapping("/v1/external-ai/check/new-text")
     @Operation(
-            summary = "외부 체크리스트 평가 호출",
+            summary = "외부 체크리스트 평가 반영",
             description = """
                     ### 개요
-                    - 외부 AI 서버의 `/check/new-text` API를 호출해 문서의 변경 블록 기준 체크리스트 평가를 반환합니다.
-
-                    ### 인증
-                    - Authorization: Bearer {accessToken}
-
-                    ### 요청
-                    - Path: /api/v1/external-ai/check/new-text
-                    - Body(JSON)
-                      - docId (string): 문서 식별자
+                    - 외부 AI 서버의 `/check/new-text` API를 호출하고 변경된 블록 기준 체크리스트 결과를 DB에 반영합니다.
 
                     ### 처리
                     - 이전 스냅샷에 없는 blockId다 -> 변경
                     - 같은 blockId인데 content가 다르다 -> 변경
                     - 같은 blockId이고 content가 같다 -> 변경 아님
-                    즉 정리하자면, 해당 API는 외부 체크리스트 전용 API 입니다. AI 종합평가가 필요하다면 '외부 사업계획서 종합평가 호출 API' 를 활용해주세요.
-                    
-
-                    ### 응답
-                    - 200 OK
-                    - data.documentId: 문서 ID
-                    - data.changedBlockIds: 외부 AI 서버로 전달된 변경 블록 ID 목록
-                    - data.checkList: 문서에 누적 저장된 체크리스트 상태
-
-                    ### 오류
-                    - AI50201: 외부 AI 서버 호출 실패
-                    - AI50202: 외부 AI 서버 응답 처리 실패
+                    - 변경된 block만 외부 AI 서버에 전달합니다.
                     """
     )
     public ResponseEntity<ApiResponse<ExternalAiDocumentCheckResponse>> checkNewText(
@@ -181,6 +181,24 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiDocumentCheckResponse response = externalAiService.checkNewText(request, user);
-        return ResponseEntity.ok(ApiResponse.ok(response, "외부 체크리스트 평가 API를 성공적으로 호출했습니다"));
+        return ResponseEntity.ok(ApiResponse.ok(response, "외부 체크리스트 평가 API를 성공적으로 반영했습니다"));
+    }
+
+    @GetMapping("/v1/external-ai/check/new-text/{documentId}")
+    @Operation(
+            summary = "저장된 외부 체크리스트 조회",
+            description = """
+                    ### 개요
+                    - 현재 DB에 저장된 체크리스트 값만 조회합니다.
+                    - 외부 AI 서버는 호출하지 않습니다.
+                    """
+    )
+    public ResponseEntity<ApiResponse<ExternalAiChecklistResponse>> getChecklist(
+            @Parameter(description = "문서 ID", required = true)
+            @PathVariable Long documentId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ExternalAiChecklistResponse response = externalAiService.getChecklist(documentId, user);
+        return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 체크리스트가 조회되었습니다"));
     }
 }

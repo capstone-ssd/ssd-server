@@ -42,6 +42,10 @@ public class Document extends BaseEntity {
     @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
     private String summary;
 
+    @Comment("ai가 생성한 사업계획서 짧은 요약")
+    @Column(name = "short_summary", nullable = true, columnDefinition = "TEXT")
+    private String shortSummary;
+
     @Comment("ai가 생성한 사업계획서 상세 요약 (입력: details)")
     @Column(name = "details", nullable = true, columnDefinition = "TEXT")
     private String details;
@@ -230,6 +234,11 @@ public class Document extends BaseEntity {
 
     public void updateSummary(String summary) {
         this.summary = summary;
+    }
+
+    public void updateSummary(String summary, String shortSummary) {
+        this.summary = summary;
+        this.shortSummary = shortSummary;
     }
 
     public void updateKeywords(String keywords) {
