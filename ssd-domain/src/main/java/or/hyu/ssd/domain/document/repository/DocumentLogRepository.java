@@ -8,7 +8,7 @@ import java.util.List;
 public interface DocumentLogRepository {
     DocumentLog save(DocumentLog log);
 
-    List<DocumentLog> findAllByDocumentOrderByCreatedAtAsc(Document document);
+    List<DocumentLog> findAllByDocumentOrderByCreatedAtDesc(Document document);
 
     void deleteAllByDocument(Document document);
 }

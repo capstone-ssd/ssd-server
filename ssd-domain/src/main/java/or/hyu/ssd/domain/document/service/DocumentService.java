@@ -310,7 +310,7 @@ public class DocumentService {
 
     private void saveDocumentLog(Document doc, CustomUserDetails user) {
         String editorName = resolveEditorName(user);
-        documentLogRepository.save(DocumentLog.of(editorName, doc));
+        documentLogRepository.save(DocumentLog.of(editorName, resolveEditorEmail(user), doc));
     }
 
     private String resolveEditorName(CustomUserDetails user) {
@@ -326,5 +326,13 @@ public class DocumentService {
             return email.trim();
         }
         return "Unknown";
+    }
+
+    private String resolveEditorEmail(CustomUserDetails user) {
+        if (user == null || user.getMember() == null) {
+            return null;
+        }
+        String email = user.getMember().getEmail();
+        return email == null || email.isBlank() ? null : email.trim();
     }
 }
