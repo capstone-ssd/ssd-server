@@ -58,6 +58,10 @@ public class DocumentController {
                     - 200 OK
                     - data.id: 생성된 문서 ID
 
+                    ### 후처리
+                    - 외부 AI 종합평가/요약/키워드 생성은 별도 `POST /api/v1/external-ai/generate-all` API를 호출해야 합니다.
+                    - 생성 API는 문서 저장만 담당합니다.
+
                     ### 오류
                     - TOKEN4030x: 토큰 누락/만료/위조
                     - REQ40001: JSON 파싱 실패

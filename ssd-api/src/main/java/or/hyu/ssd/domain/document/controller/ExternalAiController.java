@@ -6,11 +6,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiChecklistResponse;
+import or.hyu.ssd.domain.document.controller.dto.ExternalAiBatchResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
+import or.hyu.ssd.domain.document.service.ExternalAiBatchService;
 import or.hyu.ssd.domain.document.service.ExternalAiService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExternalAiController {
 
     private final ExternalAiService externalAiService;
+    private final ExternalAiBatchService externalAiBatchService;
 
     @PostMapping("/v1/external-ai/evaluate")
     @Operation(
@@ -160,6 +163,40 @@ public class ExternalAiController {
     ) {
         ExternalAiKeywordResponse response = externalAiService.getKeyword(documentId, user);
         return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 키워드가 조회되었습니다"));
+    }
+
+
+    @PostMapping("/v1/external-ai/generate-all")
+    @Operation(
+            summary = "외부 AI 일괄 반영",
+            description = """
+                    ### 개요
+                    - 외부 AI `evaluate`, `summarization/basic`, `summarization/keyword`를 순차 호출해 문서에 한 번에 반영합니다.
+                    - 문서 생성 API와 분리된 후처리용 API입니다.
+                    - `/check/new-text` 체크리스트 API는 호출하지 않습니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Path: /api/v1/external-ai/generate-all
+                    - Body(JSON)
+                      - docId (string): 문서 식별자
+
+                    ### 응답
+                    - 200 OK
+                    - data.documentId: 문서 ID
+                    - data.evaluation: 저장된 종합평가 결과
+                    - data.summary: 저장된 요약 결과
+                    - data.keyword: 저장된 키워드 결과
+                    """
+    )
+    public ResponseEntity<ApiResponse<ExternalAiBatchResponse>> generateAll(
+            @Valid @RequestBody ExternalDocumentIdRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ExternalAiBatchResponse response = externalAiBatchService.generateAll(request, user);
+        return ResponseEntity.ok(ApiResponse.ok(response, "외부 AI 결과가 일괄 반영되었습니다"));
     }
 
     @PostMapping("/v1/external-ai/check/new-text")
