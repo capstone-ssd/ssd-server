@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.service.DocumentCreateOrchestrationService;
 import or.hyu.ssd.domain.document.service.DocumentService;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
@@ -37,14 +36,13 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
-    private final DocumentCreateOrchestrationService documentCreateOrchestrationService;
 
     @PostMapping("/v1/documents")
     @Operation(
             summary = "문서 생성",
             description = """
                     ### 개요
-                    - 새 문서를 저장하고 외부 AI 종합평가/요약/키워드까지 함께 반영한 뒤 ID를 반환합니다.
+                    - 새 문서를 저장하고 ID를 반환합니다.
 
                     ### 인증
                     - Authorization: Bearer {accessToken}
@@ -60,15 +58,12 @@ public class DocumentController {
                     - 200 OK
                     - data.id: 생성된 문서 ID
 
-                    ### 내부 처리
-                    - 문서 생성 후 외부 AI `evaluate`, `summarization/basic`, `summarization/keyword`를 순차 호출합니다.
-                    - `/check/new-text` 체크리스트 API는 호출하지 않습니다.
-                    - 외부 AI 호출 중 하나라도 실패하면 생성된 문서는 보상 삭제되고 요청 전체가 실패합니다.
+                    ### 후처리
+                    - 외부 AI 종합평가/요약/키워드 생성은 별도 `POST /api/v1/external-ai/generate-all` API를 호출해야 합니다.
+                    - 생성 API는 문서 저장만 담당합니다.
 
                     ### 오류
                     - TOKEN4030x: 토큰 누락/만료/위조
-                    - AI50201: 외부 AI 서버 호출 실패
-                    - AI50202: 외부 AI 서버 응답 처리 실패
                     - REQ40001: JSON 파싱 실패
                     - SERVER50001: 내부 서버 오류
                     """
@@ -77,8 +72,8 @@ public class DocumentController {
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CreateDocumentResponse dto = documentCreateOrchestrationService.createDocumentWithAi(user, request);
-        return ResponseEntity.ok(ApiResponse.ok(dto, "문서와 AI 결과가 저장되었습니다"));
+        CreateDocumentResponse dto = documentService.createDocument(user, request);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
 
