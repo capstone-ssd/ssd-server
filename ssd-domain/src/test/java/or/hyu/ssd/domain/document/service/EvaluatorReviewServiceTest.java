@@ -121,11 +121,11 @@ class EvaluatorReviewServiceTest {
     }
 
     @Test
-    @DisplayName("문서 리뷰 목록 조회는 문서 평균 점수와 각 평가자 총점을 반환한다")
+    @DisplayName("문서 리뷰 목록 조회는 문서 캐시값이 stale여도 실데이터 기준 평균을 반환한다")
     void list_returnsSummaryAndItems() {
         Member owner = member(1L, "owner@example.com");
         Document document = document(10L, owner);
-        document.updateReviewSummary(80.0, 70.0, 60.0, 70.0, 2);
+        document.updateReviewSummary(100.0, 100.0, 100.0, 100.0, 1);
         EvaluatorReview first = EvaluatorReview.of(80, 70, 60, "의견1", document, member(2L, "first@example.com"));
         EvaluatorReview second = EvaluatorReview.of(90, 80, 70, "의견2", document, member(3L, "second@example.com"));
 
@@ -135,7 +135,7 @@ class EvaluatorReviewServiceTest {
         EvaluatorReviewListResponse response = evaluatorReviewService.list(10L, new CustomUserDetails(owner));
 
         assertThat(response.documentId()).isEqualTo(10L);
-        assertThat(response.averageTotalScore()).isEqualTo(70.0);
+        assertThat(response.averageTotalScore()).isEqualTo(75.0);
         assertThat(response.reviewCount()).isEqualTo(2);
         assertThat(response.reviews()).hasSize(2);
         assertThat(response.reviews().get(0).reviewerName()).isEqualTo("사용자2");

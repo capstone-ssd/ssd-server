@@ -83,8 +83,11 @@ public class EvaluatorReviewService {
                 .map(EvaluatorReviewListItemResponse::of)
                 .toList();
 
-        double averageTotalScore = document.getReviewTotalAvg() == null ? 0.0 : document.getReviewTotalAvg();
-        int reviewCount = document.getReviewCount() == null ? 0 : document.getReviewCount();
+        double averageTotalScore = reviews.stream()
+                .mapToDouble(EvaluatorReview::getScoreTotal)
+                .average()
+                .orElse(0.0);
+        int reviewCount = reviews.size();
 
         return EvaluatorReviewListResponse.of(document.getId(), averageTotalScore, reviewCount, items);
     }
