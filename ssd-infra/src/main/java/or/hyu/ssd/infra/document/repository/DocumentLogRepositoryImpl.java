@@ -20,8 +20,8 @@ public class DocumentLogRepositoryImpl implements DocumentLogRepository {
     }
 
     @Override
-    public List<DocumentLog> findAllByDocumentOrderByCreatedAtAsc(Document document) {
-        return documentLogJpaRepository.findAllByDocumentOrderByCreatedAtAsc(document);
+    public List<DocumentLog> findAllByDocumentOrderByCreatedAtDesc(Document document) {
+        return documentLogJpaRepository.findAllByDocumentOrderByCreatedAtDesc(document);
     }
 
     @Override

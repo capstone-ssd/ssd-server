@@ -27,6 +27,11 @@ public class EvaluatorReviewRepositoryImpl implements EvaluatorReviewRepository 
     }
 
     @Override
+    public List<EvaluatorReview> findAllByDocumentOrderByUpdatedAtDesc(Document document) {
+        return evaluatorReviewJpaRepository.findAllByDocumentOrderByUpdatedAtDesc(document);
+    }
+
+    @Override
     public boolean existsByDocumentAndReviewer(Document document, Member reviewer) {
         return evaluatorReviewJpaRepository.existsByDocumentAndReviewer(document, reviewer);
     }
@@ -34,5 +39,15 @@ public class EvaluatorReviewRepositoryImpl implements EvaluatorReviewRepository 
     @Override
     public EvaluatorReview save(EvaluatorReview review) {
         return evaluatorReviewJpaRepository.save(review);
+    }
+
+    @Override
+    public void delete(EvaluatorReview review) {
+        evaluatorReviewJpaRepository.delete(review);
+    }
+
+    @Override
+    public void deleteAllByDocument(Document document) {
+        evaluatorReviewJpaRepository.deleteAllByDocument(document);
     }
 }

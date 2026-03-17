@@ -19,6 +19,7 @@ import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
+import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
@@ -46,6 +47,7 @@ public class DocumentService {
     private final DocumentParagraphRepository documentParagraphRepository;
     private final DocumentCommentRepository documentCommentRepository;
     private final DocumentLogRepository documentLogRepository;
+    private final EvaluatorReviewRepository evaluatorReviewRepository;
     private final FolderRepository folderRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
 
@@ -106,6 +108,7 @@ public class DocumentService {
         documentParagraphRepository.deleteAllByDocument(doc);
         documentCommentRepository.deleteAllByDocument(doc);
         documentLogRepository.deleteAllByDocument(doc);
+        evaluatorReviewRepository.deleteAllByDocument(doc);
         documentRepository.delete(doc);
     }
 
@@ -310,7 +313,7 @@ public class DocumentService {
 
     private void saveDocumentLog(Document doc, CustomUserDetails user) {
         String editorName = resolveEditorName(user);
-        documentLogRepository.save(DocumentLog.of(editorName, doc));
+        documentLogRepository.save(DocumentLog.of(editorName, resolveEditorEmail(user), doc));
     }
 
     private String resolveEditorName(CustomUserDetails user) {
@@ -326,5 +329,13 @@ public class DocumentService {
             return email.trim();
         }
         return "Unknown";
+    }
+
+    private String resolveEditorEmail(CustomUserDetails user) {
+        if (user == null || user.getMember() == null) {
+            return null;
+        }
+        String email = user.getMember().getEmail();
+        return email == null || email.isBlank() ? null : email.trim();
     }
 }

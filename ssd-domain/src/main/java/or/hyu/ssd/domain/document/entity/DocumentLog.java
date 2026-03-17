@@ -27,6 +27,10 @@ public class DocumentLog extends BaseEntity {
     @Column(name = "editor_name", nullable = false, length = 100)
     private String editorName;
 
+    @Comment("수정한 사용자 이메일 (입력: member.email)")
+    @Column(name = "editor_email", length = 150)
+    private String editorEmail;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = false)
     private Document document;
@@ -34,9 +38,10 @@ public class DocumentLog extends BaseEntity {
     @Version
     private Long version;
 
-    public static DocumentLog of(String editorName, Document document) {
+    public static DocumentLog of(String editorName, String editorEmail, Document document) {
         return DocumentLog.builder()
                 .editorName(editorName)
+                .editorEmail(editorEmail)
                 .document(document)
                 .build();
     }
