@@ -72,8 +72,8 @@ class DocumentServiceTest {
                 null,
                 "   ",
                 List.of(
-                        new CreateDocumentParagraphRequest("첫 문단 제목", "BODY", 99),
-                        new CreateDocumentParagraphRequest("둘째 문단", "BODY", 100)
+                        new CreateDocumentParagraphRequest("첫 문단 제목", "#", 99),
+                        new CreateDocumentParagraphRequest("둘째 문단", "", 100)
                 ),
                 0L
         );
@@ -119,25 +119,6 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("updateDocument()는 수정할 값이 하나도 없으면 예외를 던진다")
-    void updateDocument_throwsWhenRequestHasNoChanges() {
-        Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
-        Document document = document(42L, member);
-        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
-
-        assertThatThrownBy(() -> documentService.updateDocument(
-                42L,
-                user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest(
-                        null, null, null, null, null, null, null
-                )
-        ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
-                .hasMessage("수정할 값을 하나 이상 입력해 주세요");
-    }
-
-    @Test
     @DisplayName("updateDocument()는 공백 제목이나 공백 본문을 거부한다")
     void updateDocument_rejectsBlankFields() {
         Member member = member(1L);
@@ -148,8 +129,8 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest(
-                        "   ", null, null, null, null, null, null
+                new CreateDocumentRequest(
+                        "   ", "본문", null, null
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
@@ -158,12 +139,55 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest(
-                        null, "   ", null, null, null, null, null
+                new CreateDocumentRequest(
+                        null, "   ", null, null
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
                 .hasMessage("내용은 공백일 수 없습니다");
+    }
+
+
+    @Test
+    @DisplayName("updateDocument()는 title이 null이면 기존 제목을 유지하고 생성 스펙 기준으로 문단을 다시 저장한다")
+    void updateDocument_keepsTitleAndResavesParagraphsWithCreateSpec() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Document document = document(42L, member);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        documentService.updateDocument(
+                42L,
+                user,
+                new CreateDocumentRequest(
+                        null,
+                        "새 본문",
+                        List.of(
+                                new CreateDocumentParagraphRequest("새 문단 1", "#", 10),
+                                new CreateDocumentParagraphRequest("새 문단 2", "", 20)
+                        ),
+                        0L
+                )
+        );
+
+        assertThat(document.getTitle()).isEqualTo("문서 제목");
+        assertThat(document.getContent()).isEqualTo("새 본문");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Iterable<DocumentParagraph>> paragraphCaptor =
+                (ArgumentCaptor<Iterable<DocumentParagraph>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Iterable.class);
+        verify(documentParagraphRepository).deleteAllByDocument(document);
+        verify(documentParagraphRepository).saveAll(paragraphCaptor.capture());
+
+        List<DocumentParagraph> savedParagraphs = new ArrayList<>();
+        paragraphCaptor.getValue().forEach(savedParagraphs::add);
+        assertThat(savedParagraphs)
+                .extracting(DocumentParagraph::getPageNumber)
+                .containsExactly(1, 1);
+        assertThat(savedParagraphs)
+                .extracting(DocumentParagraph::getBlockId)
+                .containsExactly(1, 2);
     }
 
     private Document document(Long id, Member member) {
