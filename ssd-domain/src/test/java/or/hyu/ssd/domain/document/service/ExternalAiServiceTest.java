@@ -177,7 +177,7 @@ class ExternalAiServiceTest {
         CustomUserDetails user = new CustomUserDetails(member);
 
         assertThatThrownBy(() -> externalAiService.evaluate(new ExternalDocumentIdRequest("abc"), user))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("docId는 1 이상의 숫자여야 합니다");
     }
 

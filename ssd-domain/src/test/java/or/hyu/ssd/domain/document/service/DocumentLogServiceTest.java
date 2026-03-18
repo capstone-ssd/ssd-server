@@ -44,6 +44,8 @@ class DocumentLogServiceTest {
         DocumentLog first = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
+                .deletedBlockCount(1)
+                .createdBlockCount(2)
                 .document(document)
                 .build();
         setCreatedAt(first, LocalDateTime.of(2026, 3, 17, 15, 10));
@@ -51,6 +53,8 @@ class DocumentLogServiceTest {
         DocumentLog second = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
+                .deletedBlockCount(0)
+                .createdBlockCount(1)
                 .document(document)
                 .build();
         setCreatedAt(second, LocalDateTime.of(2026, 3, 17, 9, 5));
@@ -58,6 +62,8 @@ class DocumentLogServiceTest {
         DocumentLog third = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
+                .deletedBlockCount(2)
+                .createdBlockCount(0)
                 .document(document)
                 .build();
         setCreatedAt(third, LocalDateTime.of(2026, 3, 16, 18, 0));
@@ -72,6 +78,8 @@ class DocumentLogServiceTest {
         assertThat(response.records().get(0).savedDate()).isEqualTo("2026-03-17");
         assertThat(response.records().get(0).logs()).hasSize(2);
         assertThat(response.records().get(0).logs().get(0).savedTime()).isEqualTo("15:10");
+        assertThat(response.records().get(0).logs().get(0).deletedBlockCount()).isEqualTo(1);
+        assertThat(response.records().get(0).logs().get(0).createdBlockCount()).isEqualTo(2);
         assertThat(response.records().get(1).savedDate()).isEqualTo("2026-03-16");
     }
 
@@ -85,7 +93,7 @@ class DocumentLogServiceTest {
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
         assertThatThrownBy(() -> documentLogService.list(10L, new CustomUserDetails(other)))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
 

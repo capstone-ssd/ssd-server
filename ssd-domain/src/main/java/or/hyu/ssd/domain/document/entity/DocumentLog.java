@@ -31,6 +31,14 @@ public class DocumentLog extends BaseEntity {
     @Column(name = "editor_email", length = 150)
     private String editorEmail;
 
+    @Comment("마지막 수정에서 삭제된 블록 개수")
+    @Column(name = "deleted_block_count", nullable = false)
+    private int deletedBlockCount;
+
+    @Comment("마지막 수정에서 생성된 블록 개수")
+    @Column(name = "created_block_count", nullable = false)
+    private int createdBlockCount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = false)
     private Document document;
@@ -39,9 +47,15 @@ public class DocumentLog extends BaseEntity {
     private Long version;
 
     public static DocumentLog of(String editorName, String editorEmail, Document document) {
+        return of(editorName, editorEmail, 0, 0, document);
+    }
+
+    public static DocumentLog of(String editorName, String editorEmail, int deletedBlockCount, int createdBlockCount, Document document) {
         return DocumentLog.builder()
                 .editorName(editorName)
                 .editorEmail(editorEmail)
+                .deletedBlockCount(deletedBlockCount)
+                .createdBlockCount(createdBlockCount)
                 .document(document)
                 .build();
     }

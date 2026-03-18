@@ -10,7 +10,7 @@ import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,12 +58,12 @@ public class DocumentLogService {
 
     private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
         Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
         if (user == null || user.getMember() == null || document.getMember() == null) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         if (!document.getMember().getId().equals(user.getMember().getId())) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return document;
     }

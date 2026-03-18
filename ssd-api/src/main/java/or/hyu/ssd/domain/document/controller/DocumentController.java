@@ -93,6 +93,8 @@ public class DocumentController {
                       - text (string, required): 새 본문
                       - paragraphs (array, optional): 문단 메타데이터 배열 (content, role, blockId만 입력. pageNumber는 수정 API에서도 받지 않으며 1로 저장)
                         - role 허용값: "", "#", "##", "###", "####", "#####", "######"
+                        - 기존 문단은 기존 blockId를 그대로 보내야 하며, 새 문단은 새 blockId를 사용합니다.
+                        - 요청에서 빠진 blockId에 달린 주석은 함께 삭제됩니다.
                       - folderId (number, optional): 폴더 ID (0이면 루트로 이동)
 
                     ### 제외 필드
