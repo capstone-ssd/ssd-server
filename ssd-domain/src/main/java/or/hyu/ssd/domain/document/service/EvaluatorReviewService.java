@@ -14,7 +14,7 @@ import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.global.api.handler.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +33,7 @@ public class EvaluatorReviewService {
         Member reviewer = getReviewer(user);
 
         if (evaluatorReviewRepository.existsByDocumentAndReviewer(document, reviewer)) {
-            throw new UserExceptionHandler(ErrorCode.REVIEW_ALREADY_EXISTS);
+            throw new DomainException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
         EvaluatorReview review = EvaluatorReview.of(
@@ -53,7 +53,7 @@ public class EvaluatorReviewService {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new DomainException(ErrorCode.REVIEW_NOT_FOUND));
 
         review.updateScores(
                 request.feasibility(),
@@ -71,7 +71,7 @@ public class EvaluatorReviewService {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new DomainException(ErrorCode.REVIEW_NOT_FOUND));
         return EvaluatorReviewDetailResponse.of(review);
     }
 
@@ -96,7 +96,7 @@ public class EvaluatorReviewService {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new DomainException(ErrorCode.REVIEW_NOT_FOUND));
 
         evaluatorReviewRepository.delete(review);
         recalculateAverages(document);
@@ -119,21 +119,21 @@ public class EvaluatorReviewService {
 
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+                .orElseThrow(() -> new DomainException(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
     private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
         Document document = getDocument(documentId);
         Member member = getReviewer(user);
         if (document.getMember() == null || !document.getMember().getId().equals(member.getId())) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return document;
     }
 
     private Member getReviewer(CustomUserDetails user) {
         if (user == null || user.getMember() == null) {
-            throw new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND);
+            throw new DomainException(ErrorCode.MEMBER_NOT_FOUND);
         }
         return user.getMember();
     }

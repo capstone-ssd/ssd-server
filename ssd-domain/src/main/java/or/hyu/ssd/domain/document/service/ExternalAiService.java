@@ -27,7 +27,7 @@ import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.global.api.handler.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,7 +117,7 @@ public class ExternalAiService {
         List<DocumentParagraph> currentParagraphs =
                 documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
         if (currentParagraphs.isEmpty()) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
+            throw new DomainException(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
         }
 
         List<DocumentParagraph> changedParagraphs = findChangedParagraphs(doc, currentParagraphs);
@@ -182,19 +182,19 @@ public class ExternalAiService {
 
     private Document getOwnedDocument(Long docId, Long memberId) {
         Document doc = documentRepository.findById(docId)
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.DOCUMENT_NOT_FOUND));
+                .orElseThrow(() -> new DomainException(ErrorCode.DOCUMENT_NOT_FOUND));
         if (doc.getMember() == null || doc.getMember().getId() == null) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         if (!doc.getMember().getId().equals(memberId)) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return doc;
     }
 
     private Long getMemberId(CustomUserDetails user) {
         if (user == null || user.getMember() == null || user.getMember().getId() == null) {
-            throw new UserExceptionHandler(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return user.getMember().getId();
     }
@@ -207,7 +207,7 @@ public class ExternalAiService {
             }
             return docId;
         } catch (Exception e) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "docId는 1 이상의 숫자여야 합니다");
+            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "docId는 1 이상의 숫자여야 합니다");
         }
     }
 

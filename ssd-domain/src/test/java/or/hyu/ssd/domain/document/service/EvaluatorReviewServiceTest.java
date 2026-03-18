@@ -51,7 +51,7 @@ class EvaluatorReviewServiceTest {
                 new CustomUserDetails(member),
                 new EvaluatorReviewCreateRequest(80, 90, 70, "좋은 사업입니다")
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
                 .hasMessage("이미 작성한 리뷰가 존재합니다");
     }
 
@@ -116,7 +116,7 @@ class EvaluatorReviewServiceTest {
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
         assertThatThrownBy(() -> evaluatorReviewService.list(10L, new CustomUserDetails(other)))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
 

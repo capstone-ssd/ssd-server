@@ -46,7 +46,7 @@ class DocumentCommentServiceTest {
                 new CustomUserDetails(other),
                 new DocumentCommentRequest(1, "주석")
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
 
@@ -62,7 +62,7 @@ class DocumentCommentServiceTest {
                 10L,
                 new CustomUserDetails(other)
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
 
