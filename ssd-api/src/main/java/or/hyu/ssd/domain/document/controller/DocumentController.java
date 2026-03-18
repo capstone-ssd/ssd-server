@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.service.DocumentService;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
@@ -82,7 +81,7 @@ public class DocumentController {
             summary = "문서 수정",
             description = """
                     ### 개요
-                    - 문서 ID로 부분/전체 수정합니다. Body에 포함된 필드만 변경됩니다.
+                    - 문서 ID로 본문/제목/문단/폴더를 생성 API와 동일한 스펙으로 교체합니다.
 
                     ### 인증
                     - Authorization: Bearer {accessToken} (문서 작성자만)
@@ -90,14 +89,14 @@ public class DocumentController {
                     ### 요청
                     - Path: /api/v1/documents/{id}
                     - Body(JSON, required)
-                      - title (string): 새 제목
-                      - text (string): 새 본문
-                      - summary (string): 요약 본문
-                      - details (string): 상세 요약
-                      - folderId (number): 폴더 ID (0이면 루트로 이동)
-                      - bookmark (boolean): 즐겨찾기 여부
-                      - paragraphs (array): 문단 메타데이터 배열 (blockId는 서버가 1..n으로 자동 부여)
+                      - title (string, optional): 제목. null이면 기존 제목 유지
+                      - text (string, required): 새 본문
+                      - paragraphs (array, optional): 문단 메타데이터 배열 (content, role, blockId만 입력. pageNumber는 수정 API에서도 받지 않으며 1로 저장)
                         - role 허용값: "", "#", "##", "###", "####", "#####", "######"
+                      - folderId (number, optional): 폴더 ID (0이면 루트로 이동)
+
+                    ### 제외 필드
+                    - summary, details, shortSummary, keywords, 외부 AI 평가값, checklist, bookmark는 이 API로 수정하지 않습니다.
 
                     ### 응답
                     - 200 OK
@@ -113,7 +112,7 @@ public class DocumentController {
     public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
             @Parameter(description = "수정할 문서 ID", example = "42")
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
-            @Valid @RequestBody UpdateDocumentRequest request,
+            @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateDocumentResponse dto = documentService.updateDocument(id, user, request);

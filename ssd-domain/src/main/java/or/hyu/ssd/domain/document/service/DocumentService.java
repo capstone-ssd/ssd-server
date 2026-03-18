@@ -6,7 +6,6 @@ import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentParagraphDto;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
@@ -67,7 +66,7 @@ public class DocumentService {
         return CreateDocumentResponse.of(saved.getId());
     }
 
-    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
+    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, CreateDocumentRequest req) {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -78,14 +77,15 @@ public class DocumentService {
         }
         validateUpdateRequest(req);
 
-        doc.updateIfPresent(req.title(), req.text(), req.summary(), req.details(), req.bookmark());
+        String updatedTitle = resolveUpdatedTitle(doc.getTitle(), req.title());
+        doc.updateIfPresent(updatedTitle, req.text(), null, null, null);
         if (req.folderId() != null) {
             Folder folder = resolveFolderOrNull(user, req.folderId());
             doc.updateFolder(folder);
         }
         if (req.paragraphs() != null) {
             documentParagraphRepository.deleteAllByDocument(doc);
-            saveParagraphsIfPresent(doc, req.paragraphs());
+            saveCreateParagraphsIfPresent(doc, req.paragraphs());
         }
         saveDocumentLog(doc, user);
 
@@ -216,30 +216,22 @@ public class DocumentService {
         return "Untitled";
     }
 
-    private void validateUpdateRequest(UpdateDocumentRequest req) {
+    private String resolveUpdatedTitle(String currentTitle, String requestedTitle) {
+        String title = trimOrNull(requestedTitle);
+        return title != null ? title : currentTitle;
+    }
+
+    private void validateUpdateRequest(CreateDocumentRequest req) {
         if (req == null) {
             throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
         }
         if (isBlankProvided(req.title())) {
             throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "제목은 공백일 수 없습니다");
         }
-        if (isBlankProvided(req.text())) {
+        if (req.text() == null || req.text().trim().isEmpty()) {
             throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
         }
         validateFolderId(req.folderId());
-        if (!hasChanges(req)) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정할 값을 하나 이상 입력해 주세요");
-        }
-    }
-
-    private boolean hasChanges(UpdateDocumentRequest req) {
-        return req.title() != null
-                || req.text() != null
-                || req.summary() != null
-                || req.details() != null
-                || req.folderId() != null
-                || req.bookmark() != null
-                || req.paragraphs() != null;
     }
 
     private void validateFolderId(Long folderId) {
@@ -287,20 +279,6 @@ public class DocumentService {
         int blockId = 1;
         for (CreateDocumentParagraphRequest p : paragraphs) {
             entities.add(DocumentParagraph.of(p.content(), p.role(), 1, blockId++, doc));
-        }
-        documentParagraphRepository.saveAll(entities);
-    }
-
-    private void saveParagraphsIfPresent(Document doc, List<DocumentParagraphDto> paragraphs) {
-        if (paragraphs == null || paragraphs.isEmpty()) {
-            return;
-        }
-        List<DocumentParagraph> entities = new ArrayList<>(paragraphs.size());
-
-        // blockId를 서버에서 임의로 증가시킵니다
-        int blockId = 1;
-        for (DocumentParagraphDto p : paragraphs) {
-            entities.add(DocumentParagraph.of(p.content(), p.role(), p.pageNumber(), blockId++, doc));
         }
         documentParagraphRepository.saveAll(entities);
     }
