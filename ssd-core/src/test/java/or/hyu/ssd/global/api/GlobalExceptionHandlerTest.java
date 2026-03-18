@@ -11,7 +11,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import or.hyu.ssd.global.alert.ErrorAlertContext;
 import or.hyu.ssd.global.alert.ErrorAlertNotifier;
-import or.hyu.ssd.global.api.handler.DomainException;
+import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -39,7 +39,7 @@ class GlobalExceptionHandlerTest {
         GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
         HttpServletRequest request = request("POST", "/api/v1/external-ai/evaluate");
 
-        handler.handleGeneralException(new DomainException(ErrorCode.EXTERNAL_AI_CALL_FAILED), request);
+        handler.handleGeneralException(new DocumentException(ErrorCode.EXTERNAL_AI_CALL_FAILED), request);
 
         ArgumentCaptor<ErrorAlertContext> contextCaptor = ArgumentCaptor.forClass(ErrorAlertContext.class);
         verify(errorAlertNotifier).notify(contextCaptor.capture());

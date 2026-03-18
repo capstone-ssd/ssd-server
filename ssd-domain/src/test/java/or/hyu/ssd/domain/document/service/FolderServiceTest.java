@@ -106,7 +106,7 @@ class FolderServiceTest {
                 user,
                 new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest(null, null, null)
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정할 값을 하나 이상 입력해 주세요");
     }
 
@@ -123,7 +123,7 @@ class FolderServiceTest {
                 user,
                 new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest("   ", null, null)
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("폴더명은 공백일 수 없습니다");
     }
 

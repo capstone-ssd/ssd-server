@@ -12,7 +12,7 @@ import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DomainException;
+import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,7 +100,7 @@ public class ExternalAiPersistenceService {
 
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
-                .orElseThrow(() -> new DomainException(ErrorCode.DOCUMENT_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
     private void refreshAiCheckSnapshots(Document doc, List<DocumentParagraph> currentParagraphs) {

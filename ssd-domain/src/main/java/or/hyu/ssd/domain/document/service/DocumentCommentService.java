@@ -13,7 +13,7 @@ import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DomainException;
+import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,41 +92,41 @@ public class DocumentCommentService {
 
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
-                .orElseThrow(() -> new DomainException(ErrorCode.DOCUMENT_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
     private DocumentComment getComment(Long commentId) {
         return documentCommentRepository.findById(commentId)
-                .orElseThrow(() -> new DomainException(ErrorCode.COMMENT_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.COMMENT_NOT_FOUND));
     }
 
     private void ensureAuthenticated(CustomUserDetails user) {
         if (user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.MEMBER_NOT_FOUND);
+            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
     }
 
     private void ensureCommentOwner(DocumentComment comment, CustomUserDetails user) {
         if (comment.getMember() == null) {
-            throw new DomainException(ErrorCode.COMMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.COMMENT_FORBIDDEN);
         }
         if (!comment.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.COMMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.COMMENT_FORBIDDEN);
         }
     }
 
     private void ensureDocumentOwner(Document document, CustomUserDetails user) {
         if (document.getMember() == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         if (!document.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
     }
 
     private void ensureBlockExists(Document doc, int blockId) {
         if (documentParagraphRepository.findByDocumentAndBlockId(doc, blockId).isEmpty()) {
-            throw new DomainException(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
+            throw new DocumentException(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
         }
     }
 }

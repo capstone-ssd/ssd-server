@@ -24,7 +24,7 @@ import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DomainException;
+import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +55,7 @@ public class DocumentService {
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
         if (user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.MEMBER_NOT_FOUND);
+            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
         validateFolderId(req.folderId());
 
@@ -73,10 +73,10 @@ public class DocumentService {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         validateUpdateRequest(req);
 
@@ -102,10 +102,10 @@ public class DocumentService {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
         checkListRepository.deleteAllByDocument(doc);
@@ -123,10 +123,10 @@ public class DocumentService {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
         List<DocumentParagraphDto> paragraphs = fetchParagraphs(doc);
@@ -136,7 +136,7 @@ public class DocumentService {
     @Transactional(readOnly = true)
     public List<DocumentListItemResponse> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
         if (user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.MEMBER_NOT_FOUND);
+            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
 
         Sort sort = switch (sortOption) {
@@ -167,10 +167,10 @@ public class DocumentService {
             Document doc = getDocument(documentId);
 
             if (doc.getMember() == null || user == null || user.getMember() == null) {
-                throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+                throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
             }
             if (!doc.getMember().getId().equals(user.getMember().getId())) {
-                throw new DomainException(ErrorCode.DOCUMENT_FORBIDDEN);
+                throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
             }
 
             boolean newVal = !doc.isBookmark();
@@ -186,7 +186,7 @@ public class DocumentService {
 
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
-                .orElseThrow(() -> new DomainException(ErrorCode.DOCUMENT_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
     private Folder resolveFolderOrNull(CustomUserDetails user, Long folderId) {
@@ -194,12 +194,12 @@ public class DocumentService {
             return null;
         }
         Folder folder = folderRepository.findById(folderId)
-                .orElseThrow(() -> new DomainException(ErrorCode.FOLDER_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.FOLDER_NOT_FOUND));
         if (folder.getMember() == null || user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.FOLDER_FORBIDDEN);
+            throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
         if (!folder.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.FOLDER_FORBIDDEN);
+            throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
         return folder;
     }
@@ -229,20 +229,20 @@ public class DocumentService {
 
     private void validateUpdateRequest(CreateDocumentRequest req) {
         if (req == null) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
         }
         if (isBlankProvided(req.title())) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "제목은 공백일 수 없습니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "제목은 공백일 수 없습니다");
         }
         if (req.text() == null || req.text().trim().isEmpty()) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
         }
         validateFolderId(req.folderId());
     }
 
     private void validateFolderId(Long folderId) {
         if (folderId != null && folderId < 0L) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더 ID는 0 이상이어야 합니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더 ID는 0 이상이어야 합니다");
         }
     }
 
@@ -325,13 +325,13 @@ public class DocumentService {
         for (CreateDocumentParagraphRequest paragraph : paragraphs) {
             Integer blockId = paragraph.blockId();
             if (blockId == null) {
-                throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청의 모든 문단에는 blockId가 필요합니다");
+                throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청의 모든 문단에는 blockId가 필요합니다");
             }
             if (blockId <= 0) {
-                throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "blockId는 1 이상이어야 합니다");
+                throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "blockId는 1 이상이어야 합니다");
             }
             if (!requestedBlockIds.add(blockId)) {
-                throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청에 중복된 blockId가 있습니다");
+                throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청에 중복된 blockId가 있습니다");
             }
         }
         return requestedBlockIds;

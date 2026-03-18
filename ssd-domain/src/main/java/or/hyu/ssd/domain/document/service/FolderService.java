@@ -14,7 +14,7 @@ import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DomainException;
+import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,34 +139,34 @@ public class FolderService {
 
     private Folder getFolderOwned(Long folderId, CustomUserDetails user) {
         Folder folder = folderRepository.findById(folderId)
-                .orElseThrow(() -> new DomainException(ErrorCode.FOLDER_NOT_FOUND));
+                .orElseThrow(() -> new DocumentException(ErrorCode.FOLDER_NOT_FOUND));
         ensureOwner(folder, user);
         return folder;
     }
 
     private void ensureOwner(Folder folder, CustomUserDetails user) {
         if (folder.getMember() == null || user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.FOLDER_FORBIDDEN);
+            throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
         if (!folder.getMember().getId().equals(user.getMember().getId())) {
-            throw new DomainException(ErrorCode.FOLDER_FORBIDDEN);
+            throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
     }
 
     private void ensureAuthenticated(CustomUserDetails user) {
         if (user == null || user.getMember() == null) {
-            throw new DomainException(ErrorCode.MEMBER_NOT_FOUND);
+            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
     }
 
     private void ensureMovable(Folder folder, Folder newParent) {
         if (folder.getId().equals(newParent.getId())) {
-            throw new DomainException(ErrorCode.FOLDER_INVALID_PARENT);
+            throw new DocumentException(ErrorCode.FOLDER_INVALID_PARENT);
         }
         Folder cursor = newParent;
         while (cursor != null) {
             if (cursor.getId().equals(folder.getId())) {
-                throw new DomainException(ErrorCode.FOLDER_INVALID_PARENT);
+                throw new DocumentException(ErrorCode.FOLDER_INVALID_PARENT);
             }
             cursor = cursor.getParent();
         }
@@ -182,20 +182,20 @@ public class FolderService {
 
     private void validateUpdateRequest(UpdateFolderRequest request) {
         if (request == null) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
         }
         if (request.name() != null && request.name().trim().isEmpty()) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더명은 공백일 수 없습니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더명은 공백일 수 없습니다");
         }
         validateParentId(request.parentId());
         if (request.name() == null && request.color() == null && request.parentId() == null) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정할 값을 하나 이상 입력해 주세요");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정할 값을 하나 이상 입력해 주세요");
         }
     }
 
     private void validateParentId(Long parentId) {
         if (parentId != null && parentId < 0L) {
-            throw new DomainException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "상위 폴더 ID는 0 이상이어야 합니다");
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "상위 폴더 ID는 0 이상이어야 합니다");
         }
     }
 

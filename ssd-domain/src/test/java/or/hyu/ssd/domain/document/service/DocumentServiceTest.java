@@ -135,7 +135,7 @@ class DocumentServiceTest {
                         "   ", "본문", null, null
                 )
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("제목은 공백일 수 없습니다");
 
         assertThatThrownBy(() -> documentService.updateDocument(
@@ -145,7 +145,7 @@ class DocumentServiceTest {
                         null, "   ", null, null
                 )
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("내용은 공백일 수 없습니다");
     }
 
@@ -228,7 +228,7 @@ class DocumentServiceTest {
                         0L
                 )
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정 요청의 모든 문단에는 blockId가 필요합니다");
 
         assertThatThrownBy(() -> documentService.updateDocument(
@@ -244,7 +244,7 @@ class DocumentServiceTest {
                         0L
                 )
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DomainException.class)
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정 요청에 중복된 blockId가 있습니다");
     }
 
