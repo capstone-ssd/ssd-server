@@ -27,12 +27,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -149,12 +151,17 @@ class DocumentServiceTest {
 
 
     @Test
-    @DisplayName("updateDocument()는 title이 null이면 기존 제목을 유지하고 생성 스펙 기준으로 문단을 다시 저장한다")
-    void updateDocument_keepsTitleAndResavesParagraphsWithCreateSpec() {
+    @DisplayName("updateDocument()는 요청 blockId를 유지하고 삭제된 block 주석을 정리하며 변경 개수를 기록한다")
+    void updateDocument_preservesBlockIdsAndDeletesRemovedComments() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+                .thenReturn(List.of(
+                        DocumentParagraph.of("기존 문단 1", "#", 1, 1, document),
+                        DocumentParagraph.of("기존 문단 2", "##", 1, 2, document)
+                ));
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         documentService.updateDocument(
@@ -164,8 +171,8 @@ class DocumentServiceTest {
                         null,
                         "새 본문",
                         List.of(
-                                new CreateDocumentParagraphRequest("새 문단 1", "#", 10),
-                                new CreateDocumentParagraphRequest("새 문단 2", "", 20)
+                                new CreateDocumentParagraphRequest("기존 문단 1 수정", "#", 1),
+                                new CreateDocumentParagraphRequest("새 문단", "", 3)
                         ),
                         0L
                 )
@@ -187,7 +194,58 @@ class DocumentServiceTest {
                 .containsExactly(1, 1);
         assertThat(savedParagraphs)
                 .extracting(DocumentParagraph::getBlockId)
-                .containsExactly(1, 2);
+                .containsExactly(1, 3);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Collection<Integer>> removedBlockIdsCaptor =
+                (ArgumentCaptor<Collection<Integer>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Collection.class);
+        verify(documentCommentRepository).deleteAllByDocumentAndBlockIdIn(eq(document), removedBlockIdsCaptor.capture());
+        assertThat(removedBlockIdsCaptor.getValue()).containsExactly(2);
+
+        ArgumentCaptor<or.hyu.ssd.domain.document.entity.DocumentLog> documentLogCaptor =
+                ArgumentCaptor.forClass(or.hyu.ssd.domain.document.entity.DocumentLog.class);
+        verify(documentLogRepository).save(documentLogCaptor.capture());
+        assertThat(documentLogCaptor.getValue().getDeletedBlockCount()).isEqualTo(1);
+        assertThat(documentLogCaptor.getValue().getCreatedBlockCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("updateDocument()는 수정 요청 문단의 blockId가 없거나 중복되면 거부한다")
+    void updateDocument_rejectsInvalidBlockIds() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Document document = document(42L, member);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> documentService.updateDocument(
+                42L,
+                user,
+                new CreateDocumentRequest(
+                        null,
+                        "본문",
+                        List.of(new CreateDocumentParagraphRequest("문단", "#", null)),
+                        0L
+                )
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("수정 요청의 모든 문단에는 blockId가 필요합니다");
+
+        assertThatThrownBy(() -> documentService.updateDocument(
+                42L,
+                user,
+                new CreateDocumentRequest(
+                        null,
+                        "본문",
+                        List.of(
+                                new CreateDocumentParagraphRequest("문단 1", "#", 1),
+                                new CreateDocumentParagraphRequest("문단 2", "##", 1)
+                        ),
+                        0L
+                )
+        ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .hasMessage("수정 요청에 중복된 blockId가 있습니다");
     }
 
     private Document document(Long id, Member member) {

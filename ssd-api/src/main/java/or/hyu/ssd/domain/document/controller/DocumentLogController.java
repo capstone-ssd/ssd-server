@@ -46,6 +46,8 @@ public class DocumentLogController {
                     - data.records[].logs[].savedTime: 저장 시간
                     - data.records[].logs[].editorName: 저장한 사람 이름
                     - data.records[].logs[].editorEmail: 저장한 사람 이메일
+                    - data.records[].logs[].deletedBlockCount: 마지막 수정에서 삭제된 block 개수
+                    - data.records[].logs[].createdBlockCount: 마지막 수정에서 생성된 block 개수
                     """
     )
     public ResponseEntity<ApiResponse<DocumentLogResponse>> list(

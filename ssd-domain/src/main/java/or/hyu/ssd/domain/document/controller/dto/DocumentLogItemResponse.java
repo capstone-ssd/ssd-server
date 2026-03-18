@@ -8,7 +8,9 @@ import java.time.format.DateTimeFormatter;
 public record DocumentLogItemResponse(
         String savedTime,
         String editorName,
-        String editorEmail
+        String editorEmail,
+        int deletedBlockCount,
+        int createdBlockCount
 ) {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -16,7 +18,9 @@ public record DocumentLogItemResponse(
         return new DocumentLogItemResponse(
                 formatTime(log.getCreatedAt()),
                 log.getEditorName(),
-                log.getEditorEmail()
+                log.getEditorEmail(),
+                log.getDeletedBlockCount(),
+                log.getCreatedBlockCount()
         );
     }
 

@@ -7,6 +7,7 @@ import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.infra.document.repository.jpa.DocumentCommentJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +34,11 @@ public class DocumentCommentRepositoryImpl implements DocumentCommentRepository 
     @Override
     public void deleteAllByDocument(Document document) {
         documentCommentJpaRepository.deleteAllByDocument(document);
+    }
+
+    @Override
+    public void deleteAllByDocumentAndBlockIdIn(Document document, Collection<Integer> blockIds) {
+        documentCommentJpaRepository.deleteAllByDocumentAndBlockIdIn(document, blockIds);
     }
 
     @Override
