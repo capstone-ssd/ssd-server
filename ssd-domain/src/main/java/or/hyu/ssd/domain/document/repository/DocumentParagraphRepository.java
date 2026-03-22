@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface DocumentParagraphRepository {
     List<DocumentParagraph> saveAll(Iterable<DocumentParagraph> entities);
 
+    void flush();
+
     List<DocumentParagraph> findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(Document document);
 
     Optional<DocumentParagraph> findByDocumentAndBlockId(Document document, int blockId);

@@ -307,6 +307,7 @@ public class DocumentService {
         }
 
         documentParagraphRepository.deleteAllByDocument(doc);
+        documentParagraphRepository.flush();
         saveUpdatedParagraphs(doc, paragraphs);
 
         if (!removedBlockIds.isEmpty()) {

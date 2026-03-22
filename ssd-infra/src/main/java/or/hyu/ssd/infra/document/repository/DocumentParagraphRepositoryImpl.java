@@ -21,6 +21,11 @@ public class DocumentParagraphRepositoryImpl implements DocumentParagraphReposit
     }
 
     @Override
+    public void flush() {
+        documentParagraphJpaRepository.flush();
+    }
+
+    @Override
     public List<DocumentParagraph> findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(Document document) {
         return documentParagraphJpaRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document);
     }

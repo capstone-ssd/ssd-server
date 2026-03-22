@@ -149,7 +149,6 @@ class DocumentServiceTest {
                 .hasMessage("내용은 공백일 수 없습니다");
     }
 
-
     @Test
     @DisplayName("updateDocument()는 요청 blockId를 유지하고 삭제된 block 주석을 정리하며 변경 개수를 기록한다")
     void updateDocument_preservesBlockIdsAndDeletesRemovedComments() {
@@ -185,6 +184,7 @@ class DocumentServiceTest {
         ArgumentCaptor<Iterable<DocumentParagraph>> paragraphCaptor =
                 (ArgumentCaptor<Iterable<DocumentParagraph>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Iterable.class);
         verify(documentParagraphRepository).deleteAllByDocument(document);
+        verify(documentParagraphRepository).flush();
         verify(documentParagraphRepository).saveAll(paragraphCaptor.capture());
 
         List<DocumentParagraph> savedParagraphs = new ArrayList<>();
