@@ -107,8 +107,8 @@ public class EvaluatorReviewController {
             summary = "문서 리뷰 목록 조회",
             description = """
                     ### 개요
-                    - 문서 작성자가 해당 문서의 전체 리뷰 요약 목록을 조회합니다.
-                    - 모든 리뷰의 종합평점 평균과, 각 평가자의 이름/종합평점을 함께 반환합니다.
+                    - 문서 작성자가 해당 문서의 전체 리뷰 목록을 조회합니다.
+                    - 모든 리뷰의 종합평점 평균과 함께, 각 리뷰의 상세 정보(작성자, 이메일, 수정시각, 항목별 점수, 코멘트)를 반환합니다.
                     """
     )
     public ResponseEntity<ApiResponse<EvaluatorReviewListResponse>> list(
