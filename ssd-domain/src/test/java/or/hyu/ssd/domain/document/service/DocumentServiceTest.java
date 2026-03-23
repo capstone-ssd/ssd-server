@@ -3,6 +3,7 @@ package or.hyu.ssd.domain.document.service;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
@@ -131,8 +132,8 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new CreateDocumentRequest(
-                        "   ", "본문", null, null
+                new UpdateDocumentRequest(
+                        "   ", "본문", null
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
@@ -141,8 +142,8 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new CreateDocumentRequest(
-                        null, "   ", null, null
+                new UpdateDocumentRequest(
+                        null, "   ", null
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
@@ -166,14 +167,13 @@ class DocumentServiceTest {
         documentService.updateDocument(
                 42L,
                 user,
-                new CreateDocumentRequest(
+                new UpdateDocumentRequest(
                         null,
                         "새 본문",
                         List.of(
                                 new CreateDocumentParagraphRequest("기존 문단 1 수정", "#", 1),
                                 new CreateDocumentParagraphRequest("새 문단", "", 3)
-                        ),
-                        0L
+                        )
                 )
         );
 
@@ -221,11 +221,10 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new CreateDocumentRequest(
+                new UpdateDocumentRequest(
                         null,
                         "본문",
-                        List.of(new CreateDocumentParagraphRequest("문단", "#", null)),
-                        0L
+                        List.of(new CreateDocumentParagraphRequest("문단", "#", null))
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
@@ -234,14 +233,13 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new CreateDocumentRequest(
+                new UpdateDocumentRequest(
                         null,
                         "본문",
                         List.of(
                                 new CreateDocumentParagraphRequest("문단 1", "#", 1),
                                 new CreateDocumentParagraphRequest("문단 2", "##", 1)
-                        ),
-                        0L
+                        )
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)

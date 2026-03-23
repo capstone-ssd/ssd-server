@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.service.DocumentService;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
@@ -95,10 +96,10 @@ public class DocumentController {
                         - role 허용값: "", "#", "##", "###", "####", "#####", "######"
                         - 기존 문단은 기존 blockId를 그대로 보내야 하며, 새 문단은 새 blockId를 사용합니다.
                         - 요청에서 빠진 blockId에 달린 주석은 함께 삭제됩니다.
-                      - folderId (number, optional): 폴더 ID (0이면 루트로 이동)
 
                     ### 제외 필드
-                    - summary, details, shortSummary, keywords, 외부 AI 평가값, checklist, bookmark는 이 API로 수정하지 않습니다.
+                    - folderId, summary, details, shortSummary, keywords, 외부 AI 평가값, checklist, bookmark는 이 API로 수정하지 않습니다.
+                    - 문서 이동은 별도 폴더 API로 처리합니다.
 
                     ### 응답
                     - 200 OK
@@ -114,7 +115,7 @@ public class DocumentController {
     public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocument(
             @Parameter(description = "수정할 문서 ID", example = "42")
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
-            @Valid @RequestBody CreateDocumentRequest request,
+            @Valid @RequestBody UpdateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateDocumentResponse dto = documentService.updateDocument(id, user, request);
