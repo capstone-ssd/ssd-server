@@ -138,7 +138,14 @@ class EvaluatorReviewServiceTest {
         assertThat(response.averageTotalScore()).isEqualTo(75.0);
         assertThat(response.reviewCount()).isEqualTo(2);
         assertThat(response.reviews()).hasSize(2);
+        assertThat(response.reviews().get(0).reviewId()).isNull();
         assertThat(response.reviews().get(0).reviewerName()).isEqualTo("사용자2");
+        assertThat(response.reviews().get(0).reviewerEmail()).isEqualTo("first@example.com");
+        assertThat(response.reviews().get(0).feasibility()).isEqualTo(80);
+        assertThat(response.reviews().get(0).differentiation()).isEqualTo(70);
+        assertThat(response.reviews().get(0).financial()).isEqualTo(60);
+        assertThat(response.reviews().get(0).totalScore()).isEqualTo(70.0);
+        assertThat(response.reviews().get(0).comment()).isEqualTo("의견1");
     }
 
     private Document document(Long id, Member owner) {
