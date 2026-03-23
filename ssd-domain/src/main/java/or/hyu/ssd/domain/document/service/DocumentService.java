@@ -6,6 +6,7 @@ import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentParagraphDto;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.Document;
@@ -69,7 +70,7 @@ public class DocumentService {
         return CreateDocumentResponse.of(saved.getId());
     }
 
-    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, CreateDocumentRequest req) {
+    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -82,10 +83,6 @@ public class DocumentService {
 
         String updatedTitle = resolveUpdatedTitle(doc.getTitle(), req.title());
         doc.updateIfPresent(updatedTitle, req.text(), null, null, null);
-        if (req.folderId() != null) {
-            Folder folder = resolveFolderOrNull(user, req.folderId());
-            doc.updateFolder(folder);
-        }
         int deletedBlockCount = 0;
         int createdBlockCount = 0;
         if (req.paragraphs() != null) {
@@ -227,7 +224,7 @@ public class DocumentService {
         return title != null ? title : currentTitle;
     }
 
-    private void validateUpdateRequest(CreateDocumentRequest req) {
+    private void validateUpdateRequest(UpdateDocumentRequest req) {
         if (req == null) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
         }
@@ -237,7 +234,6 @@ public class DocumentService {
         if (req.text() == null || req.text().trim().isEmpty()) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
         }
-        validateFolderId(req.folderId());
     }
 
     private void validateFolderId(Long folderId) {
