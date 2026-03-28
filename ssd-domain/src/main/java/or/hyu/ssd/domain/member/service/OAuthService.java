@@ -64,15 +64,16 @@ public class OAuthService {
     }
 
     /**
-     * 카카오 로그인 시작(최종 리다이렉트 포함)
-     * - redirect 파라미터를 검증한 뒤 짧은 TTL의 state와 매핑합니다.
+     * 카카오 로그인 시작(고정 /redirect 리다이렉트)
+     * - 최종 클라이언트 리다이렉트 대상은 요청 Origin/Referer를 기준으로 {base}/redirect 로 계산합니다.
+     * - 카카오 콜백 redirect_uri는 항상 서버 콜백 URL을 사용합니다.
      * - 카카오 콜백은 기존 /oauth/kakao/callback 경로를 재사용합니다.
      */
-    public String requestRedirectWithClientRedirect(HttpServletRequest request, String redirectUri) {
-        String validatedRedirectUri = validateClientRedirectUri(redirectUri);
+    public String requestRedirectToFixedRedirect(HttpServletRequest request) {
+        String redirectUri = resolveClientRedirectUri(request);
         String state = UUID.randomUUID().toString();
-        oAuthRedirectStateRepository.save(state, validatedRedirectUri, oAuthProperties.getRedirectStateTtlSeconds());
-        return buildAuthorizeUrl(resolveDynamicCallbackUri(request), state);
+        oAuthRedirectStateRepository.save(state, redirectUri, oAuthProperties.getRedirectStateTtlSeconds());
+        return buildAuthorizeUrl(resolveServerCallbackUri(request), state);
     }
 
     /**
@@ -97,7 +98,7 @@ public class OAuthService {
         String redirectUri = oAuthRedirectStateRepository.consume(state)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'state' 파라미터가 올바르지 않습니다"));
 
-        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, resolveDynamicCallbackUri(request));
+        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, resolveServerCallbackUri(request));
         writeTokens(response, loginResult);
         response.setHeader("Location", buildRedirectLocation(redirectUri, loginResult));
         response.setStatus(HttpServletResponse.SC_FOUND);
@@ -195,6 +196,10 @@ public class OAuthService {
         return resolveRequestBase(request) + DYNAMIC_CALLBACK_PATH;
     }
 
+    private String resolveServerCallbackUri(HttpServletRequest request) {
+        return resolveServerBase(request) + DYNAMIC_CALLBACK_PATH;
+    }
+
     private String resolveRequestBase(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         if (StringUtils.hasText(origin)) {
@@ -222,45 +227,72 @@ public class OAuthService {
         return scheme + "://" + host + (isDefaultPort ? "" : ":" + port);
     }
 
+    private String resolveServerBase(HttpServletRequest request) {
+        String scheme = String.valueOf(request.getHeader("X-Forwarded-Proto"));
+        if (!StringUtils.hasText(scheme) || "null".equalsIgnoreCase(scheme)) {
+            scheme = request.getScheme();
+        }
+
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        if (StringUtils.hasText(forwardedHost)) {
+            return scheme + "://" + forwardedHost;
+        }
+
+        String host = request.getServerName();
+        int port = request.getServerPort();
+        boolean isDefaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
+        return scheme + "://" + host + (isDefaultPort ? "" : ":" + port);
+    }
+
     private boolean isAllowedOrigin(String origin) {
         List<String> allowed = oAuthProperties.getAllowedOrigins();
         return allowed == null || allowed.isEmpty() || allowed.contains(origin);
     }
 
-    private String validateClientRedirectUri(String redirectUri) {
-        if (!StringUtils.hasText(redirectUri)) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터가 필요합니다");
+    private String resolveClientRedirectUri(HttpServletRequest request) {
+        String base = resolveClientBase(request);
+        return base + "/redirect";
+    }
+
+    private String resolveClientBase(HttpServletRequest request) {
+        String origin = request.getHeader("Origin");
+        if (StringUtils.hasText(origin)) {
+            if (!isAllowedOrigin(origin)) {
+                throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "허용되지 않은 Origin 입니다");
+            }
+            return origin;
         }
 
-        URI uri;
-        try {
-            uri = URI.create(redirectUri);
-        } catch (IllegalArgumentException e) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터 형식이 올바르지 않습니다");
+        String referer = request.getHeader("Referer");
+        if (StringUtils.hasText(referer)) {
+            try {
+                URI refererUri = URI.create(referer);
+                String refererOrigin = normalizeOrigin(refererUri);
+                if (!isAllowedOrigin(refererOrigin)) {
+                    throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "허용되지 않은 Referer 입니다");
+                }
+                return refererOrigin;
+            } catch (IllegalArgumentException e) {
+                throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "Referer 형식이 올바르지 않습니다");
+            }
         }
 
-        String scheme = uri.getScheme();
-        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터는 http 또는 https만 허용됩니다");
-        }
-        if (!StringUtils.hasText(uri.getHost())) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터 형식이 올바르지 않습니다");
-        }
-
-        String origin = normalizeOrigin(uri);
-        if (!isAllowedOrigin(origin)) {
-            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터 origin이 허용되지 않습니다");
-        }
-        return redirectUri;
+        return resolveServerBase(request);
     }
 
     private String normalizeOrigin(URI uri) {
-        String scheme = uri.getScheme().toLowerCase();
+        String scheme = uri.getScheme();
+        if (!StringUtils.hasText(scheme) || !StringUtils.hasText(uri.getHost())) {
+            throw new IllegalArgumentException("Origin 형식이 올바르지 않습니다");
+        }
+
+        String normalizedScheme = scheme.toLowerCase();
         int port = uri.getPort();
         boolean isDefaultPort = port == -1
-                || ("http".equalsIgnoreCase(scheme) && port == 80)
-                || ("https".equalsIgnoreCase(scheme) && port == 443);
-        return scheme + "://" + uri.getHost() + (isDefaultPort ? "" : ":" + port);
+                || ("http".equalsIgnoreCase(normalizedScheme) && port == 80)
+                || ("https".equalsIgnoreCase(normalizedScheme) && port == 443);
+        return normalizedScheme + "://" + uri.getHost() + (isDefaultPort ? "" : ":" + port);
     }
 
     private String buildAuthorizeUrl(String redirectUri, String state) {

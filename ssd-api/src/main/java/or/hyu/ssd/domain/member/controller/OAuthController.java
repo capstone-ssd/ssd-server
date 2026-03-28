@@ -52,23 +52,23 @@ public class OAuthController {
 
     @GetMapping("/oauth/kakao/login")
     @Operation(
-            summary = "카카오 로그인 시작(최종 리다이렉트 포함)",
+            summary = "카카오 로그인 시작(고정 /redirect 리다이렉트)",
             description = """
                     ### 개요
-                    - 서버가 카카오 로그인과 JWT 발급까지 완료한 뒤, 최종 클라이언트 redirect 주소로 다시 리다이렉트합니다.
-                    - redirect 주소는 화이트리스트 origin 검증 후 state와 함께 저장됩니다.
+                    - 서버가 카카오 로그인과 JWT 발급까지 완료한 뒤, 최종 클라이언트의 `/redirect` 경로로 다시 리다이렉트합니다.
+                    - 최종 리다이렉트 대상은 요청 Origin/Referer를 기준으로 계산하고, 화이트리스트 origin 검증 후 state와 함께 저장됩니다.
+                    - 카카오 `redirect_uri`는 항상 서버 콜백(`/oauth/kakao/callback`)을 사용합니다.
 
                     ### 요청
-                    - GET /oauth/kakao/login?redirect=https://client.example.com/redirect
+                    - GET /oauth/kakao/login
 
                     ### 응답
                     - 302 Redirect: 카카오 인증 서버
                     """
     )
-    public void kakaoOAuthLoginStart(@RequestParam("redirect") String redirect,
-                                     HttpServletRequest request,
+    public void kakaoOAuthLoginStart(HttpServletRequest request,
                                      HttpServletResponse response) throws IOException {
-        String redirectAddress = oAuthService.requestRedirectWithClientRedirect(request, redirect);
+        String redirectAddress = oAuthService.requestRedirectToFixedRedirect(request);
         response.sendRedirect(redirectAddress);
     }
 

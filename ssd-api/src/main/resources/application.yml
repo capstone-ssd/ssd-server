@@ -71,6 +71,8 @@ app:
     allowed-origins:
       - http://localhost:5173
       - http://localhost:8080
+      - https://dev-api.simsaimdang.shop
+      - https://dev.simsaimdang.shop
   external-ai:
     base-url: ${EXTERNAL_AI_BASE_URL}
 

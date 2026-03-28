@@ -65,7 +65,8 @@ public class SecurityConfig {
                                 "http://localhost:5174",
                                 "http://localhost:1573",
                                 "https://domain.com",
-                                "https://dev-api.simsaimdang.shop"
+                                "https://dev-api.simsaimdang.shop",
+                                "https://dev.simsaimdang.shop"
                         ));
                         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                         configuration.setAllowCredentials(true);

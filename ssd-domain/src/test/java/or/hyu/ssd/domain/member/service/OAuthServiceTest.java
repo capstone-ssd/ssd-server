@@ -79,7 +79,8 @@ class OAuthServiceTest {
         oAuthProperties = new OAuthProperties();
         oAuthProperties.setAllowedOrigins(List.of(
                 "https://client.example.com",
-                "https://dev-api.simsaimdang.shop"
+                "https://dev-api.simsaimdang.shop",
+                "https://dev.simsaimdang.shop"
         ));
         oAuthProperties.setRedirectStateTtlSeconds(300L);
 
@@ -98,14 +99,17 @@ class OAuthServiceTest {
     }
 
     @Test
-    @DisplayName("requestRedirectWithClientRedirect()는 허용된 redirect를 state와 저장하고 카카오 authorize URL을 반환한다")
-    void requestRedirectWithClientRedirect_savesStateAndBuildsAuthorizeUrl() {
+    @DisplayName("requestRedirectToFixedRedirect()는 Origin 기준 /redirect를 state와 저장하고 카카오 authorize URL을 반환한다")
+    void requestRedirectToFixedRedirect_savesStateAndBuildsAuthorizeUrl() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setScheme("https");
-        request.setServerName("dev-api.simsaimdang.shop");
+        request.setServerName("api.example.com");
         request.setServerPort(443);
+        request.addHeader("Origin", "https://client.example.com");
+        request.addHeader("X-Forwarded-Proto", "https");
+        request.addHeader("X-Forwarded-Host", "dev-api.simsaimdang.shop");
 
-        String authorizeUrl = oAuthService.requestRedirectWithClientRedirect(request, "https://client.example.com/redirect");
+        String authorizeUrl = oAuthService.requestRedirectToFixedRedirect(request);
 
         ArgumentCaptor<String> stateCaptor = ArgumentCaptor.forClass(String.class);
         verify(oAuthRedirectStateRepository).save(stateCaptor.capture(), eq("https://client.example.com/redirect"), eq(300L));
@@ -118,16 +122,17 @@ class OAuthServiceTest {
     }
 
     @Test
-    @DisplayName("requestRedirectWithClientRedirect()는 허용되지 않은 redirect origin을 거부한다")
-    void requestRedirectWithClientRedirect_rejectsDisallowedRedirectOrigin() {
+    @DisplayName("requestRedirectToFixedRedirect()는 허용되지 않은 Origin을 거부한다")
+    void requestRedirectToFixedRedirect_rejectsDisallowedOrigin() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setScheme("https");
         request.setServerName("dev-api.simsaimdang.shop");
         request.setServerPort(443);
+        request.addHeader("Origin", "https://evil.example.com");
 
-        assertThatThrownBy(() -> oAuthService.requestRedirectWithClientRedirect(request, "https://evil.example.com/redirect"))
+        assertThatThrownBy(() -> oAuthService.requestRedirectToFixedRedirect(request))
                 .isInstanceOf(UserExceptionHandler.class)
-                .hasMessage("'redirect' 파라미터 origin이 허용되지 않습니다");
+                .hasMessage("허용되지 않은 Origin 입니다");
     }
 
     @Test
