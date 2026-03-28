@@ -1,6 +1,6 @@
 package or.hyu.ssd.domain.member.client;
 
-
+import feign.Response;
 import or.hyu.ssd.domain.member.controller.dto.kakao.KaKaoUserInfoResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,4 +18,10 @@ public interface KaKaoUserInfoClient {
      * */
     @PostMapping("/v2/user/me")
     KaKaoUserInfoResponse getUserInfo(@RequestHeader("Authorization") String accessToken);
+
+    /**
+     * 카카오 /v2/user/me 원본 응답을 디버깅용으로 조회합니다.
+     */
+    @PostMapping("/v2/user/me")
+    Response getUserInfoRaw(@RequestHeader("Authorization") String accessToken);
 }

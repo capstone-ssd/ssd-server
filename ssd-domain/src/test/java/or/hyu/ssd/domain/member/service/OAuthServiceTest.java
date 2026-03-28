@@ -1,5 +1,7 @@
 package or.hyu.ssd.domain.member.service;
 
+import feign.Request;
+import feign.Response;
 import jakarta.servlet.http.HttpServletResponse;
 import or.hyu.ssd.domain.member.client.KaKaoOAuthClient;
 import or.hyu.ssd.domain.member.client.KaKaoUserInfoClient;
@@ -28,7 +30,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -225,6 +229,34 @@ class OAuthServiceTest {
         verify(refreshTokenRepository).saveRefreshToken(1L, "refresh-jwt", 2592000L);
     }
 
+    @Test
+    @DisplayName("kakaoLoginAndRedirect()는 이메일 누락 시 카카오 raw user/me 응답을 추가 조회한다")
+    void kakaoLoginAndRedirect_fetchesRawUserInfoWhenEmailMissing() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setScheme("https");
+        request.setServerName("dev-api.simsaimdang.shop");
+        request.setServerPort(443);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(oAuthRedirectStateRepository.consume("state-3"))
+                .thenReturn(Optional.of("https://client.example.com/redirect"));
+        when(kaKaoOAuthClient.getToken(
+                eq("authorization_code"),
+                eq("kakao-client-id"),
+                eq("https://dev-api.simsaimdang.shop/oauth/kakao/callback"),
+                eq("auth-code")
+        )).thenReturn(kakaoToken("kakao-access-token"));
+        when(kaKaoUserInfoClient.getUserInfo("Bearer kakao-access-token"))
+                .thenReturn(kakaoUserInfo(null, "테스터"));
+        when(kaKaoUserInfoClient.getUserInfoRaw("Bearer kakao-access-token"))
+                .thenReturn(rawUserInfoResponse("{\"id\":77,\"properties\":{\"nickname\":\"테스터\"}}"));
+
+        assertThatThrownBy(() -> oAuthService.kakaoLoginAndRedirect("auth-code", "state-3", request, response))
+                .isInstanceOf(UserExceptionHandler.class);
+
+        verify(kaKaoUserInfoClient).getUserInfoRaw("Bearer kakao-access-token");
+    }
+
     private KaKaoOAuthTokenDTO kakaoToken(String accessToken) {
         KaKaoOAuthTokenDTO dto = new KaKaoOAuthTokenDTO();
         dto.setAccess_token(accessToken);
@@ -254,6 +286,23 @@ class OAuthServiceTest {
                 .profileImageUrl("")
                 .profileImageKey("kakao:77")
                 .role(Role.ROLE_AUTHOR)
+                .build();
+    }
+
+    private Response rawUserInfoResponse(String body) {
+        return Response.builder()
+                .status(200)
+                .reason("OK")
+                .request(Request.create(
+                        Request.HttpMethod.POST,
+                        "https://kapi.kakao.com/v2/user/me",
+                        Map.of(),
+                        null,
+                        StandardCharsets.UTF_8,
+                        null
+                ))
+                .headers(Map.of())
+                .body(body, StandardCharsets.UTF_8)
                 .build();
     }
 }

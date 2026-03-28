@@ -1,6 +1,8 @@
 package or.hyu.ssd.domain.member.service;
 
 import feign.FeignException;
+import feign.Response;
+import feign.Util;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.net.URLEncoder;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -142,8 +145,9 @@ public class OAuthService {
         }
 
         KaKaoUserInfoResponse userInfo;
+        String bearerAccessToken = "Bearer " + authorizationCode.getAccess_token();
         try {
-            userInfo = kaKaoUserInfoClient.getUserInfo("Bearer " + authorizationCode.getAccess_token());
+            userInfo = kaKaoUserInfoClient.getUserInfo(bearerAccessToken);
         } catch (FeignException e) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_ACCESSTOKEN_INVALID);
         }
@@ -162,6 +166,7 @@ public class OAuthService {
                     profile.nickname(),
                     userInfo != null ? userInfo.getConnectedAt() : null
             );
+            logRawKakaoUserInfoResponse(bearerAccessToken);
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
@@ -201,6 +206,32 @@ public class OAuthService {
                 cookieConfig.isSecure(),
                 cookieConfig.getSameSite()
         );
+    }
+
+    private void logRawKakaoUserInfoResponse(String bearerAccessToken) {
+        Response rawResponse = null;
+        try {
+            rawResponse = kaKaoUserInfoClient.getUserInfoRaw(bearerAccessToken);
+            if (rawResponse.body() == null) {
+                log.warn("카카오 user/me raw 응답 body가 비어 있습니다. status={}, headers={}", rawResponse.status(), rawResponse.headers());
+                return;
+            }
+
+            String rawBody = Util.toString(rawResponse.body().asReader(StandardCharsets.UTF_8));
+            log.warn("카카오 user/me raw 응답: status={}, body={}", rawResponse.status(), rawBody);
+        } catch (FeignException e) {
+            log.warn("카카오 user/me raw 응답 조회 실패: {}", e.getMessage());
+        } catch (IOException e) {
+            log.warn("카카오 user/me raw 응답 로깅 실패", e);
+        } finally {
+            if (rawResponse != null && rawResponse.body() != null) {
+                try {
+                    rawResponse.body().close();
+                } catch (IOException e) {
+                    log.debug("카카오 user/me raw 응답 body close 실패", e);
+                }
+            }
+        }
     }
 
     private String resolveDynamicCallbackUri(HttpServletRequest request) {
