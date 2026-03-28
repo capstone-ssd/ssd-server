@@ -12,30 +12,34 @@ import or.hyu.ssd.domain.member.controller.dto.kakao.KaKaoUserInfoResponse;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
-import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
-import or.hyu.ssd.global.config.properties.CookieConfig;
-import or.hyu.ssd.global.config.properties.JWTConfig;
-import or.hyu.ssd.global.config.KaKaoConfig;
-import or.hyu.ssd.global.config.properties.OAuthProperties;
-import or.hyu.ssd.global.jwt.JWTUtil;
+import or.hyu.ssd.domain.member.service.support.KakaoLoginResult;
 import or.hyu.ssd.domain.member.service.support.KakaoProfileExtractor;
 import or.hyu.ssd.domain.member.service.support.KakaoProfileExtractor.NormalizedKakaoProfile;
+import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.global.config.KaKaoConfig;
+import or.hyu.ssd.global.config.properties.CookieConfig;
+import or.hyu.ssd.global.config.properties.OAuthProperties;
+import or.hyu.ssd.global.jwt.JWTUtil;
+import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
+import or.hyu.ssd.global.oauth.repository.OAuthRedirectStateRepository;
+import or.hyu.ssd.global.config.properties.JWTConfig;
 import or.hyu.ssd.global.util.CookieUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class OAuthService {
+
+    private static final String DYNAMIC_CALLBACK_PATH = "/oauth/kakao/callback";
 
     private final KaKaoOAuthClient kaKaoOAuthClient;
     private final KaKaoUserInfoClient kaKaoUserInfoClient;
@@ -43,91 +47,85 @@ public class OAuthService {
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final OAuthRedirectStateRepository oAuthRedirectStateRepository;
 
     private final KaKaoConfig kaKaoConfig;
     private final CookieConfig cookieConfig;
     private final OAuthProperties oAuthProperties;
-
-
 
     /**
      * 카카오 authorize URL 생성 (동적 콜백)
      * - Origin 기반 또는 요청의 스킴/호스트/포트로 "{base}/oauth/kakao/callback"을 계산합니다.
      * - 프론트 콜백 플로우에 사용합니다.
      */
-    public String requestRedirect(jakarta.servlet.http.HttpServletRequest request) {
-        String origin = request.getHeader("Origin");
-        String redirectBase;
-
-        if (StringUtils.hasText(origin)) {
-            // 브라우저가 보낸 Origin이 화이트리스트에 있는지 검증
-            List<String> allowed = oAuthProperties.getAllowedOrigins();
-            if (allowed != null && !allowed.isEmpty() && !allowed.contains(origin)) {
-                log.warn("허용되지 않은 Origin: {}", origin);
-                throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
-            }
-            redirectBase = origin;
-        } else {
-            // Origin 헤더가 없으면 현재 요청의 서버 기준으로 복원
-            String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
-            String forwardedHost = request.getHeader("X-Forwarded-Host");
-            if (StringUtils.hasText(forwardedHost)) {
-                redirectBase = scheme + "://" + forwardedHost;
-            } else {
-                String host = request.getServerName();
-                int port = request.getServerPort();
-                boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) || ("https".equalsIgnoreCase(scheme) && port == 443);
-                redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
-            }
-        }
-
-        String redirectUri = redirectBase + "/oauth/kakao/callback";
-
-        String encodedRedirect = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
-        String encodedScope = URLEncoder.encode(kaKaoConfig.getScope(), StandardCharsets.UTF_8);
-
-        return String.format(
-                "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent",
-                kaKaoConfig.getClientId(), encodedRedirect, encodedScope
-        );
+    public String requestRedirect(HttpServletRequest request) {
+        String redirectUri = resolveDynamicCallbackUri(request);
+        return buildAuthorizeUrl(redirectUri, null);
     }
 
     /**
-     * 프론트에서 받은 code/state를 검증하고, state에 저장된 redirect_uri로 토큰 교환을 수행합니다.
-     * 이후 사용자 저장/조회 및 JWT 발급까지 처리합니다.
+     * 카카오 로그인 시작(최종 리다이렉트 포함)
+     * - redirect 파라미터를 검증한 뒤 짧은 TTL의 state와 매핑합니다.
+     * - 카카오 콜백은 기존 /oauth/kakao/callback 경로를 재사용합니다.
+     */
+    public String requestRedirectWithClientRedirect(HttpServletRequest request, String redirectUri) {
+        String validatedRedirectUri = validateClientRedirectUri(redirectUri);
+        String state = UUID.randomUUID().toString();
+        oAuthRedirectStateRepository.save(state, validatedRedirectUri, oAuthProperties.getRedirectStateTtlSeconds());
+        return buildAuthorizeUrl(resolveDynamicCallbackUri(request), state);
+    }
+
+    /**
+     * 프론트에서 받은 code를 기반으로 토큰 교환/회원 처리/JWT 발급을 수행합니다.
      */
     public Boolean kakaoLoginNoState(String accessCode, HttpServletRequest request, HttpServletResponse response) {
+        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, resolveDynamicCallbackUri(request));
+        writeTokens(response, loginResult);
+        return loginResult.isNewUser();
+    }
 
-        Boolean isNewUser = false;
+    /**
+     * redirect 로그인 콜백
+     * - state에 저장된 최종 클라이언트 redirect 주소를 복원합니다.
+     * - 로그인 완료 후 refresh cookie를 설정하고 access token은 URL fragment로 전달합니다.
+     */
+    public void kakaoLoginAndRedirect(String accessCode,
+                                      String state,
+                                      HttpServletRequest request,
+                                      HttpServletResponse response) {
 
+        String redirectUri = oAuthRedirectStateRepository.consume(state)
+                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'state' 파라미터가 올바르지 않습니다"));
+
+        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, resolveDynamicCallbackUri(request));
+        writeTokens(response, loginResult);
+        response.setHeader("Location", buildRedirectLocation(redirectUri, loginResult));
+        response.setStatus(HttpServletResponse.SC_FOUND);
+    }
+
+    /**
+     * 항상 서버 콜백 방식 - 시작 단계 (yml redirect_uri 사용)
+     * - yml에 설정된 redirect_uri를 그대로 사용합니다.
+     */
+    public String requestRedirectServer(HttpServletRequest request) {
+        return buildAuthorizeUrl(kaKaoConfig.getRedirectUri(), null);
+    }
+
+    /**
+     * 항상 서버 콜백 방식 - 카카오로부터 서버 콜백을 받을 때 호출 (yml redirect_uri 사용)
+     * - 설정된 redirect_uri로 토큰 교환을 수행합니다.
+     */
+    public Boolean kakaoLoginServer(String accessCode, HttpServletRequest request, HttpServletResponse response) {
+        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, kaKaoConfig.getRedirectUri());
+        writeTokens(response, loginResult);
+        return loginResult.isNewUser();
+    }
+
+    private KakaoLoginResult completeKakaoLogin(String accessCode, String redirectUri) {
         if (!StringUtils.hasText(accessCode)) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        // 동적 콜백 redirect_uri를 재구성 (인가요청에서 사용한 값과 일치하도록)
-        String origin = request.getHeader("Origin");
-        String redirectBase;
-        if (StringUtils.hasText(origin)) {
-            List<String> allowed = oAuthProperties.getAllowedOrigins();
-            if (allowed != null && !allowed.isEmpty() && !allowed.contains(origin)) {
-                throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
-            }
-            redirectBase = origin;
-        } else {
-            String scheme = java.util.Objects.toString(request.getHeader("X-Forwarded-Proto"), request.getScheme());
-            String forwardedHost = request.getHeader("X-Forwarded-Host");
-            if (StringUtils.hasText(forwardedHost)) {
-                redirectBase = scheme + "://" + forwardedHost;
-            } else {
-                String host = request.getServerName();
-                int port = request.getServerPort();
-                boolean isDefault = ("http".equalsIgnoreCase(scheme) && port == 80) || ("https".equalsIgnoreCase(scheme) && port == 443);
-                redirectBase = scheme + "://" + host + (isDefault ? "" : ":" + port);
-            }
-        }
-        String redirectUri = redirectBase + "/oauth/kakao/callback";
-
-        // 액세스 토큰 발급
         KaKaoOAuthTokenDTO authorizationCode;
         try {
             log.info("액세스 토큰 발급을 시작합니다");
@@ -142,152 +140,150 @@ public class OAuthService {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        // 사용자 정보 조회
         KaKaoUserInfoResponse userInfo;
         try {
-            userInfo = kaKaoUserInfoClient.getUserInfo(
-                    "Bearer " + authorizationCode.getAccess_token());
+            userInfo = kaKaoUserInfoClient.getUserInfo("Bearer " + authorizationCode.getAccess_token());
         } catch (FeignException e) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_ACCESSTOKEN_INVALID);
         }
 
-        // 캡슐화된 파서로 안전하게 추출
-        NormalizedKakaoProfile p = KakaoProfileExtractor.extract(userInfo);
-
-        if (!StringUtils.hasText(p.email())) {
+        NormalizedKakaoProfile profile = KakaoProfileExtractor.extract(userInfo);
+        if (!StringUtils.hasText(profile.email())) {
             log.warn("카카오 로그인 실패: 이메일 동의가 없어 회원 이메일을 확인할 수 없습니다");
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        // 신규 회원 생성
-        Boolean userExist = userRepository.existsByEmail(p.email());
+        boolean isNewUser = createMemberIfAbsent(profile);
 
-        if (userExist == Boolean.FALSE) {
-
-            String profileImageKey = "kakao:" + (p.kakaoId() != null ? p.kakaoId() : java.util.UUID.randomUUID());
-
-            Member newMember = Member.join(p.nickname(), p.email(), p.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
-
-            userRepository.save(newMember);
-
-            isNewUser = true;
-        }
-
-        // 그리고 회원 정보를 기반으로 액세스토큰을 발급하여 헤더에 넣습니다
-        Member byEmail = userRepository.findByEmail(p.email())
+        Member member = userRepository.findByEmail(profile.email())
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
 
-        String access = jwtUtil.createJwt("access", byEmail.getId(), byEmail.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
-        String refresh = jwtUtil.createJwt("refresh", byEmail.getId(), byEmail.getRole().toString(), jwtConfig.getRefreshTokenValidityInSeconds());
+        String access = jwtUtil.createJwt("access", member.getId(), member.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
+        String refresh = jwtUtil.createJwt("refresh", member.getId(), member.getRole().toString(), jwtConfig.getRefreshTokenValidityInSeconds());
 
-        refreshTokenRepository.saveRefreshToken(byEmail.getId(), refresh, jwtConfig.getRefreshTokenValidityInSeconds());
+        refreshTokenRepository.saveRefreshToken(member.getId(), refresh, jwtConfig.getRefreshTokenValidityInSeconds());
 
-        response.setHeader("access-token", access);
+        return new KakaoLoginResult(access, refresh, isNewUser);
+    }
 
+    private boolean createMemberIfAbsent(NormalizedKakaoProfile profile) {
+        Boolean userExist = userRepository.existsByEmail(profile.email());
+        if (Boolean.TRUE.equals(userExist)) {
+            return false;
+        }
+
+        String profileImageKey = "kakao:" + (profile.kakaoId() != null ? profile.kakaoId() : UUID.randomUUID());
+        Member newMember = Member.join(profile.nickname(), profile.email(), profile.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
+        userRepository.save(newMember);
+        return true;
+    }
+
+    private void writeTokens(HttpServletResponse response, KakaoLoginResult loginResult) {
+        response.setHeader("access-token", loginResult.accessToken());
         CookieUtil.addSameSiteCookie(
                 response,
                 "refresh-token",
-                refresh,
+                loginResult.refreshToken(),
                 jwtConfig.getRefreshTokenValidityInSeconds().intValue(),
                 cookieConfig.getDomain(),
                 cookieConfig.isSecure(),
                 cookieConfig.getSameSite()
         );
-
-        return isNewUser;
     }
 
+    private String resolveDynamicCallbackUri(HttpServletRequest request) {
+        return resolveRequestBase(request) + DYNAMIC_CALLBACK_PATH;
+    }
 
+    private String resolveRequestBase(HttpServletRequest request) {
+        String origin = request.getHeader("Origin");
+        if (StringUtils.hasText(origin)) {
+            if (!isAllowedOrigin(origin)) {
+                log.warn("허용되지 않은 Origin: {}", origin);
+                throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
+            }
+            return origin;
+        }
 
+        String scheme = String.valueOf(request.getHeader("X-Forwarded-Proto"));
+        if (!StringUtils.hasText(scheme) || "null".equalsIgnoreCase(scheme)) {
+            scheme = request.getScheme();
+        }
 
-    /**
-     * 항상 서버 콜백 방식 - 시작 단계 (yml redirect_uri 사용)
-     * - yml에 설정된 redirect_uri를 그대로 사용합니다.
-     */
-    public String requestRedirectServer(HttpServletRequest request) {
-        String redirectUri = kaKaoConfig.getRedirectUri();
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        if (StringUtils.hasText(forwardedHost)) {
+            return scheme + "://" + forwardedHost;
+        }
 
+        String host = request.getServerName();
+        int port = request.getServerPort();
+        boolean isDefaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
+        return scheme + "://" + host + (isDefaultPort ? "" : ":" + port);
+    }
+
+    private boolean isAllowedOrigin(String origin) {
+        List<String> allowed = oAuthProperties.getAllowedOrigins();
+        return allowed == null || allowed.isEmpty() || allowed.contains(origin);
+    }
+
+    private String validateClientRedirectUri(String redirectUri) {
+        if (!StringUtils.hasText(redirectUri)) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터가 필요합니다");
+        }
+
+        URI uri;
+        try {
+            uri = URI.create(redirectUri);
+        } catch (IllegalArgumentException e) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터 형식이 올바르지 않습니다");
+        }
+
+        String scheme = uri.getScheme();
+        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터는 http 또는 https만 허용됩니다");
+        }
+        if (!StringUtils.hasText(uri.getHost())) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터 형식이 올바르지 않습니다");
+        }
+
+        String origin = normalizeOrigin(uri);
+        if (!isAllowedOrigin(origin)) {
+            throw new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'redirect' 파라미터 origin이 허용되지 않습니다");
+        }
+        return redirectUri;
+    }
+
+    private String normalizeOrigin(URI uri) {
+        String scheme = uri.getScheme().toLowerCase();
+        int port = uri.getPort();
+        boolean isDefaultPort = port == -1
+                || ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
+        return scheme + "://" + uri.getHost() + (isDefaultPort ? "" : ":" + port);
+    }
+
+    private String buildAuthorizeUrl(String redirectUri, String state) {
         String encodedRedirect = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedScope = URLEncoder.encode(kaKaoConfig.getScope(), StandardCharsets.UTF_8);
 
-        return String.format(
+        String url = String.format(
                 "https://kauth.kakao.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&prompt=consent",
                 kaKaoConfig.getClientId(), encodedRedirect, encodedScope
         );
+        if (StringUtils.hasText(state)) {
+            url += "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+        }
+        return url;
     }
 
-    /**
-     * 항상 서버 콜백 방식 - 카카오로부터 서버 콜백을 받을 때 호출 (yml redirect_uri 사용)
-     * - 설정된 redirect_uri로 토큰 교환을 수행합니다.
-     */
-    public Boolean kakaoLoginServer(String accessCode, HttpServletRequest request, HttpServletResponse response) {
-        Boolean isNewUser = false;
+    private String buildRedirectLocation(String redirectUri, KakaoLoginResult loginResult) {
+        String fragment = "accessToken=" + URLEncoder.encode(loginResult.accessToken(), StandardCharsets.UTF_8)
+                + "&isNewUser=" + loginResult.isNewUser();
 
-        if (!StringUtils.hasText(accessCode)) {
-            throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
+        if (redirectUri.contains("#")) {
+            return redirectUri + "&" + fragment;
         }
-
-        String redirectUri = kaKaoConfig.getRedirectUri();
-
-        KaKaoOAuthTokenDTO authorizationCode;
-        try {
-            log.info("액세스 토큰 발급을 시작합니다(서버 콜백)");
-            authorizationCode = kaKaoOAuthClient.getToken(
-                    "authorization_code",
-                    kaKaoConfig.getClientId(),
-                    redirectUri,
-                    accessCode
-            );
-        } catch (FeignException e) {
-            log.info(e.getMessage());
-            throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
-        }
-
-        KaKaoUserInfoResponse userInfo;
-        try {
-            userInfo = kaKaoUserInfoClient.getUserInfo(
-                    "Bearer " + authorizationCode.getAccess_token());
-        } catch (FeignException e) {
-            throw new UserExceptionHandler(ErrorCode.KAKAO_ACCESSTOKEN_INVALID);
-        }
-
-        // 캡슐화된 파서로 안전하게 추출
-        NormalizedKakaoProfile extractedUserInfo = KakaoProfileExtractor.extract(userInfo);
-
-        if (!StringUtils.hasText(extractedUserInfo.email())) {
-            log.warn("카카오 로그인 실패: 이메일 동의가 없어 회원 이메일을 확인할 수 없습니다");
-            throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
-        }
-
-        Boolean userExist = userRepository.existsByEmail(extractedUserInfo.email());
-        if (userExist == Boolean.FALSE) {
-            String profileImageKey = "kakao:" + (extractedUserInfo.kakaoId() != null ? extractedUserInfo.kakaoId() : java.util.UUID.randomUUID());
-
-            Member newMember = Member.join(extractedUserInfo.nickname(), extractedUserInfo.email(), extractedUserInfo.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
-
-            userRepository.save(newMember);
-            isNewUser = true;
-        }
-
-        Member byEmail = userRepository.findByEmail(extractedUserInfo.email())
-                .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
-
-        String access = jwtUtil.createJwt("access", byEmail.getId(), byEmail.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
-        String refresh = jwtUtil.createJwt("refresh", byEmail.getId(), byEmail.getRole().toString(), jwtConfig.getRefreshTokenValidityInSeconds());
-
-        refreshTokenRepository.saveRefreshToken(byEmail.getId(), refresh, jwtConfig.getRefreshTokenValidityInSeconds());
-
-        response.setHeader("access-token", access);
-        CookieUtil.addSameSiteCookie(
-                response,
-                "refresh-token",
-                refresh,
-                jwtConfig.getRefreshTokenValidityInSeconds().intValue(),
-                cookieConfig.getDomain(),
-                cookieConfig.isSecure(),
-                cookieConfig.getSameSite()
-        );
-
-        return isNewUser;
+        return redirectUri + "#" + fragment;
     }
 }
