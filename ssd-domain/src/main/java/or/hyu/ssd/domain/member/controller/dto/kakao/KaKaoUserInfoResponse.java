@@ -30,6 +30,7 @@ public class KaKaoUserInfoResponse {
 
     @Getter
     @Setter
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class Properties {
 
         /** 카카오 닉네임 */
@@ -44,6 +45,7 @@ public class KaKaoUserInfoResponse {
 
     @Getter
     @Setter
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class KakaoAccount {
 
         /** 이메일 */
@@ -69,6 +71,7 @@ public class KaKaoUserInfoResponse {
 
         @Getter
         @Setter
+        @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
         public static class Profile {
 
             /** 프로필 닉네임 */

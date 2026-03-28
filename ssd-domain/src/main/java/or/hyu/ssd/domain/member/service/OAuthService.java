@@ -152,12 +152,15 @@ public class OAuthService {
         if (!StringUtils.hasText(profile.email())) {
             KaKaoUserInfoResponse.KakaoAccount kakaoAccount = userInfo != null ? userInfo.getKakaoAccount() : null;
             log.warn(
-                    "카카오 로그인 실패: 이메일이 응답에 없습니다. kakaoId={}, hasEmail={}, emailNeedsAgreement={}, isEmailValid={}, isEmailVerified={}",
+                    "카카오 로그인 실패: 이메일이 응답에 없습니다. kakaoId={}, email={}, hasEmail={}, emailNeedsAgreement={}, isEmailValid={}, isEmailVerified={}, nickname={}, connectedAt={}",
                     profile.kakaoId(),
+                    kakaoAccount != null ? kakaoAccount.getEmail() : null,
                     kakaoAccount != null ? kakaoAccount.getHasEmail() : null,
                     kakaoAccount != null ? kakaoAccount.getEmailNeedsAgreement() : null,
                     kakaoAccount != null ? kakaoAccount.getIsEmailValid() : null,
-                    kakaoAccount != null ? kakaoAccount.getIsEmailVerified() : null
+                    kakaoAccount != null ? kakaoAccount.getIsEmailVerified() : null,
+                    profile.nickname(),
+                    userInfo != null ? userInfo.getConnectedAt() : null
             );
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
