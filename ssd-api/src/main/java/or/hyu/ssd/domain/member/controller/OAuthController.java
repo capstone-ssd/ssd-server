@@ -2,25 +2,21 @@ package or.hyu.ssd.domain.member.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.domain.member.service.OAuthService;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 @Tag(name = "소셜로그인 관련 API", description = "카카오 OAuth 시작/콜백 및 JWT 발급")
 public class OAuthController {
 
@@ -51,6 +47,28 @@ public class OAuthController {
          *   {base}/oauth/kakao/callback 콜백 URL을 계산해 카카오로 302 리다이렉트 합니다.
          */
         String redirectAddress = oAuthService.requestRedirect(request);
+        response.sendRedirect(redirectAddress);
+    }
+
+    @GetMapping("/oauth/kakao/login")
+    @Operation(
+            summary = "카카오 로그인 시작(최종 리다이렉트 포함)",
+            description = """
+                    ### 개요
+                    - 서버가 카카오 로그인과 JWT 발급까지 완료한 뒤, 최종 클라이언트 redirect 주소로 다시 리다이렉트합니다.
+                    - redirect 주소는 화이트리스트 origin 검증 후 state와 함께 저장됩니다.
+
+                    ### 요청
+                    - GET /oauth/kakao/login?redirect=https://client.example.com/redirect
+
+                    ### 응답
+                    - 302 Redirect: 카카오 인증 서버
+                    """
+    )
+    public void kakaoOAuthLoginStart(@RequestParam("redirect") String redirect,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) throws IOException {
+        String redirectAddress = oAuthService.requestRedirectWithClientRedirect(request, redirect);
         response.sendRedirect(redirectAddress);
     }
 
@@ -98,7 +116,7 @@ public class OAuthController {
                     - data: true/false
                     """
     )
-    @GetMapping("/oauth/kakao/callback")
+    @GetMapping(value = "/oauth/kakao/callback", params = "!state")
     public ResponseEntity<ApiResponse<Boolean>> kakaoLoginCallbackGet(
             @RequestParam("code") String accessCode,
             HttpServletRequest request,
@@ -106,6 +124,30 @@ public class OAuthController {
 
         Boolean result = oAuthService.kakaoLoginNoState(accessCode, request, response);
         return ResponseEntity.ok(ApiResponse.ok(result, "성공적으로 로그인이 완료되었습니다"));
+    }
+
+    @Operation(
+            summary = "카카오 로그인 콜백(최종 리다이렉트)",
+            description = """
+                    ### 개요
+                    - 카카오 인가코드를 서버가 받아 로그인과 JWT 발급을 완료한 뒤, state에 저장된 redirect 주소로 다시 리다이렉트합니다.
+
+                    ### 요청
+                    - GET /oauth/kakao/callback?code=...&state=...
+
+                    ### 응답
+                    - 302 Redirect: {redirect}#accessToken=...&isNewUser=...
+                    - 쿠키: refresh-token
+                    """
+    )
+    @GetMapping(value = "/oauth/kakao/callback", params = "state")
+    public void kakaoLoginCallbackRedirect(
+            @RequestParam("code") String accessCode,
+            @RequestParam("state") String state,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        oAuthService.kakaoLoginAndRedirect(accessCode, state, request, response);
     }
 
 

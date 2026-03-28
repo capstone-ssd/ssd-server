@@ -30,6 +30,7 @@ public class WhiteListConfig {
         return List.of(
                 "/oauth/kakao",
                 "/oauth/kakao/",
+                "/oauth/kakao/login",
                 "/oauth/kakao/callback",
                 "/oauth/kakao/server",
                 "/oauth/kakao/server/callback",
