@@ -215,16 +215,19 @@ public class OAuthService {
             scheme = request.getScheme();
         }
 
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String forwardedHost = extractForwardedAuthority(request.getHeader("X-Forwarded-Host"));
         if (StringUtils.hasText(forwardedHost)) {
-            return scheme + "://" + forwardedHost;
+            return normalizeBase(scheme, forwardedHost);
+        }
+
+        String hostHeader = extractForwardedAuthority(request.getHeader("Host"));
+        if (StringUtils.hasText(hostHeader)) {
+            return normalizeBase(scheme, hostHeader);
         }
 
         String host = request.getServerName();
         int port = request.getServerPort();
-        boolean isDefaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
-                || ("https".equalsIgnoreCase(scheme) && port == 443);
-        return scheme + "://" + host + (isDefaultPort ? "" : ":" + port);
+        return normalizeHostPort(scheme, host, port);
     }
 
     private String resolveServerBase(HttpServletRequest request) {
@@ -233,16 +236,19 @@ public class OAuthService {
             scheme = request.getScheme();
         }
 
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String forwardedHost = extractForwardedAuthority(request.getHeader("X-Forwarded-Host"));
         if (StringUtils.hasText(forwardedHost)) {
-            return scheme + "://" + forwardedHost;
+            return normalizeBase(scheme, forwardedHost);
+        }
+
+        String hostHeader = extractForwardedAuthority(request.getHeader("Host"));
+        if (StringUtils.hasText(hostHeader)) {
+            return normalizeBase(scheme, hostHeader);
         }
 
         String host = request.getServerName();
         int port = request.getServerPort();
-        boolean isDefaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
-                || ("https".equalsIgnoreCase(scheme) && port == 443);
-        return scheme + "://" + host + (isDefaultPort ? "" : ":" + port);
+        return normalizeHostPort(scheme, host, port);
     }
 
     private boolean isAllowedOrigin(String origin) {
@@ -293,6 +299,41 @@ public class OAuthService {
                 || ("http".equalsIgnoreCase(normalizedScheme) && port == 80)
                 || ("https".equalsIgnoreCase(normalizedScheme) && port == 443);
         return normalizedScheme + "://" + uri.getHost() + (isDefaultPort ? "" : ":" + port);
+    }
+
+    private String extractForwardedAuthority(String rawHeader) {
+        if (!StringUtils.hasText(rawHeader)) {
+            return null;
+        }
+        return rawHeader.split(",")[0].trim();
+    }
+
+    private String normalizeBase(String scheme, String authority) {
+        try {
+            URI uri = URI.create(scheme + "://" + authority);
+            return normalizeOrigin(uri);
+        } catch (IllegalArgumentException ignored) {
+            int delimiter = authority.lastIndexOf(':');
+            if (delimiter < 0) {
+                return normalizeHostPort(scheme, authority, -1);
+            }
+
+            String host = authority.substring(0, delimiter);
+            try {
+                int port = Integer.parseInt(authority.substring(delimiter + 1));
+                return normalizeHostPort(scheme, host, port);
+            } catch (NumberFormatException ex) {
+                return normalizeHostPort(scheme, authority, -1);
+            }
+        }
+    }
+
+    private String normalizeHostPort(String scheme, String host, int port) {
+        String normalizedScheme = scheme.toLowerCase();
+        boolean shouldDropPort = port == -1
+                || ("http".equalsIgnoreCase(normalizedScheme) && port == 80)
+                || ("https".equalsIgnoreCase(normalizedScheme) && (port == 443 || port == 80));
+        return normalizedScheme + "://" + host + (shouldDropPort ? "" : ":" + port);
     }
 
     private String buildAuthorizeUrl(String redirectUri, String state) {

@@ -122,6 +122,24 @@ class OAuthServiceTest {
     }
 
     @Test
+    @DisplayName("requestRedirectToFixedRedirect()는 https 요청에서 잘못 보고된 80 포트를 callback URL에 붙이지 않는다")
+    void requestRedirectToFixedRedirect_dropsPort80ForHttpsCallback() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setScheme("http");
+        request.setServerName("dev-api.simsaimdang.shop");
+        request.setServerPort(80);
+        request.addHeader("Origin", "https://dev.simsaimdang.shop");
+        request.addHeader("Host", "dev-api.simsaimdang.shop");
+        request.addHeader("X-Forwarded-Proto", "https");
+
+        String authorizeUrl = oAuthService.requestRedirectToFixedRedirect(request);
+
+        assertThat(authorizeUrl)
+                .contains("redirect_uri=https%3A%2F%2Fdev-api.simsaimdang.shop%2Foauth%2Fkakao%2Fcallback")
+                .doesNotContain("%3A80%2Foauth%2Fkakao%2Fcallback");
+    }
+
+    @Test
     @DisplayName("requestRedirectToFixedRedirect()는 허용되지 않은 Origin을 거부한다")
     void requestRedirectToFixedRedirect_rejectsDisallowedOrigin() {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -172,6 +190,38 @@ class OAuthServiceTest {
                 .contains("Secure")
                 .contains("HttpOnly");
 
+        verify(refreshTokenRepository).saveRefreshToken(1L, "refresh-jwt", 2592000L);
+    }
+
+    @Test
+    @DisplayName("kakaoLoginAndRedirect()는 https 서버 콜백에서 80 포트를 제거한 redirect_uri로 토큰 교환한다")
+    void kakaoLoginAndRedirect_usesNormalizedHttpsCallbackUri() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setScheme("http");
+        request.setServerName("dev-api.simsaimdang.shop");
+        request.setServerPort(80);
+        request.addHeader("Host", "dev-api.simsaimdang.shop");
+        request.addHeader("X-Forwarded-Proto", "https");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(oAuthRedirectStateRepository.consume("state-2"))
+                .thenReturn(Optional.of("https://client.example.com/redirect"));
+        when(kaKaoOAuthClient.getToken(
+                eq("authorization_code"),
+                eq("kakao-client-id"),
+                eq("https://dev-api.simsaimdang.shop/oauth/kakao/callback"),
+                eq("auth-code")
+        )).thenReturn(kakaoToken("kakao-access-token"));
+        when(kaKaoUserInfoClient.getUserInfo("Bearer kakao-access-token"))
+                .thenReturn(kakaoUserInfo("tester@example.com", "테스터"));
+        when(userRepository.existsByEmail("tester@example.com")).thenReturn(true);
+        when(userRepository.findByEmail("tester@example.com")).thenReturn(Optional.of(member(1L)));
+        when(jwtUtil.createJwt(eq("access"), eq(1L), eq(Role.ROLE_AUTHOR.toString()), anyLong())).thenReturn("access-jwt");
+        when(jwtUtil.createJwt(eq("refresh"), eq(1L), eq(Role.ROLE_AUTHOR.toString()), anyLong())).thenReturn("refresh-jwt");
+
+        oAuthService.kakaoLoginAndRedirect("auth-code", "state-2", request, response);
+
+        assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FOUND);
         verify(refreshTokenRepository).saveRefreshToken(1L, "refresh-jwt", 2592000L);
     }
 
