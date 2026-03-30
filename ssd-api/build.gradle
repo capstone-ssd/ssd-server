@@ -37,7 +37,7 @@ jib {
         mainClass = 'or.hyu.ssd.SsdApplication'
         ports = ['8080']
         jvmFlags = ['-Duser.timezone=Asia/Seoul']
-        creationTime = 'USE_CURRENT_TIMESTAMP'
+        creationTime = 'EPOCH'
     }
 }
 

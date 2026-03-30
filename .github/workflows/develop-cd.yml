@@ -81,41 +81,19 @@ jobs:
           IMAGE_SHA: ${{ github.sha }}
         run: |
           ./gradlew :ssd-api:jib -x test --no-daemon --build-cache \
-            -Djib.from.auth.username="${DOCKER_USERNAME}" \
-            -Djib.from.auth.password="${DOCKER_PASSWORD}" \
             -Djib.to.image="${DOCKER_REPO}" \
             -Djib.to.tags="${IMAGE_SHA},develop-latest" \
             -Djib.to.auth.username="${DOCKER_USERNAME}" \
             -Djib.to.auth.password="${DOCKER_PASSWORD}"
 
-      - name: 배포 파일 전송
+      - name: 배포 리소스 전송
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
           port: ${{ env.SSH_PORT }}
           username: ubuntu
           key: ${{ secrets.KEY }}
-          source: deploy/ec2
-          target: /tmp
-
-      - name: 모니터링 파일 전송
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          port: ${{ env.SSH_PORT }}
-          username: ubuntu
-          key: ${{ secrets.KEY }}
-          source: k6/monitoring
-          target: /tmp
-
-      - name: dev 설정 파일 전송
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          port: ${{ env.SSH_PORT }}
-          username: ubuntu
-          key: ${{ secrets.KEY }}
-          source: .runtime/application-dev.yml
+          source: "deploy/ec2,k6/monitoring,.runtime/application-dev.yml"
           target: /tmp
 
       - name: EC2 Blue/Green 배포
