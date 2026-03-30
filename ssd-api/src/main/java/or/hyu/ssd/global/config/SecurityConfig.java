@@ -55,20 +55,8 @@ public class SecurityConfig {
 
                         CorsConfiguration configuration = new CorsConfiguration();
 
-                        /**
-                         * CORS 정책 대상 URL을 리스트로 관리
-                         * 다양한 메서드에 대해 CORS 정책을 허용합니다
-                         * */
-                        configuration.setAllowedOrigins(Arrays.asList(
-                                "http://localhost:3000",
-                                "http://localhost:5173",
-                                "http://localhost:5174",
-                                "http://localhost:1573",
-                                "https://domain.com",
-                                "https://dev-api.simsaimdang.shop",
-                                "https://dev.simsaimdang.shop"
-                        ));
-                        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+                        configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
+                        configuration.setAllowedMethods(Collections.singletonList("*"));
                         configuration.setAllowCredentials(true);
                         configuration.setAllowedHeaders(Collections.singletonList("*"));
                         configuration.setMaxAge(3600L);
