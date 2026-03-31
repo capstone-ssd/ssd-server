@@ -1,12 +1,12 @@
 name: develop-cd
 
 on:
-  workflow_run:
-    workflows: ["develop-ci"]
-    types: [completed]
+  pull_request:
+    types: [closed]
+    branches: ["develop"]
 
 concurrency:
-  group: develop-cd-${{ github.event.workflow_run.head_branch }}
+  group: develop-cd-${{ github.event.pull_request.base.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'develop'
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       SSH_PORT: 2222
@@ -23,7 +23,7 @@ jobs:
       - name: 코드 가져오기
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - name: application-dev.yml 생성
         env:
@@ -88,7 +88,7 @@ jobs:
             chmod +x /tmp/deploy/ec2/install_infra.sh /tmp/deploy/ec2/install_monitoring.sh /tmp/deploy/ec2/blue_green_deploy.sh
             export APP_NAME="ssd"
             export DOCKER_REPO="${{ env.DOCKER_REPO }}"
-            export IMAGE_TAG="${{ github.event.workflow_run.head_sha }}"
+            export IMAGE_TAG="pr-${{ github.event.pull_request.number }}-latest"
             export SPRING_PROFILES_ACTIVE="dev"
             export APP_CONFIG_SOURCE="/tmp/.runtime/application-dev.yml"
             export APP_CONFIG_FILE="/opt/ssd/config/application-dev.yml"

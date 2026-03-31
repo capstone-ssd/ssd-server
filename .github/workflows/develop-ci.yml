@@ -11,16 +11,6 @@ on:
       - 'ssd-infra/**'
       - 'build.gradle'
       - 'settings.gradle'
-      - '.github/workflows/develop-ci.yml'
-  push:
-    branches: ["develop"]
-    paths:
-      - 'ssd-api/**'
-      - 'ssd-domain/**'
-      - 'ssd-core/**'
-      - 'ssd-infra/**'
-      - 'build.gradle'
-      - 'settings.gradle'
       - 'Dockerfile'
       - '.dockerignore'
       - '.github/workflows/develop-ci.yml'
@@ -92,7 +82,8 @@ jobs:
         if: always()
 
   build-image:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: github.event_name == 'pull_request'
+    needs: pr-check
     runs-on: ubuntu-latest
 
     steps:
@@ -129,7 +120,7 @@ jobs:
           provenance: false
           sbom: false
           tags: |
-            ${{ env.DOCKER_REPO }}:${{ github.sha }}
-            ${{ env.DOCKER_REPO }}:develop-latest
+            ${{ env.DOCKER_REPO }}:pr-${{ github.event.pull_request.number }}-latest
+            ${{ env.DOCKER_REPO }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
           cache-from: type=gha,scope=develop-ci-docker
           cache-to: type=gha,mode=max,scope=develop-ci-docker
