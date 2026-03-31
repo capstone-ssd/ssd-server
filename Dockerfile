@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
-# Build the boot jar in an isolated stage so runtime image stays slim.
+# 런타임 이미지를 가볍게 유지하기 위해 별도 stage에서 boot jar를 빌드합니다.
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /workspace
 
-# Copy Gradle descriptors first to maximize dependency cache reuse.
+# Gradle 설정 파일을 먼저 복사해 의존성 캐시 재사용률을 높입니다.
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY gradle ./gradle
 COPY ssd-api/build.gradle ./ssd-api/build.gradle
@@ -18,7 +18,7 @@ RUN chmod +x gradlew
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew --no-daemon :ssd-api:dependencies >/dev/null 2>&1 || true
 
-# Source changes should only invalidate layers after dependency resolution.
+# 소스 변경이 의존성 레이어까지 깨지지 않도록 소스 복사는 뒤에서 수행합니다.
 COPY ssd-api/src ./ssd-api/src
 COPY ssd-domain/src ./ssd-domain/src
 COPY ssd-core/src ./ssd-core/src
@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew --no-daemon :ssd-api:bootJar -x test && \
     cp /workspace/ssd-api/build/libs/*.jar /workspace/app.jar
 
-# Explode the boot jar so dependency and class layers can be copied separately.
+# boot jar를 풀어서 라이브러리 레이어와 클래스 레이어를 분리합니다.
 FROM eclipse-temurin:21-jdk-alpine AS extractor
 
 WORKDIR /layers
@@ -37,7 +37,7 @@ COPY --from=builder /workspace/app.jar app.jar
 
 RUN mkdir extracted && cd extracted && jar -xf ../app.jar
 
-# Final runtime image contains only the boot loader, libs, and compiled classes.
+# 최종 런타임 이미지는 boot loader, 라이브러리, 컴파일된 클래스만 포함합니다.
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
