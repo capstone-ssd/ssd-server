@@ -12,6 +12,19 @@ on:
       - 'build.gradle'
       - 'settings.gradle'
       - '.github/workflows/develop-ci.yml'
+  push:
+    branches: ["develop"]
+    paths:
+      - 'ssd-api/**'
+      - 'ssd-domain/**'
+      - 'ssd-core/**'
+      - 'ssd-infra/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/develop-ci.yml'
+      - '.github/workflows/develop-cd.yml'
 
 permissions:
   contents: read
