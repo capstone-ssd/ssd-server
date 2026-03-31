@@ -67,6 +67,15 @@ app:
     domain: ""
     same-site: None
     secure: false
+  storage:
+    s3:
+      enabled: ${S3_ENABLED:false}
+      bucket: ${S3_BUCKET:}
+      region: ap-northeast-2
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+      endpoint: ${S3_ENDPOINT:}
+      public-base-url: ${S3_PUBLIC_BASE_URL:}
   oauth:
     allowed-origins:
       - http://localhost:5173
