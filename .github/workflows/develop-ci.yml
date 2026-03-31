@@ -3,7 +3,7 @@ name: develop-ci
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main]
+    branches: ["develop"]
     paths:
       - 'ssd-api/**'
       - 'ssd-domain/**'
@@ -12,8 +12,6 @@ on:
       - 'build.gradle'
       - 'settings.gradle'
       - '.github/workflows/develop-ci.yml'
-  push:
-    branches: ["develop"]
 
 permissions:
   contents: read
