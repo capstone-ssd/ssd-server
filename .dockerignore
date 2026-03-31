@@ -1,0 +1,14 @@
+.git
+.github
+.gradle
+.idea
+.runtime
+.DS_Store
+.vscode
+
+build
+**/build
+
+deploy
+k6
+HELP.md
