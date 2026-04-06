@@ -1,17 +1,38 @@
 package or.hyu.ssd.domain.document.controller.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.AssertTrue;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
+import org.springframework.util.StringUtils;
+
+import java.util.regex.Pattern;
 
 public record CreateDocumentParagraphRequest(
-        @NotBlank(message = "문단 내용은 필수입니다")
+        DocumentBlockType type,
         String content,
-        @NotNull(message = "문단 역할은 필수입니다")
-        @Pattern(
-                regexp = "^#{0,6}$",
-                message = "문단 역할은 '', '#', '##', '###', '####', '#####', '######' 중 하나여야 합니다"
-        )
         String role,
-        Integer blockId
-) {}
+        Integer blockId,
+        String blobKey,
+        String url
+) {
+
+    private static final Pattern ROLE_PATTERN = Pattern.compile("^#{0,6}$");
+
+    public DocumentBlockType resolvedType() {
+        return type == null ? DocumentBlockType.PARAGRAPH : type;
+    }
+
+    @AssertTrue(message = "문단 블록은 content와 role이 필요하고, 이미지 블록은 blobKey 또는 url이 필요합니다")
+    public boolean isValidBlockStructure() {
+        if (resolvedType().isParagraph()) {
+            return StringUtils.hasText(content)
+                    && role != null
+                    && ROLE_PATTERN.matcher(role).matches()
+                    && !StringUtils.hasText(blobKey)
+                    && !StringUtils.hasText(url);
+        }
+
+        return !StringUtils.hasText(content)
+                && !StringUtils.hasText(role)
+                && (StringUtils.hasText(blobKey) || StringUtils.hasText(url));
+    }
+}

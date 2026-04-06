@@ -3,7 +3,9 @@ package or.hyu.ssd.domain.document.service;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
@@ -15,6 +17,7 @@ import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
+import or.hyu.ssd.domain.document.service.support.DocumentImageResolver;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -35,6 +38,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,12 +66,14 @@ class DocumentServiceTest {
     private FolderRepository folderRepository;
     @Mock
     private OptimisticRetryExecutor optimisticRetryExecutor;
+    @Mock
+    private DocumentImageResolver documentImageResolver;
 
     @InjectMocks
     private DocumentService documentService;
 
     @Test
-    @DisplayName("createDocument()는 생성 요청 문단의 pageNumber를 1로 저장하고 첫 문단으로 제목을 만든다")
+    @DisplayName("createDocument()는 생성 요청 블록의 pageNumber를 1로 저장하고 blockId와 첫 문단 제목을 유지한다")
     void createDocument_defaultsPageNumberAndResolvesTitleFromParagraph() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
@@ -75,8 +81,8 @@ class DocumentServiceTest {
                 null,
                 "   ",
                 List.of(
-                        new CreateDocumentParagraphRequest("첫 문단 제목", "#", 99),
-                        new CreateDocumentParagraphRequest("둘째 문단", "", 100)
+                        new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "첫 문단 제목", "#", 99, null, null),
+                        new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "둘째 문단", "", 100, null, null)
                 ),
                 0L
         );
@@ -98,6 +104,7 @@ class DocumentServiceTest {
             paragraphs.forEach(saved::add);
             return saved;
         });
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         CreateDocumentResponse response = documentService.createDocument(user, request);
 
@@ -117,7 +124,7 @@ class DocumentServiceTest {
                 .containsExactly(1, 1);
         assertThat(savedParagraphs)
                 .extracting(DocumentParagraph::getBlockId)
-                .containsExactly(1, 2);
+                .containsExactly(99, 100);
         assertThat(response.id()).isEqualTo(42L);
     }
 
@@ -157,12 +164,13 @@ class DocumentServiceTest {
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+        when(documentParagraphRepository.findBlocks(document))
                 .thenReturn(List.of(
-                        DocumentParagraph.of("기존 문단 1", "#", 1, 1, document),
-                        DocumentParagraph.of("기존 문단 2", "##", 1, 2, document)
+                        DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "기존 문단 1", "#", 1, 1, document),
+                        DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "기존 문단 2", "##", 1, 2, document)
                 ));
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         documentService.updateDocument(
                 42L,
@@ -171,8 +179,8 @@ class DocumentServiceTest {
                         null,
                         "새 본문",
                         List.of(
-                                new CreateDocumentParagraphRequest("기존 문단 1 수정", "#", 1),
-                                new CreateDocumentParagraphRequest("새 문단", "", 3)
+                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "기존 문단 1 수정", "#", 1, null, null),
+                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "새 문단", "", 3, null, null)
                         )
                 )
         );
@@ -216,7 +224,8 @@ class DocumentServiceTest {
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document)).thenReturn(List.of());
+        when(documentParagraphRepository.findBlocks(document)).thenReturn(List.of());
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
@@ -224,11 +233,11 @@ class DocumentServiceTest {
                 new UpdateDocumentRequest(
                         null,
                         "본문",
-                        List.of(new CreateDocumentParagraphRequest("문단", "#", null))
+                        List.of(new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단", "#", null, null, null))
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
-                .hasMessage("수정 요청의 모든 문단에는 blockId가 필요합니다");
+                .hasMessage("수정 요청의 모든 블록에는 blockId가 필요합니다");
 
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
@@ -237,13 +246,92 @@ class DocumentServiceTest {
                         null,
                         "본문",
                         List.of(
-                                new CreateDocumentParagraphRequest("문단 1", "#", 1),
-                                new CreateDocumentParagraphRequest("문단 2", "##", 1)
+                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단 1", "#", 1, null, null),
+                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단 2", "##", 1, null, null)
                         )
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정 요청에 중복된 blockId가 있습니다");
+    }
+
+    @Test
+    @DisplayName("createDocument()는 이미지 블록의 blobKey를 S3 URL로 치환해 저장한다")
+    void createDocument_uploadsImageBlocksAndPersistsImageType() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        CreateDocumentRequest request = new CreateDocumentRequest(
+                "이미지 문서",
+                "본문",
+                List.of(
+                        new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단1", "#", 1, null, null),
+                        new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null)
+                ),
+                0L
+        );
+
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
+            Document doc = invocation.getArgument(0);
+            return Document.builder()
+                    .id(50L)
+                    .title(doc.getTitle())
+                    .content(doc.getContent())
+                    .folder(doc.getFolder())
+                    .bookmark(doc.isBookmark())
+                    .member(doc.getMember())
+                    .build();
+        });
+        when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        documentService.createDocument(
+                user,
+                request,
+                List.of(new DocumentImageUploadPart("img-1", 2, "image.png", "image/png", new byte[]{1, 2, 3}))
+        );
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Iterable<DocumentParagraph>> paragraphCaptor =
+                (ArgumentCaptor<Iterable<DocumentParagraph>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Iterable.class);
+        verify(documentParagraphRepository).saveAll(paragraphCaptor.capture());
+
+        List<DocumentParagraph> savedParagraphs = new ArrayList<>();
+        paragraphCaptor.getValue().forEach(savedParagraphs::add);
+
+        assertThat(savedParagraphs).hasSize(2);
+        assertThat(savedParagraphs.get(1).getTypeOrDefault()).isEqualTo(DocumentBlockType.IMAGE);
+        assertThat(savedParagraphs.get(1).getContent()).isEqualTo("https://s3.example.com/documents/image.png");
+        assertThat(savedParagraphs.get(1).getBlockId()).isEqualTo(2);
+        verify(documentRepository).save(any(Document.class));
+        assertThat(request.text()).isEqualTo("본문");
+    }
+
+    @Test
+    @DisplayName("createDocument()는 본문 text 안의 blobKey를 업로드된 S3 URL로 치환한다")
+    void createDocument_replacesBlobKeyInsideText() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        CreateDocumentRequest request = new CreateDocumentRequest(
+                "이미지 본문",
+                "<img src=\"img-1\" />",
+                List.of(new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null)),
+                0L
+        );
+
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenReturn("<img src=\"https://s3.example.com/documents/image.png\" />");
+
+        documentService.createDocument(
+                user,
+                request,
+                List.of(new DocumentImageUploadPart("img-1", 2, "image.png", "image/png", new byte[]{1, 2, 3}))
+        );
+
+        ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+        verify(documentRepository).save(documentCaptor.capture());
+        assertThat(documentCaptor.getValue().getContent()).isEqualTo("<img src=\"https://s3.example.com/documents/image.png\" />");
     }
 
     private Document document(Long id, Member member) {

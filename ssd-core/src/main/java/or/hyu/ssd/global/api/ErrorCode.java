@@ -51,6 +51,12 @@ public enum ErrorCode {
     EXTERNAL_AI_CALL_FAILED(HttpStatus.BAD_GATEWAY, "AI50201", "외부 AI 서버 호출에 실패했습니다"),
     EXTERNAL_AI_RESPONSE_INVALID(HttpStatus.BAD_GATEWAY, "AI50202", "외부 AI 서버 응답 처리에 실패했습니다"),
 
+    // 스토리지 예외
+    STORAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "STORAGE50001", "스토리지 업로드에 실패했습니다"),
+    STORAGE_DOWNLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "STORAGE50002", "스토리지 조회에 실패했습니다"),
+    STORAGE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "STORAGE50003", "스토리지 삭제에 실패했습니다"),
+    STORAGE_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR, "STORAGE50004", "스토리지 설정이 누락되었습니다"),
+
     // 요청/라우팅 예외
     REQUEST_API_NOT_FOUND(HttpStatus.NOT_FOUND, "REQ40401", "요청하신 API를 찾지 못했습니다"),
     REQUEST_METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "REQ40501", "지원하지 않는 HTTP 메서드입니다"),

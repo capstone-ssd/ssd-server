@@ -71,10 +71,10 @@ public class DocumentCommentService {
 
         // 문서에 매핑된 DocumentParagraph를 blockId순으로 정렬하여 가져옵니다 -> 주석의 본문 내용을 가져오기 위함
         Map<Integer, String> blockContentMap = documentParagraphRepository
-                .findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
+                .findBlocks(doc).stream()
                 .collect(Collectors.toMap(
                         DocumentParagraph::getBlockId,
-                        DocumentParagraph::getContent,
+                        paragraph -> paragraph.isImageBlock() ? "[이미지]" : paragraph.getContent(),
                         (a, b) -> a
                 ));
 

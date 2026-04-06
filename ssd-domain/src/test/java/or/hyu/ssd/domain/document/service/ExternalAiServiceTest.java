@@ -21,6 +21,7 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluatorMetricResponse
 import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
@@ -83,10 +84,10 @@ class ExternalAiServiceTest {
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
         List<DocumentParagraph> currentParagraphs = List.of(
-                DocumentParagraph.of("문단1", "", 1, 1, document)
+                DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "문단1", "", 1, 1, document)
         );
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+        when(documentParagraphRepository.findParagraphBlocks(document))
                 .thenReturn(currentParagraphs);
         when(externalAiPort.evaluate(any())).thenReturn(
                 new ExternalEvaluationResponse(
@@ -128,8 +129,8 @@ class ExternalAiServiceTest {
         Document document = document(7L, member);
         document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
-                .thenReturn(List.of(DocumentParagraph.of("본문", "", 1, 1, document)));
+        when(documentParagraphRepository.findParagraphBlocks(document))
+                .thenReturn(List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 1, document)));
         when(documentAiCheckSnapshotRepository.findAllByDocument(document))
                 .thenReturn(List.of(DocumentAiCheckSnapshot.of(document, 1, "본문")));
 

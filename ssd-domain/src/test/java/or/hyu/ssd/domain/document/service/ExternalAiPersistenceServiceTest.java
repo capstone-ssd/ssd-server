@@ -11,6 +11,7 @@ import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardRespons
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
 import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
@@ -66,7 +67,7 @@ class ExternalAiPersistenceServiceTest {
                 ExternalAiEvaluationMetricResponse.of("팀 구성", 90, "팀 리뷰"),
                 70,
                 Map.of("problem_is_clear", true),
-                List.of(DocumentParagraph.of("본문", "", 1, 1, document))
+                List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 1, document))
         );
 
         assertThat(response.totalScore()).isEqualTo(70);
@@ -96,7 +97,7 @@ class ExternalAiPersistenceServiceTest {
                         "problem_is_clear", true,
                         "market_definition_is_correct", false
                 ),
-                List.of(DocumentParagraph.of("본문", "", 1, 3, document))
+                List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 3, document))
         );
 
         assertThat(response.changedBlockIds()).containsExactly(3);
