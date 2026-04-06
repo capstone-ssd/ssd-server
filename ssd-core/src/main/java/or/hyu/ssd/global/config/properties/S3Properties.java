@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "app.storage.s3")
 public class S3Properties {
 
-    private boolean enabled = false;
-
     private String bucket;
 
     private String region;

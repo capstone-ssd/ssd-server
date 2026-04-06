@@ -1,7 +1,6 @@
 package or.hyu.ssd.infra.storage;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.StorageException;
@@ -19,7 +18,6 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnBean(S3Client.class)
 public class S3ImageStorageUtil {
 
     private final S3Client s3Client;

@@ -1,7 +1,6 @@
 package or.hyu.ssd.infra.storage.config;
 
 import or.hyu.ssd.global.config.properties.S3Properties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -16,7 +15,6 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 public class S3StorageConfig {
 
     @Bean
-    @ConditionalOnProperty(prefix = "app.storage.s3", name = "enabled", havingValue = "true")
     public S3Client s3Client(S3Properties s3Properties) {
         if (!StringUtils.hasText(s3Properties.getRegion())) {
             throw new IllegalStateException("app.storage.s3.region 값이 필요합니다");
