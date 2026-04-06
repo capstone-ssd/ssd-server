@@ -8,7 +8,6 @@ import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
-import or.hyu.ssd.domain.document.port.DocumentImageStoragePort;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
@@ -18,6 +17,7 @@ import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
+import or.hyu.ssd.domain.document.service.support.DocumentImageResolver;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -38,6 +38,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,7 +67,7 @@ class DocumentServiceTest {
     @Mock
     private OptimisticRetryExecutor optimisticRetryExecutor;
     @Mock
-    private DocumentImageStoragePort documentImageStoragePort;
+    private DocumentImageResolver documentImageResolver;
 
     @InjectMocks
     private DocumentService documentService;
@@ -103,6 +104,7 @@ class DocumentServiceTest {
             paragraphs.forEach(saved::add);
             return saved;
         });
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         CreateDocumentResponse response = documentService.createDocument(user, request);
 
@@ -162,12 +164,13 @@ class DocumentServiceTest {
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+        when(documentParagraphRepository.findBlocks(document))
                 .thenReturn(List.of(
                         DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "기존 문단 1", "#", 1, 1, document),
                         DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "기존 문단 2", "##", 1, 2, document)
                 ));
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         documentService.updateDocument(
                 42L,
@@ -221,7 +224,8 @@ class DocumentServiceTest {
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document)).thenReturn(List.of());
+        when(documentParagraphRepository.findBlocks(document)).thenReturn(List.of());
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
@@ -278,7 +282,8 @@ class DocumentServiceTest {
                     .build();
         });
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(documentImageStoragePort.upload(any(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
+        when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         documentService.createDocument(
                 user,
@@ -315,7 +320,8 @@ class DocumentServiceTest {
         );
 
         when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(documentImageStoragePort.upload(any(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
+        when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
+        when(documentImageResolver.replaceBlobKeys(any(), any())).thenReturn("<img src=\"https://s3.example.com/documents/image.png\" />");
 
         documentService.createDocument(
                 user,

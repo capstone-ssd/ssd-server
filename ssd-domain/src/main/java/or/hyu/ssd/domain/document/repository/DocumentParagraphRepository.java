@@ -11,7 +11,9 @@ public interface DocumentParagraphRepository {
 
     void flush();
 
-    List<DocumentParagraph> findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(Document document);
+    List<DocumentParagraph> findBlocks(Document document);
+
+    List<DocumentParagraph> findParagraphBlocks(Document document);
 
     Optional<DocumentParagraph> findByDocumentAndBlockId(Document document, int blockId);
 

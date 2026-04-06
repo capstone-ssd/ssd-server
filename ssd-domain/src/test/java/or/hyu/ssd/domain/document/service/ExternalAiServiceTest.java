@@ -87,7 +87,7 @@ class ExternalAiServiceTest {
                 DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "문단1", "", 1, 1, document)
         );
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+        when(documentParagraphRepository.findParagraphBlocks(document))
                 .thenReturn(currentParagraphs);
         when(externalAiPort.evaluate(any())).thenReturn(
                 new ExternalEvaluationResponse(
@@ -129,7 +129,7 @@ class ExternalAiServiceTest {
         Document document = document(7L, member);
         document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
-        when(documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(document))
+        when(documentParagraphRepository.findParagraphBlocks(document))
                 .thenReturn(List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 1, document)));
         when(documentAiCheckSnapshotRepository.findAllByDocument(document))
                 .thenReturn(List.of(DocumentAiCheckSnapshot.of(document, 1, "본문")));

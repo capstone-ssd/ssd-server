@@ -12,8 +12,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 
-import java.net.URI;
-
 @Configuration
 public class S3StorageConfig {
 
@@ -30,10 +28,6 @@ public class S3StorageConfig {
         var builder = S3Client.builder()
                 .region(Region.of(s3Properties.getRegion()))
                 .serviceConfiguration(S3Configuration.builder().build());
-
-        if (StringUtils.hasText(s3Properties.getEndpoint())) {
-            builder.endpointOverride(URI.create(s3Properties.getEndpoint()));
-        }
 
         if (StringUtils.hasText(s3Properties.getAccessKey()) && StringUtils.hasText(s3Properties.getSecretKey())) {
             builder.credentialsProvider(StaticCredentialsProvider.create(

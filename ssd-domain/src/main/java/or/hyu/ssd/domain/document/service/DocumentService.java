@@ -14,7 +14,6 @@ import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentLog;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
-import or.hyu.ssd.domain.document.port.DocumentImageStoragePort;
 import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
@@ -25,6 +24,7 @@ import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.service.support.DocumentImageResolver;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
@@ -40,7 +40,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,7 +57,7 @@ public class DocumentService {
     private final EvaluatorReviewRepository evaluatorReviewRepository;
     private final FolderRepository folderRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
-    private final DocumentImageStoragePort documentImageStoragePort;
+    private final DocumentImageResolver documentImageResolver;
 
     public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
         return createDocument(user, req, List.of());
@@ -71,7 +70,7 @@ public class DocumentService {
         validateFolderId(req.folderId());
 
         List<ResolvedDocumentBlock> resolvedBlocks = resolveCreateBlocks(req.paragraphs(), imageUploadParts, user.getMember().getId());
-        String resolvedText = replaceImagePlaceholders(req.text(), resolvedBlocks);
+        String resolvedText = documentImageResolver.replaceBlobKeys(req.text(), collectUploadedImageUrls(resolvedBlocks));
         String title = resolveTitle(req.title(), resolvedText, resolvedBlocks);
         Folder folder = resolveFolderOrNull(user, req.folderId());
         Document doc = Document.of(title, resolvedText, folder, false, user.getMember());
@@ -98,7 +97,7 @@ public class DocumentService {
         validateUpdateRequest(req);
 
         List<ResolvedDocumentBlock> resolvedBlocks = resolveUpdateBlocks(req.paragraphs(), imageUploadParts, user.getMember().getId());
-        String resolvedText = replaceImagePlaceholders(req.text(), resolvedBlocks);
+        String resolvedText = documentImageResolver.replaceBlobKeys(req.text(), collectUploadedImageUrls(resolvedBlocks));
         String updatedTitle = resolveUpdatedTitle(doc.getTitle(), req.title());
         doc.updateIfPresent(updatedTitle, resolvedText, null, null, null);
         int deletedBlockCount = 0;
@@ -305,7 +304,7 @@ public class DocumentService {
     }
 
     private BlockChangeSummary replaceParagraphsAndSyncComments(Document doc, List<ResolvedDocumentBlock> blocks) {
-        List<DocumentParagraph> existingParagraphs = documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
+        List<DocumentParagraph> existingParagraphs = documentParagraphRepository.findBlocks(doc);
         Set<Integer> existingBlockIds = existingParagraphs.stream()
                 .map(DocumentParagraph::getBlockId)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -366,7 +365,7 @@ public class DocumentService {
     }
 
     private List<DocumentParagraphDto> fetchParagraphs(Document doc) {
-        return documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
+        return documentParagraphRepository.findBlocks(doc).stream()
                 .map(p -> p.isImageBlock()
                         ? new DocumentParagraphDto(p.getTypeOrDefault(), null, null, p.getPageNumber(), p.getBlockId(), p.getContent())
                         : new DocumentParagraphDto(p.getTypeOrDefault(), p.getContent(), p.getRole(), p.getPageNumber(), p.getBlockId(), null))
@@ -382,7 +381,7 @@ public class DocumentService {
             return List.of();
         }
 
-        Map<String, DocumentImageUploadPart> imageUploadsByBlobKey = validateAndIndexImageUploads(imageUploadParts);
+        Map<String, DocumentImageUploadPart> imageUploadsByBlobKey = documentImageResolver.indexUploadParts(imageUploadParts);
         List<ResolvedDocumentBlock> resolvedBlocks = new ArrayList<>(blocks.size());
         Set<Integer> usedBlockIds = new LinkedHashSet<>();
         int nextBlockId = 1;
@@ -400,7 +399,7 @@ public class DocumentService {
             resolvedBlocks.add(resolveBlock(block, resolvedBlockId, imageUploadsByBlobKey, memberId));
         }
 
-        validateAllImageUploadsMapped(imageUploadsByBlobKey, resolvedBlocks);
+        documentImageResolver.validateAllMapped(imageUploadsByBlobKey, collectResolvedBlobKeys(resolvedBlocks));
         return resolvedBlocks;
     }
 
@@ -413,7 +412,7 @@ public class DocumentService {
             return List.of();
         }
 
-        Map<String, DocumentImageUploadPart> imageUploadsByBlobKey = validateAndIndexImageUploads(imageUploadParts);
+        Map<String, DocumentImageUploadPart> imageUploadsByBlobKey = documentImageResolver.indexUploadParts(imageUploadParts);
         List<ResolvedDocumentBlock> resolvedBlocks = new ArrayList<>(blocks.size());
 
         for (CreateDocumentParagraphRequest block : blocks) {
@@ -423,7 +422,7 @@ public class DocumentService {
             resolvedBlocks.add(resolveBlock(block, block.blockId(), imageUploadsByBlobKey, memberId));
         }
 
-        validateAllImageUploadsMapped(imageUploadsByBlobKey, resolvedBlocks);
+        documentImageResolver.validateAllMapped(imageUploadsByBlobKey, collectResolvedBlobKeys(resolvedBlocks));
         return resolvedBlocks;
     }
 
@@ -438,76 +437,8 @@ public class DocumentService {
             return new ResolvedDocumentBlock(type, block.content(), block.role(), blockId, null);
         }
 
-        String imageUrl = trimOrNull(block.url());
-        if (imageUrl != null) {
-            return new ResolvedDocumentBlock(type, imageUrl, null, blockId, null);
-        }
-
-        String blobKey = trimOrNull(block.blobKey());
-        if (blobKey == null) {
-            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "이미지 블록에는 blobKey 또는 url이 필요합니다");
-        }
-
-        DocumentImageUploadPart imageUploadPart = imageUploadsByBlobKey.get(blobKey);
-        if (imageUploadPart == null) {
-            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "blobKey에 해당하는 이미지 파일이 없습니다: " + blobKey);
-        }
-        if (imageUploadPart.blockId() != null && imageUploadPart.blockId() != blockId) {
-            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "imageMetas의 blockId와 요청 블록의 blockId가 일치하지 않습니다: " + blobKey);
-        }
-
-        String storageKey = buildImageStorageKey(memberId, blockId, imageUploadPart.originalFilename());
-        String uploadedUrl = documentImageStoragePort.upload(storageKey, imageUploadPart.bytes(), imageUploadPart.contentType());
-        return new ResolvedDocumentBlock(type, uploadedUrl, null, blockId, blobKey);
-    }
-
-    private Map<String, DocumentImageUploadPart> validateAndIndexImageUploads(List<DocumentImageUploadPart> imageUploadParts) {
-        if (imageUploadParts == null || imageUploadParts.isEmpty()) {
-            return Map.of();
-        }
-
-        return imageUploadParts.stream()
-                .peek(part -> {
-                    if (trimOrNull(part.blobKey()) == null) {
-                        throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "imageMetas의 blobKey는 필수입니다");
-                    }
-                    if (part.blockId() == null || part.blockId() <= 0) {
-                        throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "imageMetas의 blockId는 1 이상이어야 합니다");
-                    }
-                    if (part.bytes() == null || part.bytes().length == 0) {
-                        throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "이미지 파일이 비어 있습니다");
-                    }
-                    if (part.contentType() == null || !part.contentType().startsWith("image/")) {
-                        throw new DocumentException(ErrorCode.REQUEST_MEDIA_TYPE_NOT_SUPPORTED, "이미지 파일만 업로드할 수 있습니다");
-                    }
-                })
-                .collect(Collectors.toMap(
-                        DocumentImageUploadPart::blobKey,
-                        part -> part,
-                        (left, right) -> {
-                            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "중복된 blobKey가 있습니다: " + left.blobKey());
-                        }
-                ));
-    }
-
-    private void validateAllImageUploadsMapped(
-            Map<String, DocumentImageUploadPart> imageUploadsByBlobKey,
-            List<ResolvedDocumentBlock> resolvedBlocks
-    ) {
-        if (imageUploadsByBlobKey.isEmpty()) {
-            return;
-        }
-
-        Set<String> resolvedBlobKeys = resolvedBlocks.stream()
-                .map(ResolvedDocumentBlock::blobKey)
-                .filter(this::isNotBlank)
-                .collect(Collectors.toSet());
-
-        for (String blobKey : imageUploadsByBlobKey.keySet()) {
-            if (!resolvedBlobKeys.contains(blobKey)) {
-                throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "본문에 없는 blobKey가 imageMetas로 전달되었습니다: " + blobKey);
-            }
-        }
+        String uploadedUrl = documentImageResolver.resolveImageUrl(block, blockId, imageUploadsByBlobKey, memberId);
+        return new ResolvedDocumentBlock(type, uploadedUrl, null, blockId, trimOrNull(block.blobKey()));
     }
 
     private int nextAvailableBlockId(Set<Integer> usedBlockIds, int candidate) {
@@ -518,31 +449,25 @@ public class DocumentService {
         return next;
     }
 
-    private String buildImageStorageKey(Long memberId, int blockId, String originalFilename) {
-        String extension = "";
-        if (isNotBlank(originalFilename) && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
-        }
-        return "documents/%d/%s-block-%d%s".formatted(memberId, UUID.randomUUID(), blockId, extension);
-    }
-
     private boolean isNotBlank(String value) {
         return value != null && !value.isBlank();
     }
 
-    private String replaceImagePlaceholders(String text, List<ResolvedDocumentBlock> resolvedBlocks) {
-        if (text == null || text.isBlank() || resolvedBlocks == null || resolvedBlocks.isEmpty()) {
-            return text;
-        }
+    private Set<String> collectResolvedBlobKeys(List<ResolvedDocumentBlock> resolvedBlocks) {
+        return resolvedBlocks.stream()
+                .map(ResolvedDocumentBlock::blobKey)
+                .filter(this::isNotBlank)
+                .collect(Collectors.toSet());
+    }
 
-        String resolvedText = text;
-        for (ResolvedDocumentBlock block : resolvedBlocks) {
-            if (!block.type().isImage() || !isNotBlank(block.blobKey()) || !isNotBlank(block.content())) {
-                continue;
-            }
-            resolvedText = resolvedText.replace(block.blobKey(), block.content());
-        }
-        return resolvedText;
+    private Map<String, String> collectUploadedImageUrls(List<ResolvedDocumentBlock> resolvedBlocks) {
+        return resolvedBlocks.stream()
+                .filter(block -> block.type().isImage() && isNotBlank(block.blobKey()) && isNotBlank(block.content()))
+                .collect(Collectors.toMap(
+                        ResolvedDocumentBlock::blobKey,
+                        ResolvedDocumentBlock::content,
+                        (left, right) -> right
+                ));
     }
 
     private void saveDocumentLog(Document doc, CustomUserDetails user) {

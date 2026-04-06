@@ -39,7 +39,6 @@ class S3ImageStorageUtilTest {
         S3Properties s3Properties = new S3Properties();
         s3Properties.setBucket("ssd-images");
         s3Properties.setRegion("ap-northeast-2");
-        s3Properties.setPublicBaseUrl("https://cdn.example.com/");
         s3ImageStorageUtil = new S3ImageStorageUtil(s3Client, s3Properties);
     }
 
@@ -54,7 +53,7 @@ class S3ImageStorageUtilTest {
         assertThat(captor.getValue().bucket()).isEqualTo("ssd-images");
         assertThat(captor.getValue().key()).isEqualTo("documents/test.png");
         assertThat(captor.getValue().contentType()).isEqualTo("image/png");
-        assertThat(url).isEqualTo("https://cdn.example.com/documents/test.png");
+        assertThat(url).isEqualTo("https://ssd-images.s3.ap-northeast-2.amazonaws.com/documents/test.png");
     }
 
     @Test

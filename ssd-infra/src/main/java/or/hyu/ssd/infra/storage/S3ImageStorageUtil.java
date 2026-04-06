@@ -3,7 +3,6 @@ package or.hyu.ssd.infra.storage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.StorageException;
 import or.hyu.ssd.global.config.properties.S3Properties;
@@ -37,7 +36,7 @@ public class S3ImageStorageUtil {
                     .bucket(s3Properties.getBucket())
                     .key(key);
 
-            if (StringUtils.hasText(contentType)) {
+            if (contentType != null && !contentType.isBlank()) {
                 requestBuilder.contentType(contentType);
             }
 
@@ -101,12 +100,6 @@ public class S3ImageStorageUtil {
 
     public String resolveUrl(String key) {
         validateKey(key);
-        if (StringUtils.hasText(s3Properties.getPublicBaseUrl())) {
-            return normalizeBaseUrl(s3Properties.getPublicBaseUrl()) + "/" + key;
-        }
-        if (StringUtils.hasText(s3Properties.getEndpoint())) {
-            return normalizeBaseUrl(s3Properties.getEndpoint()) + "/" + s3Properties.getBucket() + "/" + key;
-        }
         return "https://%s.s3.%s.amazonaws.com/%s".formatted(
                 s3Properties.getBucket(),
                 s3Properties.getRegion(),
@@ -115,16 +108,8 @@ public class S3ImageStorageUtil {
     }
 
     private void validateKey(String key) {
-        if (!StringUtils.hasText(key)) {
+        if (key == null || key.isBlank()) {
             throw new StorageException(ErrorCode.STORAGE_UPLOAD_FAILED, "스토리지 key는 비어 있을 수 없습니다");
         }
-    }
-
-    private String normalizeBaseUrl(String baseUrl) {
-        String normalized = baseUrl.trim();
-        while (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        return normalized;
     }
 }
