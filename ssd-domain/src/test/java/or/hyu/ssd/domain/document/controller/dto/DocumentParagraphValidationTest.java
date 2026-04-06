@@ -7,6 +7,7 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 
 import java.util.Set;
 
@@ -23,27 +24,29 @@ class DocumentParagraphValidationTest {
     }
 
     @Test
-    @DisplayName("생성 문단 role은 빈 문자열과 1~6개의 # 만 허용한다")
+    @DisplayName("문단 블록은 content와 role 조합을 검증한다")
     void createDocumentParagraphRoleValidation() {
-        CreateDocumentParagraphRequest validEmpty = new CreateDocumentParagraphRequest("본문", "", 1);
-        CreateDocumentParagraphRequest validHeading = new CreateDocumentParagraphRequest("본문", "#####", 1);
-        CreateDocumentParagraphRequest invalidBody = new CreateDocumentParagraphRequest("본문", "BODY", 1);
+        CreateDocumentParagraphRequest validEmpty = new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "본문", "", 1, null, null);
+        CreateDocumentParagraphRequest validHeading = new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "본문", "#####", 1, null, null);
+        CreateDocumentParagraphRequest invalidBody = new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "본문", "BODY", 1, null, null);
 
         assertThat(VALIDATOR.validate(validEmpty)).isEmpty();
         assertThat(VALIDATOR.validate(validHeading)).isEmpty();
         assertThat(extractMessages(VALIDATOR.validate(invalidBody)))
-                .contains("문단 역할은 '', '#', '##', '###', '####', '#####', '######' 중 하나여야 합니다");
+                .contains("문단 블록은 content와 role이 필요하고, 이미지 블록은 blobKey 또는 url이 필요합니다");
     }
 
     @Test
-    @DisplayName("수정 문단 role도 동일한 고정값만 허용한다")
-    void updateDocumentParagraphRoleValidation() {
-        DocumentParagraphDto validEmpty = new DocumentParagraphDto("본문", "", 1, 1);
-        DocumentParagraphDto invalidRole = new DocumentParagraphDto("본문", "BODY", 1, 1);
+    @DisplayName("이미지 블록은 blobKey 또는 url이 있어야 한다")
+    void imageBlockValidation() {
+        CreateDocumentParagraphRequest validBlobKey = new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null);
+        CreateDocumentParagraphRequest validUrl = new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, null, "https://example.com/image.png");
+        CreateDocumentParagraphRequest invalidImage = new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, null, null);
 
-        assertThat(VALIDATOR.validate(validEmpty)).isEmpty();
-        assertThat(extractMessages(VALIDATOR.validate(invalidRole)))
-                .contains("문단 역할은 '', '#', '##', '###', '####', '#####', '######' 중 하나여야 합니다");
+        assertThat(VALIDATOR.validate(validBlobKey)).isEmpty();
+        assertThat(VALIDATOR.validate(validUrl)).isEmpty();
+        assertThat(extractMessages(VALIDATOR.validate(invalidImage)))
+                .contains("문단 블록은 content와 role이 필요하고, 이미지 블록은 blobKey 또는 url이 필요합니다");
     }
 
     private static Set<String> extractMessages(Set<? extends ConstraintViolation<?>> violations) {
