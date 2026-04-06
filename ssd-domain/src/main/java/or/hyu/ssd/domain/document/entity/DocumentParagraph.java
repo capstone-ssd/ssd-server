@@ -30,6 +30,11 @@ public class DocumentParagraph extends BaseEntity {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Comment("블록 타입 (문단/이미지)")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "block_type", length = 20)
+    private DocumentBlockType type;
+
     @Comment("문단 역할(입력: paragraphs[].role)")
     @Column(name = "role", length = 16)
     private String role;
@@ -49,13 +54,22 @@ public class DocumentParagraph extends BaseEntity {
     @Version
     private Long version;
 
-    public static DocumentParagraph of(String content, String role, int pageNumber, int blockId, Document document) {
+    public static DocumentParagraph of(DocumentBlockType type, String content, String role, int pageNumber, int blockId, Document document) {
         return DocumentParagraph.builder()
                 .content(content)
+                .type(type)
                 .role(role)
                 .pageNumber(pageNumber)
                 .blockId(blockId)
                 .document(document)
                 .build();
+    }
+
+    public DocumentBlockType getTypeOrDefault() {
+        return type == null ? DocumentBlockType.PARAGRAPH : type;
+    }
+
+    public boolean isImageBlock() {
+        return getTypeOrDefault().isImage();
     }
 }

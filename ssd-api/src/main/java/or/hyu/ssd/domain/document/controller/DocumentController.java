@@ -5,13 +5,22 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.service.DocumentService;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentImageMetaRequest;
+import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
+import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
+import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
+import or.hyu.ssd.domain.document.service.DocumentService;
+import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
+import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.global.api.handler.DocumentException;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -19,10 +28,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
-import or.hyu.ssd.domain.document.service.support.DocumentSort;
-import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -37,7 +45,7 @@ public class DocumentController {
 
     private final DocumentService documentService;
 
-    @PostMapping("/v1/documents")
+    @PostMapping(value = "/v1/documents", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
             summary = "문서 생성",
             description = """
@@ -76,8 +84,31 @@ public class DocumentController {
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
+    @PostMapping(value = "/v1/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "문서 생성 (이미지 포함)",
+            description = """
+                    ### 개요
+                    - `request` 파트의 문서 JSON과 이미지 파일을 함께 받아 문서를 저장합니다.
 
-    @PutMapping("/v1/documents/{id}")
+                    ### multipart 파트
+                    - request (application/json, required): 문서 생성 요청 JSON
+                    - imageMetas (application/json, optional): blobKey/blockId 매핑 배열
+                    - files (file[], optional): 실제 이미지 파일 배열
+                    """
+    )
+    public ResponseEntity<ApiResponse<CreateDocumentResponse>> createDocumentWithImages(
+            @Valid @RequestPart("request") CreateDocumentRequest request,
+            @Valid @RequestPart(value = "imageMetas", required = false) List<DocumentImageMetaRequest> imageMetas,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        CreateDocumentResponse dto = documentService.createDocument(user, request, toImageUploadParts(imageMetas, files));
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
+    }
+
+
+    @PutMapping(value = "/v1/documents/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
             summary = "문서 수정",
             description = """
@@ -119,6 +150,27 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateDocumentResponse dto = documentService.updateDocument(id, user, request);
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
+    }
+
+    @PutMapping(value = "/v1/documents/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "문서 수정 (이미지 포함)",
+            description = """
+                    ### 개요
+                    - `request` 파트의 문서 JSON과 이미지 파일을 함께 받아 문서를 수정합니다.
+                    - 기존 이미지 블록은 `url`로 유지하고, 새 이미지 블록은 `blobKey + files`로 업로드합니다.
+                    """
+    )
+    public ResponseEntity<ApiResponse<UpdateDocumentResponse>> updateDocumentWithImages(
+            @Parameter(description = "수정할 문서 ID", example = "42")
+            @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
+            @Valid @RequestPart("request") UpdateDocumentRequest request,
+            @Valid @RequestPart(value = "imageMetas", required = false) List<DocumentImageMetaRequest> imageMetas,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        UpdateDocumentResponse dto = documentService.updateDocument(id, user, request, toImageUploadParts(imageMetas, files));
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
@@ -268,5 +320,37 @@ public class DocumentController {
     ) {
         DocumentBookmarkResponse dto = documentService.toggleBookmark(id, user);
         return ResponseEntity.ok(ApiResponse.ok(dto, "즐겨찾기 상태가 토글되었습니다"));
+    }
+
+    private List<DocumentImageUploadPart> toImageUploadParts(
+            List<DocumentImageMetaRequest> imageMetas,
+            List<MultipartFile> files
+    ) {
+        boolean metasEmpty = imageMetas == null || imageMetas.isEmpty();
+        boolean filesEmpty = files == null || files.isEmpty();
+        if (metasEmpty && filesEmpty) {
+            return List.of();
+        }
+        if (metasEmpty || filesEmpty || imageMetas.size() != files.size()) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "imageMetas와 files는 같은 개수로 전달되어야 합니다");
+        }
+
+        List<DocumentImageUploadPart> uploadParts = new ArrayList<>(files.size());
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            DocumentImageMetaRequest meta = imageMetas.get(i);
+            try {
+                uploadParts.add(new DocumentImageUploadPart(
+                        meta.blobKey(),
+                        meta.blockId(),
+                        file.getOriginalFilename(),
+                        file.getContentType(),
+                        file.getBytes()
+                ));
+            } catch (Exception exception) {
+                throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "이미지 파일을 읽는 데 실패했습니다");
+            }
+        }
+        return uploadParts;
     }
 }

@@ -51,7 +51,9 @@ public class ExternalAiService {
     public ExternalAiEvaluationCardResponse evaluate(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
         List<DocumentParagraph> currentParagraphs =
-                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
+                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
+                        .filter(paragraph -> paragraph.getTypeOrDefault().isParagraph())
+                        .toList();
 
         ExternalEvaluationResponse response = externalAiPort.evaluate(new ExternalEvaluationRequest(
                 String.valueOf(doc.getId()),
@@ -115,7 +117,9 @@ public class ExternalAiService {
     public ExternalAiDocumentCheckResponse checkNewText(ExternalDocumentIdRequest request, CustomUserDetails user) {
         Document doc = getOwnedDocument(request.docId(), user);
         List<DocumentParagraph> currentParagraphs =
-                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc);
+                documentParagraphRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
+                        .filter(paragraph -> paragraph.getTypeOrDefault().isParagraph())
+                        .toList();
         if (currentParagraphs.isEmpty()) {
             throw new DocumentException(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
         }

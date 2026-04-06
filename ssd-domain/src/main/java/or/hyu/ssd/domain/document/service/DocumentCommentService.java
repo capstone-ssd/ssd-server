@@ -74,7 +74,7 @@ public class DocumentCommentService {
                 .findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(doc).stream()
                 .collect(Collectors.toMap(
                         DocumentParagraph::getBlockId,
-                        DocumentParagraph::getContent,
+                        paragraph -> paragraph.isImageBlock() ? "[이미지]" : paragraph.getContent(),
                         (a, b) -> a
                 ));
 
