@@ -1,12 +1,11 @@
 name: develop-cd
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: ["develop"]
 
 concurrency:
-  group: develop-cd-${{ github.event.pull_request.base.ref }}
+  group: develop-cd-${{ github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -14,7 +13,6 @@ permissions:
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       SSH_PORT: 2222
@@ -23,7 +21,7 @@ jobs:
       - name: 코드 가져오기
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.sha }}
 
       - name: application-dev.yml 생성
         env:
@@ -85,7 +83,7 @@ jobs:
           provenance: false
           sbom: false
           tags: |
-            ${{ env.DOCKER_REPO }}:${{ github.event.pull_request.merge_commit_sha }}
+            ${{ env.DOCKER_REPO }}:${{ github.sha }}
             ${{ env.DOCKER_REPO }}:develop-latest
           cache-from: type=gha,scope=develop-cd-docker
           cache-to: type=gha,mode=max,scope=develop-cd-docker
@@ -112,7 +110,7 @@ jobs:
             chmod +x /tmp/deploy/ec2/install_infra.sh /tmp/deploy/ec2/install_monitoring.sh /tmp/deploy/ec2/blue_green_deploy.sh
             export APP_NAME="ssd"
             export DOCKER_REPO="${{ env.DOCKER_REPO }}"
-            export IMAGE_TAG="${{ github.event.pull_request.merge_commit_sha }}"
+            export IMAGE_TAG="${{ github.sha }}"
             export SPRING_PROFILES_ACTIVE="dev"
             export APP_CONFIG_SOURCE="/tmp/.runtime/application-dev.yml"
             export APP_CONFIG_FILE="/opt/ssd/config/application-dev.yml"
