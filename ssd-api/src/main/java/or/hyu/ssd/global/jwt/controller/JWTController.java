@@ -93,4 +93,31 @@ public class JWTController {
 
         return ResponseEntity.ok(ApiResponse.ok("성공적으로 재생성되었습니다"));
     }
+
+    @PostMapping("/logout")
+    @Operation(
+            summary = "로그아웃 API",
+            description = """
+                    ### 개요
+                    - 현재 로그인한 사용자의 리프레시 토큰을 무효화하고 리프레시 쿠키를 만료시킵니다.
+
+                    ### 요청
+                    - POST /logout
+                    - 헤더: Authorization: Bearer {accessToken}
+
+                    ### 응답
+                    - 200 OK
+                    - refresh-token 쿠키 만료
+
+                    ### 주의
+                    - 기존 access 토큰은 만료 시점까지 유효하며, 이후 재발급은 불가능합니다.
+                    """
+    )
+    public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                      HttpServletResponse response) {
+
+        jwtService.logout(userDetails.getMember().getId(), response);
+
+        return ResponseEntity.ok(ApiResponse.ok(null, "성공적으로 로그아웃되었습니다"));
+    }
 }

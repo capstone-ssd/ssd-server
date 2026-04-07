@@ -1,7 +1,5 @@
 package or.hyu.ssd.global.util;
 
-import io.micrometer.common.lang.Nullable;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
@@ -36,6 +34,23 @@ public class CookieUtil {
         ResponseCookie cookie = builder.build();
 
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    public static void expireSameSiteCookie(HttpServletResponse response,
+                                            String name,
+                                            String domain,
+                                            boolean secure,
+                                            String sameSite) {
+
+        addSameSiteCookie(
+                response,
+                name,
+                "",
+                0,
+                domain,
+                secure,
+                sameSite
+        );
     }
 
 }

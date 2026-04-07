@@ -84,4 +84,16 @@ public class JWTService {
 
 
     }
+
+    public void logout(Long userId, HttpServletResponse response) {
+        refreshTokenRedisTemplateUtil.deleteById(userId);
+
+        CookieUtil.expireSameSiteCookie(
+                response,
+                "refresh-token",
+                cookieConfig.getDomain(),
+                cookieConfig.isSecure(),
+                cookieConfig.getSameSite()
+        );
+    }
 }
