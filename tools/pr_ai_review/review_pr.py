@@ -14,7 +14,7 @@ MAX_FILES = 40
 MAX_TOTAL_PATCH_CHARS = 80000
 MAX_PATCH_CHARS_PER_FILE = 6000
 MAX_AGENTS_CHARS = 24000
-COMMENT_HEADER = "## Codex PR Review"
+COMMENT_HEADER = "## Codex PR 리뷰"
 
 # 바이너리/생성물/리뷰 가치가 낮은 파일은 비용 절감을 위해 제외한다.
 SKIP_SUFFIXES = {
@@ -29,7 +29,7 @@ SKIP_PATH_PARTS = {
     ".gradle",
     "node_modules",
 }
-SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3, "P4": 4, "P5": 5}
 
 
 def fail(message: str) -> None:
@@ -141,7 +141,7 @@ class OpenAIClient:
                                     "properties": {
                                         "severity": {
                                             "type": "string",
-                                            "enum": ["high", "medium", "low"],
+                                            "enum": ["P0", "P1", "P2", "P3", "P4", "P5"],
                                         },
                                         "file": {"type": "string"},
                                         "line": {"type": ["integer", "null"]},
@@ -316,13 +316,22 @@ def build_prompts(pr: dict[str, Any], files: list[dict[str, Any]]) -> tuple[str,
 
     system_prompt = textwrap.dedent(
         """
-        You are a senior backend code reviewer.
-        Review the pull request diff and report only actionable findings that are likely to cause bugs,
-        regressions, security issues, data integrity problems, or important missing tests.
-        Ignore style, naming, formatting, and trivial cleanup.
-        Be conservative: if the evidence in the diff is weak, return no finding.
-        Use the repository rules provided in AGENTS context.
-        Keep findings concise and technical.
+        당신은 시니어 백엔드 코드 리뷰어다.
+        Pull Request diff를 검토하고 실제 버그, 회귀, 보안 문제, 데이터 무결성 문제,
+        또는 중요한 테스트 누락으로 이어질 가능성이 높은 이슈만 보고하라.
+        스타일, 네이밍, 포매팅, 사소한 정리는 무시하라.
+        근거가 약하면 finding을 만들지 마라.
+        AGENTS context에 포함된 저장소 규칙을 반드시 따른다.
+        summary, title, body는 모두 한국어로 작성한다.
+        severity는 반드시 P0, P1, P2, P3, P4, P5 중 하나를 사용한다.
+        severity 기준:
+        - P0: 즉시 장애, 데이터 손상, 치명적 보안 문제
+        - P1: 배포 전 반드시 수정해야 할 높은 확률의 기능 오류
+        - P2: 조건부로 쉽게 재현되는 의미 있는 회귀 또는 누락
+        - P3: 중간 수준의 리스크, 특정 조건에서 문제를 만들 수 있음
+        - P4: 낮은 리스크지만 수정 가치가 있는 문제
+        - P5: 매우 낮은 리스크 또는 테스트 보강 제안
+        finding은 짧고 기술적으로 작성하라.
         """
     ).strip()
 
@@ -341,11 +350,13 @@ def build_prompts(pr: dict[str, Any], files: list[dict[str, Any]]) -> tuple[str,
         {diff_payload or '(no reviewable diff excerpts)'}
 
         Output rules:
-        - Return JSON only.
-        - Findings must be sorted by severity and then confidence.
-        - Use line=null when the diff does not support a precise line reference.
-        - Do not report more than 8 findings.
-        - If there are no credible findings, return an empty findings array and a short summary.
+        - JSON만 반환한다.
+        - summary, findings[].title, findings[].body는 모두 한국어로 작성한다.
+        - findings는 severity 순서와 confidence 순서로 정렬한다. P0가 가장 높고 P5가 가장 낮다.
+        - diff만으로 정확한 줄 번호를 특정할 수 없으면 line=null을 사용한다.
+        - finding은 최대 8개까지만 반환한다.
+        - 신뢰할 만한 문제가 없으면 findings는 빈 배열로 두고 짧은 한국어 summary만 작성한다.
+        - severity는 반드시 P0, P1, P2, P3, P4, P5 중 하나여야 한다.
         """
     ).strip()
     return system_prompt, user_prompt, included, skipped
@@ -353,27 +364,27 @@ def build_prompts(pr: dict[str, Any], files: list[dict[str, Any]]) -> tuple[str,
 
 def format_comment(result: dict[str, Any], included: list[str], skipped: list[str], status: str = "ok") -> str:
     # 모델 결과를 사람이 읽기 쉬운 PR 코멘트 본문으로 변환한다.
-    summary = result.get("summary", "") or "No summary provided."
+    summary = result.get("summary", "") or "요약이 제공되지 않았습니다."
     findings = result.get("findings", []) or []
     findings = sorted(
         findings,
         key=lambda item: (
-            SEVERITY_ORDER.get(str(item.get("severity", "low")).lower(), 99),
+            SEVERITY_ORDER.get(str(item.get("severity", "P5")).upper(), 99),
             -float(item.get("confidence", 0)),
         ),
     )
 
     lines = [MARKER, COMMENT_HEADER, ""]
     if status != "ok":
-        lines.append(f"Status: {status}")
+        lines.append(f"상태: {status}")
         lines.append("")
     lines.append(summary)
     lines.append("")
 
     if findings:
-        lines.append("### Findings")
+        lines.append("### 발견 사항")
         for finding in findings:
-            severity = str(finding.get("severity", "low")).upper()
+            severity = str(finding.get("severity", "P5")).upper()
             file_ref = finding.get("file", "(unknown file)")
             line = finding.get("line")
             if isinstance(line, int):
@@ -384,23 +395,23 @@ def format_comment(result: dict[str, Any], included: list[str], skipped: list[st
             )
             lines.append(f"  {finding.get('body', '').strip()}")
     else:
-        lines.append("### Findings")
-        lines.append("- No high-confidence issues found in the provided diff.")
+        lines.append("### 발견 사항")
+        lines.append("- 제공된 diff에서 높은 신뢰도의 문제를 찾지 못했습니다.")
 
     lines.append("")
-    lines.append("### Coverage")
-    lines.append(f"- Reviewed files: {len(included)}")
+    lines.append("### 검토 범위")
+    lines.append(f"- 검토한 파일 수: {len(included)}")
     if included:
         for path in included[:10]:
             lines.append(f"- `{path}`")
         if len(included) > 10:
-            lines.append(f"- ... and {len(included) - 10} more")
+            lines.append(f"- ... 외 {len(included) - 10}개")
     if skipped:
-        lines.append(f"- Skipped files: {len(skipped)}")
+        lines.append(f"- 제외한 파일 수: {len(skipped)}")
         for path in skipped[:10]:
             lines.append(f"- `{path}`")
         if len(skipped) > 10:
-            lines.append(f"- ... and {len(skipped) - 10} more")
+            lines.append(f"- ... 외 {len(skipped) - 10}개")
 
     body = "\n".join(lines).strip()
     return truncate_text(body, 60000)
@@ -443,7 +454,7 @@ def main() -> None:
     reviewable_files = [file for file in files if not should_skip_file(file["filename"], file.get("patch"))]
     if not reviewable_files:
         body = format_comment(
-            {"summary": "No text diff was available for automated review.", "findings": []},
+            {"summary": "자동 리뷰에 사용할 텍스트 diff가 없어 검토를 건너뛰었습니다.", "findings": []},
             [],
             [file["filename"] for file in files],
             status="skipped",
@@ -455,7 +466,7 @@ def main() -> None:
     api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key:
         body = format_comment(
-            {"summary": "Automated review was skipped because `OPENAI_API_KEY` is not configured in GitHub Actions secrets.", "findings": []},
+            {"summary": "GitHub Actions secret에 `OPENAI_API_KEY`가 없어 자동 리뷰를 건너뛰었습니다.", "findings": []},
             [file["filename"] for file in reviewable_files],
             [],
             status="skipped",
@@ -473,7 +484,7 @@ def main() -> None:
     except Exception as error:  # noqa: BLE001
         body = format_comment(
             {
-                "summary": f"Automated review failed: {error}",
+                "summary": f"자동 리뷰 실행에 실패했습니다: {error}",
                 "findings": [],
             },
             included,
