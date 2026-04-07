@@ -32,6 +32,7 @@ jobs:
       - name: PR 자동 리뷰 실행
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_BOT_TOKEN: ${{ secrets.GH_BOT_TOKEN }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REVIEW_MODEL: ${{ vars.OPENAI_REVIEW_MODEL }}

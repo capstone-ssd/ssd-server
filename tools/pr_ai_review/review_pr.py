@@ -470,12 +470,18 @@ def format_comment(result: dict[str, Any], included: list[str], skipped: list[st
 
 def upsert_comment(gh: GitHubClient, pr_number: int, body: str) -> None:
     # marker가 달린 기존 코멘트가 있으면 갱신하고, 없으면 새로 만든다.
-    comments = gh.issue_comments(pr_number)
-    existing = next((item for item in comments if MARKER in item.get("body", "")), None)
-    if existing:
-        gh.update_issue_comment(existing["id"], body)
-    else:
-        gh.create_issue_comment(pr_number, body)
+    try:
+        comments = gh.issue_comments(pr_number)
+        existing = next((item for item in comments if MARKER in item.get("body", "")), None)
+        if existing:
+            gh.update_issue_comment(existing["id"], body)
+        else:
+            gh.create_issue_comment(pr_number, body)
+    except RuntimeError as error:
+        if "Resource not accessible by integration" in str(error):
+            print(f"PR comment skipped: {error}", file=sys.stderr)
+            return
+        raise
 
 
 def main() -> None:
@@ -485,11 +491,11 @@ def main() -> None:
     # 3) OpenAI로 리뷰를 생성하고
     # 4) PR sticky comment를 생성/갱신한다.
     event_path = os.getenv("GITHUB_EVENT_PATH") or os.getenv("EVENT_PATH")
-    github_token = os.getenv("GITHUB_TOKEN")
+    github_token = os.getenv("GH_BOT_TOKEN") or os.getenv("GITHUB_TOKEN")
     if not event_path:
         fail("GITHUB_EVENT_PATH is required")
     if not github_token:
-        fail("GITHUB_TOKEN is required")
+        fail("GH_BOT_TOKEN or GITHUB_TOKEN is required")
 
     event = read_json(event_path)
     pr = event.get("pull_request")
