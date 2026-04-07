@@ -111,7 +111,7 @@ class OpenAIClient:
     # OpenAI Chat Completions API를 호출해 구조화된 리뷰 결과를 받는다.
     def __init__(self, api_key: str, model: str) -> None:
         self.api_key = api_key
-        self.model = model or "gpt-4.1-mini"
+        self.model = model or "gpt-5"
         self.base_url = "https://api.openai.com/v1/chat/completions"
 
     def review(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
@@ -475,7 +475,7 @@ def main() -> None:
         return
 
     system_prompt, user_prompt, included, skipped = build_prompts(pr, files)
-    client = OpenAIClient(api_key=api_key, model=os.getenv("OPENAI_REVIEW_MODEL", "") or "gpt-4.1-mini")
+    client = OpenAIClient(api_key=api_key, model=os.getenv("OPENAI_REVIEW_MODEL", "") or "gpt-5")
 
     try:
         # 모델 호출 실패도 워크플로우 전체 실패보다 코멘트 가시성을 우선한다.
