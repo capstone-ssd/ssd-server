@@ -120,7 +120,6 @@ class OpenAIClient:
         # 결과를 후처리하기 쉽도록 JSON Schema로 응답 형식을 고정한다.
         payload = {
             "model": self.model,
-            "temperature": 0,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -171,6 +170,8 @@ class OpenAIClient:
                 },
             },
         }
+        if not self.model.startswith("gpt-5"):
+            payload["temperature"] = 0
         data = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
             self.base_url,
