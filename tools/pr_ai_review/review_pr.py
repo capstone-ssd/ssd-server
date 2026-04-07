@@ -8,6 +8,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+# PR 코멘트를 재사용하기 위한 식별자와 리뷰 입력 크기 제한값들이다.
 MARKER = "<!-- codex-pr-review -->"
 MAX_FILES = 40
 MAX_TOTAL_PATCH_CHARS = 80000
@@ -15,6 +16,7 @@ MAX_PATCH_CHARS_PER_FILE = 6000
 MAX_AGENTS_CHARS = 24000
 COMMENT_HEADER = "## Codex PR Review"
 
+# 바이너리/생성물/리뷰 가치가 낮은 파일은 비용 절감을 위해 제외한다.
 SKIP_SUFFIXES = {
     ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".pdf", ".jar", ".class",
     ".lock", ".iml", ".mp4", ".mov", ".zip", ".gz", ".tgz", ".woff", ".woff2",
@@ -31,22 +33,26 @@ SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
 def fail(message: str) -> None:
+    # GitHub Actions 로그에 즉시 실패 원인을 남기고 종료한다.
     print(message, file=sys.stderr)
     sys.exit(1)
 
 
 def read_json(path: str) -> dict[str, Any]:
+    # GitHub event payload 같은 로컬 JSON 파일을 읽는다.
     with open(path, "r", encoding="utf-8") as handle:
         return json.load(handle)
 
 
 class GitHubClient:
+    # PR 파일 목록 조회, 기존 코멘트 조회/갱신에 필요한 최소 GitHub API 래퍼다.
     def __init__(self, repo_full_name: str, token: str) -> None:
         self.repo_full_name = repo_full_name
         self.token = token
         self.base_url = "https://api.github.com"
 
     def request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
+        # 단일 GitHub REST 요청을 보내고, 실패 시 응답 본문까지 포함해 에러를 올린다.
         url = f"{self.base_url}{path}"
         data = None
         headers = {
@@ -69,6 +75,7 @@ class GitHubClient:
             raise RuntimeError(f"GitHub API {method} {path} failed: {error.code} {detail}") from error
 
     def paginate(self, path: str) -> list[dict[str, Any]]:
+        # GitHub 목록 API는 페이지네이션이 있으므로 끝까지 모아서 반환한다.
         items: list[dict[str, Any]] = []
         page = 1
         while True:
@@ -84,25 +91,31 @@ class GitHubClient:
         return items
 
     def pull_request_files(self, number: int) -> list[dict[str, Any]]:
+        # PR에 포함된 변경 파일과 patch를 가져온다.
         return self.paginate(f"/repos/{self.repo_full_name}/pulls/{number}/files")
 
     def issue_comments(self, number: int) -> list[dict[str, Any]]:
+        # PR 대화 탭의 top-level 코멘트 목록을 가져온다.
         return self.paginate(f"/repos/{self.repo_full_name}/issues/{number}/comments")
 
     def create_issue_comment(self, number: int, body: str) -> None:
+        # 최초 리뷰 코멘트를 생성한다.
         self.request("POST", f"/repos/{self.repo_full_name}/issues/{number}/comments", {"body": body})
 
     def update_issue_comment(self, comment_id: int, body: str) -> None:
+        # 기존 sticky 코멘트를 최신 결과로 덮어쓴다.
         self.request("PATCH", f"/repos/{self.repo_full_name}/issues/comments/{comment_id}", {"body": body})
 
 
 class OpenAIClient:
+    # OpenAI Chat Completions API를 호출해 구조화된 리뷰 결과를 받는다.
     def __init__(self, api_key: str, model: str) -> None:
         self.api_key = api_key
         self.model = model or "gpt-4.1-mini"
         self.base_url = "https://api.openai.com/v1/chat/completions"
 
     def review(self, system_prompt: str, user_prompt: str) -> dict[str, Any]:
+        # 결과를 후처리하기 쉽도록 JSON Schema로 응답 형식을 고정한다.
         payload = {
             "model": self.model,
             "temperature": 0,
@@ -182,8 +195,8 @@ class OpenAIClient:
         return json.loads(content)
 
 
-
 def should_skip_file(path: str, patch: str | None) -> bool:
+    # 리뷰 효율이 낮은 파일이나 patch가 없는 파일은 모델 입력에서 제외한다.
     if not patch:
         return True
     if path.endswith(tuple(SKIP_SUFFIXES)):
@@ -194,15 +207,15 @@ def should_skip_file(path: str, patch: str | None) -> bool:
     return bool(parts & SKIP_PATH_PARTS)
 
 
-
 def truncate_text(text: str, limit: int) -> str:
+    # 토큰/문자 수 제한을 넘지 않도록 긴 텍스트를 잘라낸다.
     if len(text) <= limit:
         return text
     return text[: limit - 16] + "\n...<truncated>"
 
 
-
 def load_agent_context(changed_files: list[str]) -> str:
+    # 변경 파일 기준으로 관련 AGENTS.md만 골라 프롬프트에 포함한다.
     repo_root = Path.cwd()
     agent_paths = [repo_root / "AGENTS.md"]
     top_level_dirs = {Path(path).parts[0] for path in changed_files if Path(path).parts}
@@ -228,8 +241,8 @@ def load_agent_context(changed_files: list[str]) -> str:
     return "\n\n".join(chunks)
 
 
-
 def summarize_files(files: list[dict[str, Any]]) -> str:
+    # 모델이 전체 변경 범위를 빠르게 파악하도록 파일 요약 목록을 만든다.
     lines: list[str] = []
     for file in files:
         lines.append(
@@ -238,8 +251,8 @@ def summarize_files(files: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-
 def build_diff_payload(files: list[dict[str, Any]]) -> tuple[str, list[str], list[str]]:
+    # 실제 모델에 넣을 diff 본문을 만들고, 포함/제외 파일 목록도 함께 반환한다.
     included: list[str] = []
     skipped: list[str] = []
     payload_chunks: list[str] = []
@@ -282,8 +295,8 @@ def build_diff_payload(files: list[dict[str, Any]]) -> tuple[str, list[str], lis
     return "\n\n".join(payload_chunks), included, skipped
 
 
-
 def build_prompts(pr: dict[str, Any], files: list[dict[str, Any]]) -> tuple[str, str, list[str], list[str]]:
+    # PR 메타데이터, AGENTS 규칙, diff를 합쳐 최종 프롬프트를 구성한다.
     diff_payload, included, skipped = build_diff_payload(files)
     agents = load_agent_context(included or [file["filename"] for file in files])
     metadata = textwrap.dedent(
@@ -338,8 +351,8 @@ def build_prompts(pr: dict[str, Any], files: list[dict[str, Any]]) -> tuple[str,
     return system_prompt, user_prompt, included, skipped
 
 
-
 def format_comment(result: dict[str, Any], included: list[str], skipped: list[str], status: str = "ok") -> str:
+    # 모델 결과를 사람이 읽기 쉬운 PR 코멘트 본문으로 변환한다.
     summary = result.get("summary", "") or "No summary provided."
     findings = result.get("findings", []) or []
     findings = sorted(
@@ -393,8 +406,8 @@ def format_comment(result: dict[str, Any], included: list[str], skipped: list[st
     return truncate_text(body, 60000)
 
 
-
 def upsert_comment(gh: GitHubClient, pr_number: int, body: str) -> None:
+    # marker가 달린 기존 코멘트가 있으면 갱신하고, 없으면 새로 만든다.
     comments = gh.issue_comments(pr_number)
     existing = next((item for item in comments if MARKER in item.get("body", "")), None)
     if existing:
@@ -403,8 +416,12 @@ def upsert_comment(gh: GitHubClient, pr_number: int, body: str) -> None:
         gh.create_issue_comment(pr_number, body)
 
 
-
 def main() -> None:
+    # 전체 흐름:
+    # 1) GitHub event에서 PR 정보를 읽고
+    # 2) 변경 파일과 diff를 수집한 뒤
+    # 3) OpenAI로 리뷰를 생성하고
+    # 4) PR sticky comment를 생성/갱신한다.
     event_path = os.getenv("GITHUB_EVENT_PATH") or os.getenv("EVENT_PATH")
     github_token = os.getenv("GITHUB_TOKEN")
     if not event_path:
@@ -422,6 +439,7 @@ def main() -> None:
     gh = GitHubClient(repo_full_name, github_token)
     files = gh.pull_request_files(pr_number)
 
+    # 리뷰 가능한 텍스트 diff가 하나도 없으면 스킵 코멘트만 남긴다.
     reviewable_files = [file for file in files if not should_skip_file(file["filename"], file.get("patch"))]
     if not reviewable_files:
         body = format_comment(
@@ -433,6 +451,7 @@ def main() -> None:
         upsert_comment(gh, pr_number, body)
         return
 
+    # 비밀키가 없더라도 워크플로우 전체를 실패시키지 않고 원인을 코멘트로 남긴다.
     api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key:
         body = format_comment(
@@ -448,6 +467,7 @@ def main() -> None:
     client = OpenAIClient(api_key=api_key, model=os.getenv("OPENAI_REVIEW_MODEL", "") or "gpt-4.1-mini")
 
     try:
+        # 모델 호출 실패도 워크플로우 전체 실패보다 코멘트 가시성을 우선한다.
         result = client.review(system_prompt=system_prompt, user_prompt=user_prompt)
         body = format_comment(result, included, skipped, status="ok")
     except Exception as error:  # noqa: BLE001
