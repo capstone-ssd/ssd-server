@@ -11,5 +11,4 @@ public class SsdApplication {
     public static void main(String[] args) {
         SpringApplication.run(SsdApplication.class, args);
     }
-
 }
