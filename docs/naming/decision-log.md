@@ -15,7 +15,8 @@
 | Date | Issue/PR | Decision | Reason | Impact |
 | --- | --- | --- | --- | --- |
 | 2026-04-08 | `#137` | 내부 공식 사용자 용어는 `Member`로 고정한다. | 실제 엔티티, 저장소 인터페이스, 권한 모델이 `Member`를 기준으로 설계되어 있다. `user`는 외부 설명 문맥에만 제한적으로 허용한다. | `JWTService`, OAuth/JWT naming 정리 (`#143`, `#144`) |
-| 2026-04-08 | `#137` | 문서 내부 공통 단위는 `Block`, 텍스트 하위 개념은 `Paragraph`로 구분한다. | 현재 코드에서 이미지와 텍스트가 모두 `blockId` 기준으로 관리된다. `Paragraph`를 전체 단위처럼 쓰면 이미지 문맥에서 의미가 무너진다. | Document DTO 및 `DocumentService` naming 정리 (`#138`, `#139`, `#140`, `#141`, `#142`) |
+| 2026-04-08 | `#137` | `Paragraph`는 텍스트 콘텐츠 개념, `Block`은 문서-로컬 식별 단위로 구분한다. | 사용자 입력 기준으로 `Paragraph`는 문단/문장 내용을 가리키고, `Block`은 한 문서 안에서 순서/주석/비교를 위해 부여되는 식별 단위다. 두 용어는 상하관계보다 스코프와 역할이 다르다. | Document DTO 및 `DocumentService` naming 정리 (`#138`, `#139`, `#140`, `#141`, `#142`) |
 | 2026-04-08 | `#137` | 사람 평가에는 `Review`, AI/시스템 평가에는 `Evaluation`을 사용한다. | 평가자 리뷰와 외부 AI 평가를 같은 단어로 처리하면 응답 모델과 서비스 책임이 흐려진다. | External AI/평가자 도메인 DTO 정리 (`#140`) |
 | 2026-04-08 | `#137` | `Reissue`는 유스케이스 이름, `Rotate`는 refresh 교체 전략 이름으로 분리한다. | 현재 `/reissue` API와 `refreshRotate()` 메서드가 다른 추상화 레벨의 용어를 섞고 있다. | JWT/Auth naming 정리 (`#144`) |
-| 2026-04-08 | `#137` | 무효화된 access token 저장 개념은 `Blacklist`로 유지한다. | 이미 저장소 이름과 의도가 `AccessTokenBlacklistRepository`로 드러나 있고, 이번 단계에서는 저장소 개념을 유지하는 편이 가장 작다. | JWT/Auth 문서화와 naming 정리 (`#144`) |
+| 2026-04-08 | `#137` | 무효화된 access token 저장과 등록 행위 모두 `Blacklist` 용어를 우선한다. | 이미 저장소 이름과 의도가 `AccessTokenBlacklistRepository`로 드러나 있고, 사용자 결정도 `Blacklist`를 선호한다. 별도 `revoke` 용어를 섞기보다 현재 문맥을 유지하는 편이 작고 명확하다. | JWT/Auth 문서화와 naming 정리 (`#144`) |
+| 2026-04-08 | `#137` | 문서 작성자와 문서 소유자는 SSD에서 같은 개념으로 본다. | 현재 응답 모델과 권한 문맥이 같은 사람을 서로 다른 단어로 표현하고 있어, 별도 개념으로 분리할 실익이 작다. | Document 응답 및 권한 문맥 정리 (`#139`, `#140`) |

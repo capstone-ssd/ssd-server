@@ -8,12 +8,12 @@
 | Canonical term | Current mixed terms | Example | Why it is a problem | Follow-up issue |
 | --- | --- | --- | --- | --- |
 | Member | `Member`, `user`, `findUser`, `userRepository` | `JWTService`의 `MemberRepository userRepository`와 `Member findUser` | 엔티티 공식 명칭과 내부 변수명이 어긋나서 역할과 모델이 분리되어 보인다. | `#143`, `#144` |
-| Block / Paragraph | `Paragraph`, `Block`, `DocumentParagraph`, `CreateDocumentParagraphRequest`, `ResolvedDocumentBlock` | `DocumentService`는 `blocks`를 순회하지만 저장은 `DocumentParagraph`로 한다. | 이미지와 텍스트를 함께 다루는 순간 `Paragraph`가 상위 개념처럼 보이게 되어 경계가 무너진다. | `#138`, `#139`, `#140`, `#141`, `#142` |
+| Block / Paragraph | `Paragraph`, `Block`, `DocumentParagraph`, `CreateDocumentParagraphRequest`, `ResolvedDocumentBlock` | `DocumentService`는 `blockId` 기준으로 처리하지만 저장 모델과 DTO 이름은 `Paragraph`를 유지한다. | 텍스트 콘텐츠 개념과 문서-로컬 식별 단위가 섞이면 `Paragraph`와 `Block`의 스코프가 흐려진다. | `#138`, `#139`, `#140`, `#141`, `#142` |
 | Review / Evaluation | `EvaluatorReview`, `review`, `evaluation`, `ExternalAiEvaluation*` | 평가자 서비스는 `Review`, AI 응답은 `Evaluation`, `Document` 필드는 둘 다 함께 가진다. | 사람 평가와 시스템 평가의 결과 모델이 섞여 보인다. | `#140` |
-| Evaluator | `Evaluator`, `reviewer` | `EvaluatorReviewRepository.findByDocumentAndReviewer`, `EvaluatorReviewService.getReviewer` | 도메인 이름은 evaluator인데 내부 변수/메서드는 reviewer를 쓴다. | `#140` |
+| Evaluator | `Evaluator`, `reviewer` | `EvaluatorReviewRepository.findByDocumentAndReviewer`, `EvaluatorReviewService.getReviewer`, `EvaluatorReview.reviewer` | 엔티티/API prefix는 evaluator인데 내부 변수/메서드/필드는 reviewer를 쓴다. | `#140` |
 | Author | `member`, `authorId`, `authorName` | `GetDocumentResponse`는 `doc.getMember()`를 `authorId`, `authorName`으로 노출한다. | 저장 주체와 역할 표현이 같은 문맥에서 섞인다. | `#139`, `#140` |
 | Reissue / Rotate | `reissue`, `refreshRotate` | `/reissue` 엔드포인트는 유스케이스 이름이고 서비스 메서드는 전략 이름을 쓴다. | 같은 기능을 API와 서비스가 다른 이름으로 부르고 있어 추상화 레벨이 맞지 않는다. | `#144` |
-| Blacklist / Revoke | `blacklist`, `logout`, `invalidate` 의미 혼재 | `AccessTokenBlacklistRepository`는 저장소 이름이고 로그아웃 설명은 무효화 행위에 초점이 있다. | 저장 개념과 행위 개념이 섞이면 메서드명 설계가 흔들린다. | `#144` |
+| Blacklist | `blacklist`, `logout`, `invalidate` 의미 혼재 | `AccessTokenBlacklistRepository`는 `blacklist`를 쓰지만 설명과 일부 문맥은 `invalidate` 류 표현을 섞는다. | 토큰 무효화 저장/행위를 `blacklist`로 고정했으므로 다른 동사를 섞으면 naming 기준이 흔들린다. | `#144` |
 | Summary / ShortSummary / Details | `summary`, `shortSummary`, `details` | `Document` 엔티티와 `ExternalAiService`가 세 종류의 요약 표현을 동시에 사용한다. | 요약 결과의 계층이 코드만 보고 즉시 이해되지 않는다. | `#140` |
 
 ## 예시 위치
