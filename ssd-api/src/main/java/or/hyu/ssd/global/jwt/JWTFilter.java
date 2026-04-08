@@ -54,8 +54,7 @@ public class JWTFilter extends OncePerRequestFilter{
             setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
             return;
         }
-        // Bearer 뒤의 토큰을 추출
-        String accessToken = authorizationHeader.substring(7).trim();
+        String accessToken = BearerTokenExtractor.extract(authorizationHeader);
 
         try {
             jwtUtil.isExpired(accessToken);

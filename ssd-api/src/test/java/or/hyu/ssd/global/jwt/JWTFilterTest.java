@@ -85,6 +85,8 @@ class JWTFilterTest {
         request.addHeader("Authorization", "Bearer valid-token");
         when(jwtUtil.isExpired("valid-token")).thenReturn(false);
         when(jwtUtil.getCategory("valid-token")).thenReturn("access");
+        when(jwtUtil.getJti("valid-token")).thenReturn("test-jti");
+        when(accessTokenBlacklistRepository.exists("test-jti")).thenReturn(false);
         when(jwtUtil.getId("valid-token")).thenReturn(1L);
         when(jwtUtil.getRole("valid-token")).thenReturn("ROLE_AUTHOR");
         when(customUserDetailsService.loadUserById(1L))

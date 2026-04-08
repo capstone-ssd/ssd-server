@@ -66,14 +66,12 @@ class JWTServiceTest {
     @Test
     @DisplayName("logout()은 access token을 블랙리스트에 등록하고 refresh token을 삭제한 뒤 refresh-token 쿠키를 만료시킨다")
     void logout_blacklistsAccessTokenAndExpiresCookie() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        request.addHeader("Authorization", "Bearer valid-access-token");
 
         when(jwtUtil.getRemainingExpiration("valid-access-token")).thenReturn(1800L);
         when(jwtUtil.getJti("valid-access-token")).thenReturn("access-jti");
 
-        jwtService.logout(1L, request, response);
+        jwtService.logout(1L, "valid-access-token", response);
 
         verify(accessTokenBlacklistRepository).save("access-jti", 1800L);
         verify(refreshTokenRepository).deleteById(1L);

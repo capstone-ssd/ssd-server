@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.global.config.properties.JWTConfig;
+import or.hyu.ssd.global.jwt.BearerTokenExtractor;
 import or.hyu.ssd.global.jwt.service.JWTService;
 import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class JWTController {
 
     private final JWTService jwtService;
+    private final JWTConfig jwtConfig;
 
     @GetMapping("/access")
     @Operation(
@@ -110,14 +113,15 @@ public class JWTController {
                     - refresh-token 쿠키 만료
 
                     ### 주의
-                    - 기존 access 토큰은 만료 시점까지 유효하며, 이후 재발급은 불가능합니다.
+                    - 로그아웃 시 access 토큰은 즉시 블랙리스트에 등록되어 무효화됩니다.
                     """
     )
     public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                       HttpServletRequest request,
                                                       HttpServletResponse response) {
+        String accessToken = BearerTokenExtractor.extract(request.getHeader(jwtConfig.getHeader()));
 
-        jwtService.logout(userDetails.getMember().getId(), request, response);
+        jwtService.logout(userDetails.getMember().getId(), accessToken, response);
 
         return ResponseEntity.ok(ApiResponse.ok(null, "성공적으로 로그아웃되었습니다"));
     }
