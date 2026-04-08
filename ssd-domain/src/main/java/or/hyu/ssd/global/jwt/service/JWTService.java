@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
+import or.hyu.ssd.global.api.handler.TokenHandler;
 import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
 import or.hyu.ssd.domain.member.valid.RefreshTokenValidator;
 import or.hyu.ssd.global.api.ErrorCode;
@@ -12,6 +13,7 @@ import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.CookieConfig;
 import or.hyu.ssd.global.config.properties.JWTConfig;
 import or.hyu.ssd.global.jwt.JWTUtil;
+import or.hyu.ssd.global.jwt.repository.AccessTokenBlacklistRepository;
 import or.hyu.ssd.global.util.CookieUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,7 @@ public class JWTService {
     private final JWTConfig jwtConfig;
     private final MemberRepository userRepository;
     private final RefreshTokenRepository refreshTokenRedisTemplateUtil;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
     private final CookieConfig cookieConfig;
     private final RefreshTokenValidator refreshTokenValidator;
 
@@ -85,7 +88,13 @@ public class JWTService {
 
     }
 
-    public void logout(Long userId, HttpServletResponse response) {
+    public void logout(Long userId, HttpServletRequest request, HttpServletResponse response) {
+        String accessToken = extractAccessToken(request);
+        long remainingExpiration = jwtUtil.getRemainingExpiration(accessToken);
+        if (remainingExpiration > 0) {
+            accessTokenBlacklistRepository.save(jwtUtil.getJti(accessToken), remainingExpiration);
+        }
+
         refreshTokenRedisTemplateUtil.deleteById(userId);
 
         CookieUtil.expireSameSiteCookie(
@@ -95,5 +104,16 @@ public class JWTService {
                 cookieConfig.isSecure(),
                 cookieConfig.getSameSite()
         );
+    }
+
+    private String extractAccessToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader(jwtConfig.getHeader());
+        if (authorizationHeader == null) {
+            throw new TokenHandler(ErrorCode.ACCESS_TOKEN_REQUIRED);
+        }
+        if (!authorizationHeader.startsWith("Bearer ")) {
+            throw new TokenHandler(ErrorCode.ACCESS_INVALID_TYPE);
+        }
+        return authorizationHeader.substring(7).trim();
     }
 }

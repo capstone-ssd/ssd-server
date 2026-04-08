@@ -114,9 +114,10 @@ public class JWTController {
                     """
     )
     public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                      HttpServletRequest request,
                                                       HttpServletResponse response) {
 
-        jwtService.logout(userDetails.getMember().getId(), response);
+        jwtService.logout(userDetails.getMember().getId(), request, response);
 
         return ResponseEntity.ok(ApiResponse.ok(null, "성공적으로 로그아웃되었습니다"));
     }
