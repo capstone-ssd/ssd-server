@@ -5,28 +5,25 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
-import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
 import or.hyu.ssd.domain.member.valid.RefreshTokenValidator;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.CookieConfig;
 import or.hyu.ssd.global.config.properties.JWTConfig;
 import or.hyu.ssd.global.jwt.JWTUtil;
+import or.hyu.ssd.global.jwt.repository.AccessTokenBlacklistRepository;
+import or.hyu.ssd.global.jwt.repository.RefreshTokenRepository;
 import or.hyu.ssd.global.util.CookieUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class JWTService {
-
-
-    private static final Logger log = LoggerFactory.getLogger(JWTService.class);
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
     private final MemberRepository userRepository;
     private final RefreshTokenRepository refreshTokenRedisTemplateUtil;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
     private final CookieConfig cookieConfig;
     private final RefreshTokenValidator refreshTokenValidator;
 
@@ -85,7 +82,12 @@ public class JWTService {
 
     }
 
-    public void logout(Long userId, HttpServletResponse response) {
+    public void logout(Long userId, String accessToken, HttpServletResponse response) {
+        long remainingExpiration = jwtUtil.getRemainingExpiration(accessToken);
+        if (remainingExpiration > 0) {
+            accessTokenBlacklistRepository.save(jwtUtil.getJti(accessToken), remainingExpiration);
+        }
+
         refreshTokenRedisTemplateUtil.deleteById(userId);
 
         CookieUtil.expireSameSiteCookie(

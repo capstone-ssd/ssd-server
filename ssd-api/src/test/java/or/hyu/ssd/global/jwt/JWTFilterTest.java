@@ -11,6 +11,7 @@ import or.hyu.ssd.domain.member.service.CustomUserDetailsService;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.JWTConfig;
+import or.hyu.ssd.global.jwt.repository.AccessTokenBlacklistRepository;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockFilterChain;
@@ -32,10 +33,13 @@ class JWTFilterTest {
     @Mock
     private CustomUserDetailsService customUserDetailsService;
 
+    @Mock
+    private AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+
     @Test
     @DisplayName("Bearer 스킴이 아닌 Authorization 헤더는 401과 상세 메시지를 반환한다")
     void doFilterInternal_invalidAuthorizationHeader_returnsUnauthorized() throws ServletException, IOException {
-        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService);
+        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService, accessTokenBlacklistRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain filterChain = new MockFilterChain();
@@ -53,7 +57,7 @@ class JWTFilterTest {
     @Test
     @DisplayName("만료된 액세스 토큰은 401과 만료 메시지를 반환한다")
     void doFilterInternal_expiredAccessToken_returnsUnauthorized() throws ServletException, IOException {
-        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService);
+        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService, accessTokenBlacklistRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain filterChain = new MockFilterChain();
@@ -72,7 +76,7 @@ class JWTFilterTest {
     @Test
     @DisplayName("토큰의 회원이 존재하지 않으면 401과 상세 메시지를 반환한다")
     void doFilterInternal_tokenMemberNotFound_returnsUnauthorized() throws ServletException, IOException {
-        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService);
+        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService, accessTokenBlacklistRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain filterChain = new MockFilterChain();
@@ -81,6 +85,8 @@ class JWTFilterTest {
         request.addHeader("Authorization", "Bearer valid-token");
         when(jwtUtil.isExpired("valid-token")).thenReturn(false);
         when(jwtUtil.getCategory("valid-token")).thenReturn("access");
+        when(jwtUtil.getJti("valid-token")).thenReturn("test-jti");
+        when(accessTokenBlacklistRepository.exists("test-jti")).thenReturn(false);
         when(jwtUtil.getId("valid-token")).thenReturn(1L);
         when(jwtUtil.getRole("valid-token")).thenReturn("ROLE_AUTHOR");
         when(customUserDetailsService.loadUserById(1L))
@@ -91,5 +97,27 @@ class JWTFilterTest {
         assertThat(response.getStatus()).isEqualTo(ErrorCode.TOKEN_MEMBER_NOT_FOUND.getStatus().value());
         assertThat(response.getContentAsString()).contains(ErrorCode.TOKEN_MEMBER_NOT_FOUND.getCode());
         assertThat(response.getContentAsString()).contains(ErrorCode.TOKEN_MEMBER_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("블랙리스트에 등록된 액세스 토큰은 401과 상세 메시지를 반환한다")
+    void doFilterInternal_blacklistedAccessToken_returnsUnauthorized() throws ServletException, IOException {
+        JWTFilter jwtFilter = new JWTFilter(jwtUtil, jwtConfig, customUserDetailsService, accessTokenBlacklistRepository);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+
+        when(jwtConfig.getHeader()).thenReturn("Authorization");
+        request.addHeader("Authorization", "Bearer blacklisted-token");
+        when(jwtUtil.isExpired("blacklisted-token")).thenReturn(false);
+        when(jwtUtil.getCategory("blacklisted-token")).thenReturn("access");
+        when(jwtUtil.getJti("blacklisted-token")).thenReturn("access-jti");
+        when(accessTokenBlacklistRepository.exists("access-jti")).thenReturn(true);
+
+        jwtFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(response.getStatus()).isEqualTo(ErrorCode.ACCESS_TOKEN_BLACKLISTED.getStatus().value());
+        assertThat(response.getContentAsString()).contains(ErrorCode.ACCESS_TOKEN_BLACKLISTED.getCode());
+        assertThat(response.getContentAsString()).contains(ErrorCode.ACCESS_TOKEN_BLACKLISTED.getMessage());
     }
 }

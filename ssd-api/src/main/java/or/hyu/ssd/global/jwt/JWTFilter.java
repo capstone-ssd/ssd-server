@@ -14,6 +14,7 @@ import or.hyu.ssd.domain.member.service.CustomUserDetailsService;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.JWTConfig;
+import or.hyu.ssd.global.jwt.repository.AccessTokenBlacklistRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,6 +38,7 @@ public class JWTFilter extends OncePerRequestFilter{
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
     private final CustomUserDetailsService customUserDetailsService;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -52,14 +54,18 @@ public class JWTFilter extends OncePerRequestFilter{
             setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
             return;
         }
-        // Bearer 뒤의 토큰을 추출
-        String accessToken = authorizationHeader.substring(7).trim();
+        String accessToken = BearerTokenExtractor.extract(authorizationHeader);
 
         try {
             jwtUtil.isExpired(accessToken);
             String category = jwtUtil.getCategory(accessToken);
             if (!"access".equals(category)) {
                 setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
+                return;
+            }
+            String jti = jwtUtil.getJti(accessToken);
+            if (accessTokenBlacklistRepository.exists(jti)) {
+                setErrorResponse(response, ErrorCode.ACCESS_TOKEN_BLACKLISTED);
                 return;
             }
             Long id = jwtUtil.getId(accessToken);
