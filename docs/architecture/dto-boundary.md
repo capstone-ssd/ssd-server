@@ -89,7 +89,7 @@
 ### A. `ssd-api`로 가야 하는 웹 계약 DTO
 - `CreateDocumentRequest`
 - `UpdateDocumentRequest`
-- `CreateDocumentParagraphRequest`
+- `CreateDocumentBlockRequest`
 - `CreateFolderRequest`
 - `UpdateFolderRequest`
 - `DocumentImageMetaRequest`
@@ -100,6 +100,8 @@
 - `EvaluatorReviewDetailResponse`
 - `ExternalAiSummaryResponse`
 - `GetMyMemberResponse`
+
+> `#139`에서 Document 핵심 CRUD DTO(`CreateDocumentRequest`, `UpdateDocumentRequest`, `CreateDocumentBlockRequest`, `GetDocumentResponse`, `DocumentImageMetaRequest`)는 `ssd-api`로 이동했다.
 
 ### B. `ssd-domain/.../client/dto`로 가야 하는 외부 연동 payload
 - `ExternalEvaluationRequest`

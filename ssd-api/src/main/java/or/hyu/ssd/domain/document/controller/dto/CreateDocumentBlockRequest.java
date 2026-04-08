@@ -2,11 +2,12 @@ package or.hyu.ssd.domain.document.controller.dto;
 
 import jakarta.validation.constraints.AssertTrue;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
+import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
-public record CreateDocumentParagraphRequest(
+public record CreateDocumentBlockRequest(
         DocumentBlockType type,
         String content,
         String role,
@@ -14,7 +15,6 @@ public record CreateDocumentParagraphRequest(
         String blobKey,
         String url
 ) {
-
     private static final Pattern ROLE_PATTERN = Pattern.compile("^#{0,6}$");
 
     public DocumentBlockType resolvedType() {
@@ -34,5 +34,9 @@ public record CreateDocumentParagraphRequest(
         return !StringUtils.hasText(content)
                 && !StringUtils.hasText(role)
                 && (StringUtils.hasText(blobKey) || StringUtils.hasText(url));
+    }
+
+    public DocumentBlockCommand toCommand() {
+        return new DocumentBlockCommand(type, content, role, blockId, blobKey, url);
     }
 }

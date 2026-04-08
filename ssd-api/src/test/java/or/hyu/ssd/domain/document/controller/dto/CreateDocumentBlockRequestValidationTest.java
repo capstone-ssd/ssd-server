@@ -13,7 +13,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DocumentParagraphValidationTest {
+class CreateDocumentBlockRequestValidationTest {
 
     private static final ValidatorFactory VALIDATOR_FACTORY = Validation.buildDefaultValidatorFactory();
     private static final Validator VALIDATOR = VALIDATOR_FACTORY.getValidator();
@@ -25,10 +25,10 @@ class DocumentParagraphValidationTest {
 
     @Test
     @DisplayName("문단 블록은 content와 role 조합을 검증한다")
-    void createDocumentParagraphRoleValidation() {
-        CreateDocumentParagraphRequest validEmpty = new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "본문", "", 1, null, null);
-        CreateDocumentParagraphRequest validHeading = new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "본문", "#####", 1, null, null);
-        CreateDocumentParagraphRequest invalidBody = new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "본문", "BODY", 1, null, null);
+    void createDocumentBlockRoleValidation() {
+        CreateDocumentBlockRequest validEmpty = new CreateDocumentBlockRequest(DocumentBlockType.PARAGRAPH, "본문", "", 1, null, null);
+        CreateDocumentBlockRequest validHeading = new CreateDocumentBlockRequest(DocumentBlockType.PARAGRAPH, "본문", "#####", 1, null, null);
+        CreateDocumentBlockRequest invalidBody = new CreateDocumentBlockRequest(DocumentBlockType.PARAGRAPH, "본문", "BODY", 1, null, null);
 
         assertThat(VALIDATOR.validate(validEmpty)).isEmpty();
         assertThat(VALIDATOR.validate(validHeading)).isEmpty();
@@ -39,9 +39,9 @@ class DocumentParagraphValidationTest {
     @Test
     @DisplayName("이미지 블록은 blobKey 또는 url이 있어야 한다")
     void imageBlockValidation() {
-        CreateDocumentParagraphRequest validBlobKey = new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null);
-        CreateDocumentParagraphRequest validUrl = new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, null, "https://example.com/image.png");
-        CreateDocumentParagraphRequest invalidImage = new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, null, null);
+        CreateDocumentBlockRequest validBlobKey = new CreateDocumentBlockRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null);
+        CreateDocumentBlockRequest validUrl = new CreateDocumentBlockRequest(DocumentBlockType.IMAGE, null, null, 2, null, "https://example.com/image.png");
+        CreateDocumentBlockRequest invalidImage = new CreateDocumentBlockRequest(DocumentBlockType.IMAGE, null, null, 2, null, null);
 
         assertThat(VALIDATOR.validate(validBlobKey)).isEmpty();
         assertThat(VALIDATOR.validate(validUrl)).isEmpty();
