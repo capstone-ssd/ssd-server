@@ -14,7 +14,7 @@
 | Author | `member`, `authorId`, `authorName` | `GetDocumentResponse`는 `doc.getMember()`를 `authorId`, `authorName`으로 노출한다. | 저장 주체와 역할 표현이 같은 문맥에서 섞인다. | `#139`, `#140` |
 | Reissue / Rotate | `reissue`, `refreshRotate` | `/reissue` 엔드포인트는 유스케이스 이름이고 서비스 메서드는 전략 이름을 쓴다. | 같은 기능을 API와 서비스가 다른 이름으로 부르고 있어 추상화 레벨이 맞지 않는다. | `#144` |
 | Blacklist | `blacklist`, `logout`, `invalidate` 의미 혼재 | `AccessTokenBlacklistRepository`는 `blacklist`를 쓰지만 설명과 일부 문맥은 `invalidate` 류 표현을 섞는다. | 토큰 무효화 저장/행위를 `blacklist`로 고정했으므로 다른 동사를 섞으면 naming 기준이 흔들린다. | `#144` |
-| Summary / ShortSummary / Details | `summary`, `shortSummary`, `details` | `Document` 엔티티와 `ExternalAiService`가 세 종류의 요약 표현을 동시에 사용한다. | 요약 결과의 계층이 코드만 보고 즉시 이해되지 않는다. | `#140` |
+| Summary / ShortSummary / Details | `summary`, `shortSummary`, `details` | `Document` 엔티티와 `ExternalAiService`가 세 종류의 요약 표현을 동시에 사용한다. | 이름은 유지하기로 했으므로, 후속 이슈에서는 rename보다 각 필드의 의미와 노출 방식이 일관한지만 확인하면 된다. | `#140` |
 
 ## 예시 위치
 - `Member` / `user` 혼용

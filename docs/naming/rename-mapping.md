@@ -24,4 +24,4 @@
 | `findByDocumentAndReviewer` | `findByDocumentAndEvaluator` | 평가자 역할명과 저장소 메서드명을 일치시킨다. | `#140` | planned |
 | `existsByDocumentAndReviewer` | `existsByDocumentAndEvaluator` | 평가자 역할명과 저장소 메서드명을 일치시킨다. | `#140` | planned |
 | `reviewer` 필드/변수/헬퍼 | `evaluator` 필드/변수/헬퍼 | `Evaluator*` 엔티티/API prefix와 내부 명칭을 일치시킨다. | `#140` | planned |
-| `details` | `detailedSummary` 검토 | 요약 계층을 이름만 보고도 구분 가능하게 만든다. | `#140` | planned |
+| `summary` / `shortSummary` / `details` | 이름 유지, 의미만 고정 | 현재 저장/응답 필드가 이미 쓰이고 있어 이 단계에서는 rename보다 의미 정리가 우선이다. | `#140` | planned |

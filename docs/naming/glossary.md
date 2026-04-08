@@ -20,7 +20,7 @@
 | Review | 사람이 남긴 평가 결과다. SSD에서는 특히 `Evaluator`가 남긴 리뷰를 뜻한다. | evaluator review, human review | evaluation, ai review | `#140` |
 | Evaluation | 시스템 또는 외부 AI가 산출한 평가 결과다. 사람 리뷰와 구분되는 개념으로 유지한다. | ai evaluation, system evaluation | review | `#140`, `#143` |
 | Checklist | 평가 기준 또는 판단 항목의 집합이다. 리뷰나 평가 결과 자체가 아니라 판단 근거를 뜻한다. | criteria set, 체크 항목 | review, evaluation | `#140` |
-| Summary | 문서 내용을 요약한 표준 텍스트다. `shortSummary`, `details`와는 별도 하위 표현으로 구분한다. | basic summary, 요약 | details, description | `#140` |
+| Summary | 문서 내용을 요약한 기본 요약 텍스트다. 현재 SSD에서는 주로 AI가 생성한 대표 요약을 뜻하며, 필드명은 그대로 `summary`를 유지한다. | basic summary, 요약 | details, description | `#140` |
 | Keyword | 문서에서 추출한 핵심 키워드 결과다. 태그나 일반 메타데이터와 구분한다. | keyword list, 핵심 키워드 | tag, label | `#140` |
 | Member | 인증, 영속성, 권한 부여의 기준이 되는 공식 회원 엔티티 명칭이다. 내부 코드에서는 `User`보다 `Member`를 우선한다. | account(외부 설명 한정), 회원 | user(내부 코드 기준) | `#143`, `#144` |
 | Author | `Member`가 문서 작성자 또는 문서 소유자 문맥에서 사용될 때의 역할명이다. SSD에서는 `Author`와 `Owner`를 같은 개념으로 본다. 저장 엔티티 이름 자체를 대체하지는 않는다. | owner, 작성자 | member(역할 문맥에서), user | `#139`, `#140` |
@@ -46,6 +46,7 @@
 - Rotate
 
 ## 보조 메모
-- `Summary`는 문서 요약의 상위 명칭이다.
-- `shortSummary`, `details`는 아직 필드명이 고정되어 있으나, 의미상 각각 짧은 요약과 상세 요약으로 구분된다.
-- 이 두 필드의 실제 rename 여부는 `rename-mapping.md`와 후속 이슈에서 결정한다.
+- `summary`는 기본 요약이다. 현재 `Document.summary` 주석 기준으로는 세 줄 요약 성격을 가진다.
+- `shortSummary`는 더 짧은 카드형 요약이다. 현재 `ExternalAiService`에서는 외부 응답의 `small` 값을 여기에 저장한다.
+- `details`는 상세 요약 또는 상세 설명 텍스트다. 이름은 유지하되, `summary`보다 긴 설명이라는 의미로 고정한다.
+- 이 세 필드는 당장 rename하지 않는다. 후속 이슈에서는 의미 충돌이 있는지만 검토한다.
