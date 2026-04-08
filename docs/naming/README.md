@@ -6,16 +6,18 @@
 - 도메인 용어, 클래스/메서드 명명 규칙, 금지 단어, 변경 결정 이력을 한 곳에서 관리한다.
 
 ## 문서 구성
-- `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/glossary.md`
+- `glossary.md`
   - 도메인 용어 사전
   - 같은 개념을 어떤 단어로 고정할지 정의한다.
-- `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/patterns.md`
+- `patterns.md`
   - 클래스, 메서드, DTO, boolean, port/adapter 이름 패턴을 정의한다.
-- `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/banned-words.md`
+- `banned-words.md`
   - 의미가 흐린 단어와 지양 표현을 관리한다.
-- `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/decision-log.md`
+- `mixed-terms.md`
+  - 현재 코드에서 같은 개념을 다른 단어로 혼용하는 사례를 기록한다.
+- `decision-log.md`
   - 용어 충돌이나 naming 결정의 근거를 남긴다.
-- `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/rename-mapping.md`
+- `rename-mapping.md`
   - 현재 이름과 목표 이름, 후속 이슈를 연결한다.
 
 ## 운영 원칙
@@ -33,4 +35,5 @@
 
 ## 현재 상태
 - 이 문서 구조는 `#136`에서 생성되었다.
-- 핵심 용어 정의와 rename 매핑의 실질 내용은 `#137` 이후 이슈에서 순차적으로 채운다.
+- 핵심 용어 정의, 혼용 사례, rename 매핑의 1차 기준은 `#137`에서 채운다.
+- 실제 코드 rename은 후속 구조 리팩터링 이슈에서 순차적으로 반영한다.
