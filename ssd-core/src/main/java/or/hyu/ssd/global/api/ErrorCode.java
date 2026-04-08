@@ -80,6 +80,7 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED,"TOKEN40307" ,"유효하지 않은 토큰입니다"),
     ACCESS_TOKEN_REQUIRED(HttpStatus.UNAUTHORIZED,"TOKEN40309" ,"액세스 토큰이 필요합니다"),
     TOKEN_MEMBER_NOT_FOUND(HttpStatus.UNAUTHORIZED,"TOKEN40310" ,"토큰에 해당하는 회원을 찾을 수 없습니다"),
+    ACCESS_TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED,"TOKEN40311" ,"로그아웃된 액세스 토큰입니다"),
 
     // 요청 바디/JSON 파싱 예외
     REQUEST_BODY_INVALID_JSON(HttpStatus.BAD_REQUEST, "REQ40001", "요청 본문 JSON 파싱에 실패했습니다. 문자열의 개행은 \\n 로 이스케이프해 주세요"),
