@@ -18,6 +18,10 @@
   - 트랜잭션 경계는 서비스 계층에 둔다.
   - 엔티티의 상태 변경은 의도된 메서드(`update*`, `of`)를 통해 수행한다.
 
+## Naming Reference
+- 도메인 용어의 정본은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/glossary.md`다.
+- 새 도메인 용어 추가 또는 기존 용어 재정의는 같은 PR에서 `decision-log.md`까지 갱신한다.
+
 ## Implementation Patterns
 
 ### Service Pattern

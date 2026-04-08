@@ -16,6 +16,10 @@
   - 비즈니스 도메인 지식(문서/회원 정책)을 담지 않는다.
   - 전역 계약(`ApiResponse`, `ErrorCode`) 변경 시 API/도메인/인프라 영향도를 검토한다.
 
+## Naming Reference
+- 공통 유틸, 설정, 예외 이름은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/patterns.md`를 따른다.
+- 모호한 공통 클래스명은 `banned-words.md`를 기준으로 피한다.
+
 ## Implementation Patterns
 
 ### Exception and Response Pattern
