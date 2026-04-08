@@ -57,7 +57,7 @@ public class FolderController {
             @Valid @RequestBody CreateFolderRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CreateFolderResponse dto = folderService.create(user, request);
+        CreateFolderResponse dto = CreateFolderResponse.from(folderService.create(user, request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "폴더가 생성되었습니다"));
     }
 
@@ -89,7 +89,7 @@ public class FolderController {
             @Valid @RequestBody UpdateFolderRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UpdateFolderResponse dto = folderService.update(id, user, request);
+        UpdateFolderResponse dto = UpdateFolderResponse.from(folderService.update(id, user, request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "폴더가 수정되었습니다"));
     }
 
@@ -147,7 +147,7 @@ public class FolderController {
             @Parameter(description = "부모 폴더 ID (없으면 루트)", schema = @Schema(type = "integer", example = "0"))
             @RequestParam(name = "parentId", required = false) @PositiveOrZero(message = "parentId는 0 이상이어야 합니다") Long parentId
     ) {
-        FolderContentResponse data = folderService.listContent(user, parentId);
+        FolderContentResponse data = FolderContentResponse.from(folderService.listContent(user, parentId));
         return ResponseEntity.ok(ApiResponse.ok(data, "폴더 내용이 조회되었습니다"));
     }
 
@@ -174,7 +174,7 @@ public class FolderController {
     public ResponseEntity<ApiResponse<FolderContentResponse>> listAllPaths(
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        FolderContentResponse data = folderService.listAllContent(user);
+        FolderContentResponse data = FolderContentResponse.from(folderService.listAllContent(user));
         return ResponseEntity.ok(ApiResponse.ok(data, "파일 경로 전체 조회에 성공했습니다"));
     }
 }

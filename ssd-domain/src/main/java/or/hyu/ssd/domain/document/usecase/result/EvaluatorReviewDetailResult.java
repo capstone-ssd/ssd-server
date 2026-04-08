@@ -1,10 +1,10 @@
-package or.hyu.ssd.domain.document.controller.dto;
+package or.hyu.ssd.domain.document.usecase.result;
 
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
 
 import java.time.LocalDateTime;
 
-public record EvaluatorReviewListItemResponse(
+public record EvaluatorReviewDetailResult(
         Long reviewId,
         String reviewerName,
         String reviewerEmail,
@@ -15,8 +15,8 @@ public record EvaluatorReviewListItemResponse(
         double totalScore,
         String comment
 ) {
-    public static EvaluatorReviewListItemResponse of(EvaluatorReview review) {
-        return new EvaluatorReviewListItemResponse(
+    public static EvaluatorReviewDetailResult of(EvaluatorReview review) {
+        return new EvaluatorReviewDetailResult(
                 review.getId(),
                 review.getReviewer() == null ? null : review.getReviewer().getName(),
                 review.getReviewer() == null ? null : review.getReviewer().getEmail(),

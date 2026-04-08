@@ -54,7 +54,7 @@ public class DocumentLogController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentLogResponse response = documentLogService.list(documentId, user);
+        DocumentLogResponse response = DocumentLogResponse.from(documentLogService.list(documentId, user));
         return ResponseEntity.ok(ApiResponse.ok(response, "기록이 조회되었습니다"));
     }
 }

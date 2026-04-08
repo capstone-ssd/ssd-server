@@ -1,16 +1,16 @@
 package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewCreateRequest;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewDetailResponse;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewIdResponse;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewListResponse;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewUpdateRequest;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
+import or.hyu.ssd.domain.document.usecase.command.CreateEvaluatorReviewCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateEvaluatorReviewCommand;
+import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewDetailResult;
+import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewIdResult;
+import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewListItemResult;
+import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewListResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
@@ -28,7 +28,7 @@ public class EvaluatorReviewService {
     private final EvaluatorReviewRepository evaluatorReviewRepository;
     private final DocumentRepository documentRepository;
 
-    public EvaluatorReviewIdResponse create(Long documentId, CustomUserDetails user, EvaluatorReviewCreateRequest request) {
+    public EvaluatorReviewIdResult create(Long documentId, CustomUserDetails user, CreateEvaluatorReviewCommand command) {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
 
@@ -37,50 +37,50 @@ public class EvaluatorReviewService {
         }
 
         EvaluatorReview review = EvaluatorReview.of(
-                request.feasibility(),
-                request.differentiation(),
-                request.financial(),
-                request.comment(),
+                command.feasibility(),
+                command.differentiation(),
+                command.financial(),
+                command.comment(),
                 document,
                 reviewer
         );
         EvaluatorReview saved = evaluatorReviewRepository.save(review);
         recalculateAverages(document);
-        return EvaluatorReviewIdResponse.of(saved.getId());
+        return EvaluatorReviewIdResult.of(saved.getId());
     }
 
-    public EvaluatorReviewDetailResponse update(Long documentId, CustomUserDetails user, EvaluatorReviewUpdateRequest request) {
+    public EvaluatorReviewDetailResult update(Long documentId, CustomUserDetails user, UpdateEvaluatorReviewCommand command) {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
                 .orElseThrow(() -> new DocumentException(ErrorCode.REVIEW_NOT_FOUND));
 
         review.updateScores(
-                request.feasibility(),
-                request.differentiation(),
-                request.financial(),
-                request.comment()
+                command.feasibility(),
+                command.differentiation(),
+                command.financial(),
+                command.comment()
         );
         evaluatorReviewRepository.save(review);
         recalculateAverages(document);
-        return EvaluatorReviewDetailResponse.of(review);
+        return EvaluatorReviewDetailResult.of(review);
     }
 
     @Transactional(readOnly = true)
-    public EvaluatorReviewDetailResponse getMyReview(Long documentId, CustomUserDetails user) {
+    public EvaluatorReviewDetailResult getMyReview(Long documentId, CustomUserDetails user) {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
                 .orElseThrow(() -> new DocumentException(ErrorCode.REVIEW_NOT_FOUND));
-        return EvaluatorReviewDetailResponse.of(review);
+        return EvaluatorReviewDetailResult.of(review);
     }
 
     @Transactional(readOnly = true)
-    public EvaluatorReviewListResponse list(Long documentId, CustomUserDetails user) {
+    public EvaluatorReviewListResult list(Long documentId, CustomUserDetails user) {
         Document document = getOwnedDocument(documentId, user);
         List<EvaluatorReview> reviews = evaluatorReviewRepository.findAllByDocumentOrderByUpdatedAtDesc(document);
-        List<EvaluatorReviewListItemResponse> items = reviews.stream()
-                .map(EvaluatorReviewListItemResponse::of)
+        List<EvaluatorReviewListItemResult> items = reviews.stream()
+                .map(EvaluatorReviewListItemResult::of)
                 .toList();
 
         double averageTotalScore = reviews.stream()
@@ -89,7 +89,7 @@ public class EvaluatorReviewService {
                 .orElse(0.0);
         int reviewCount = reviews.size();
 
-        return EvaluatorReviewListResponse.of(document.getId(), averageTotalScore, reviewCount, items);
+        return EvaluatorReviewListResult.of(document.getId(), averageTotalScore, reviewCount, items);
     }
 
     public void delete(Long documentId, CustomUserDetails user) {

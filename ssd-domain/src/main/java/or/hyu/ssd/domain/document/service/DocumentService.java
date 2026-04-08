@@ -1,7 +1,5 @@
 package or.hyu.ssd.domain.document.service;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentLog;
@@ -23,8 +21,10 @@ import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommand;
 import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
 import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommand;
 import or.hyu.ssd.domain.document.usecase.result.CreateDocumentResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentBookmarkResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentBlockResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentDetailResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
 import or.hyu.ssd.domain.document.usecase.result.UpdateDocumentResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
@@ -148,7 +148,7 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentListItemResponse> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
+    public List<DocumentListItemResult> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
         if (user == null || user.getMember() == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
@@ -172,12 +172,12 @@ public class DocumentService {
         }
 
         return documents.stream()
-                .map(DocumentListItemResponse::of)
+                .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
     }
 
-    public DocumentBookmarkResponse toggleBookmark(Long documentId, CustomUserDetails user) {
-        DocumentBookmarkResponse result = optimisticRetryExecutor.execute(3, () -> {
+    public DocumentBookmarkResult toggleBookmark(Long documentId, CustomUserDetails user) {
+        DocumentBookmarkResult result = optimisticRetryExecutor.execute(3, () -> {
             Document doc = getDocument(documentId);
 
             if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -190,7 +190,7 @@ public class DocumentService {
             boolean newVal = !doc.isBookmark();
             doc.updateIfPresent(null, null, null, null, newVal);
             documentRepository.flush();
-            return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
+            return DocumentBookmarkResult.of(doc.getId(), doc.isBookmark());
         });
         return result;
     }

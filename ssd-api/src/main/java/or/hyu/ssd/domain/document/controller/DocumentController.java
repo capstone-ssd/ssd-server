@@ -289,7 +289,9 @@ public class DocumentController {
             @Parameter(description = "폴더 ID (없으면 전체, 0이면 루트)")
             @RequestParam(name = "folderId", required = false) @PositiveOrZero(message = "folderId는 0 이상이어야 합니다") Long folderId
     ) {
-        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort, folderId);
+        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort, folderId).stream()
+                .map(DocumentListItemResponse::from)
+                .toList();
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
     }
 
@@ -324,7 +326,7 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentBookmarkResponse dto = documentService.toggleBookmark(id, user);
+        DocumentBookmarkResponse dto = DocumentBookmarkResponse.from(documentService.toggleBookmark(id, user));
         return ResponseEntity.ok(ApiResponse.ok(dto, "즐겨찾기 상태가 토글되었습니다"));
     }
 

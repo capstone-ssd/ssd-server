@@ -6,14 +6,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewCreateRequest;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewDetailResponse;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewListResponse;
-import or.hyu.ssd.domain.document.controller.dto.EvaluatorReviewUpdateRequest;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
+import or.hyu.ssd.domain.document.usecase.command.CreateEvaluatorReviewCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateEvaluatorReviewCommand;
+import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewDetailResult;
+import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewListResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -49,7 +49,7 @@ class EvaluatorReviewServiceTest {
         assertThatThrownBy(() -> evaluatorReviewService.create(
                 10L,
                 new CustomUserDetails(member),
-                new EvaluatorReviewCreateRequest(80, 90, 70, "좋은 사업입니다")
+                new CreateEvaluatorReviewCommand(80, 90, 70, "좋은 사업입니다")
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("이미 작성한 리뷰가 존재합니다");
@@ -69,10 +69,10 @@ class EvaluatorReviewServiceTest {
         when(evaluatorReviewRepository.findAllByDocument(document)).thenReturn(List.of(review, other));
         when(evaluatorReviewRepository.save(any(EvaluatorReview.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        EvaluatorReviewDetailResponse response = evaluatorReviewService.update(
+        EvaluatorReviewDetailResult response = evaluatorReviewService.update(
                 10L,
                 new CustomUserDetails(reviewer),
-                new EvaluatorReviewUpdateRequest(100, 80, 60, "수정 의견")
+                new UpdateEvaluatorReviewCommand(100, 80, 60, "수정 의견")
         );
 
         assertThat(response.feasibility()).isEqualTo(100);
@@ -132,7 +132,7 @@ class EvaluatorReviewServiceTest {
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(evaluatorReviewRepository.findAllByDocumentOrderByUpdatedAtDesc(document)).thenReturn(List.of(first, second));
 
-        EvaluatorReviewListResponse response = evaluatorReviewService.list(10L, new CustomUserDetails(owner));
+        EvaluatorReviewListResult response = evaluatorReviewService.list(10L, new CustomUserDetails(owner));
 
         assertThat(response.documentId()).isEqualTo(10L);
         assertThat(response.averageTotalScore()).isEqualTo(75.0);

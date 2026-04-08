@@ -62,7 +62,9 @@ public class EvaluatorReviewController {
             @Valid @RequestBody EvaluatorReviewCreateRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        EvaluatorReviewIdResponse response = evaluatorReviewService.create(documentId, user, request);
+        EvaluatorReviewIdResponse response = EvaluatorReviewIdResponse.from(
+                evaluatorReviewService.create(documentId, user, request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 저장되었습니다"));
     }
 
@@ -82,7 +84,9 @@ public class EvaluatorReviewController {
             @Valid @RequestBody EvaluatorReviewUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        EvaluatorReviewDetailResponse response = evaluatorReviewService.update(documentId, user, request);
+        EvaluatorReviewDetailResponse response = EvaluatorReviewDetailResponse.from(
+                evaluatorReviewService.update(documentId, user, request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 수정되었습니다"));
     }
 
@@ -98,7 +102,9 @@ public class EvaluatorReviewController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        EvaluatorReviewDetailResponse response = evaluatorReviewService.getMyReview(documentId, user);
+        EvaluatorReviewDetailResponse response = EvaluatorReviewDetailResponse.from(
+                evaluatorReviewService.getMyReview(documentId, user)
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 조회되었습니다"));
     }
 
@@ -115,7 +121,9 @@ public class EvaluatorReviewController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        EvaluatorReviewListResponse response = evaluatorReviewService.list(documentId, user);
+        EvaluatorReviewListResponse response = EvaluatorReviewListResponse.from(
+                evaluatorReviewService.list(documentId, user)
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰 목록이 조회되었습니다"));
     }
 

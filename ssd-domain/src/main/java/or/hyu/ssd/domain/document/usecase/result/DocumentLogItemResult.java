@@ -1,11 +1,11 @@
-package or.hyu.ssd.domain.document.controller.dto;
+package or.hyu.ssd.domain.document.usecase.result;
 
 import or.hyu.ssd.domain.document.entity.DocumentLog;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public record DocumentLogItemResponse(
+public record DocumentLogItemResult(
         String savedTime,
         String editorName,
         String editorEmail,
@@ -14,8 +14,8 @@ public record DocumentLogItemResponse(
 ) {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    public static DocumentLogItemResponse of(DocumentLog log) {
-        return new DocumentLogItemResponse(
+    public static DocumentLogItemResult of(DocumentLog log) {
+        return new DocumentLogItemResult(
                 formatTime(log.getCreatedAt()),
                 log.getEditorName(),
                 log.getEditorEmail(),

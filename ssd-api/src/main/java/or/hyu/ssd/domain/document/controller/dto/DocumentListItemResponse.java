@@ -1,6 +1,7 @@
 package or.hyu.ssd.domain.document.controller.dto;
 
-import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
+
 import java.time.LocalDateTime;
 
 public record DocumentListItemResponse(
@@ -9,12 +10,12 @@ public record DocumentListItemResponse(
         Long folderId,
         LocalDateTime updatedAt
 ) {
-    public static DocumentListItemResponse of(Document doc) {
+    public static DocumentListItemResponse from(DocumentListItemResult result) {
         return new DocumentListItemResponse(
-                doc.getId(),
-                doc.getTitle(),
-                doc.getFolder() != null ? doc.getFolder().getId() : null,
-                doc.getUpdatedAt()
+                result.id(),
+                result.title(),
+                result.folderId(),
+                result.updatedAt()
         );
     }
 }

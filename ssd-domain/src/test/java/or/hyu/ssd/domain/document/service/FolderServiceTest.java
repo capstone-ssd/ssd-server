@@ -1,10 +1,11 @@
 package or.hyu.ssd.domain.document.service;
 
-import or.hyu.ssd.domain.document.controller.dto.FolderContentResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
+import or.hyu.ssd.domain.document.usecase.command.UpdateFolderCommand;
+import or.hyu.ssd.domain.document.usecase.result.FolderContentResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -53,7 +54,7 @@ class FolderServiceTest {
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 1L)).thenReturn(true);
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 2L)).thenReturn(false);
 
-        FolderContentResponse result = folderService.listContent(user, null);
+        FolderContentResult result = folderService.listContent(user, null);
 
         assertThat(result.parentId()).isEqualTo(0L);
         assertThat(result.currentFolderId()).isEqualTo(0L);
@@ -81,7 +82,7 @@ class FolderServiceTest {
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 1L)).thenReturn(true);
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 11L)).thenReturn(false);
 
-        FolderContentResponse result = folderService.listAllContent(user);
+        FolderContentResult result = folderService.listAllContent(user);
 
         assertThat(result.parentId()).isEqualTo(0L);
         assertThat(result.currentFolderId()).isEqualTo(0L);
@@ -104,7 +105,7 @@ class FolderServiceTest {
         assertThatThrownBy(() -> folderService.update(
                 1L,
                 user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest(null, null, null)
+                new UpdateFolderCommand(null, null, null)
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정할 값을 하나 이상 입력해 주세요");
@@ -121,7 +122,7 @@ class FolderServiceTest {
         assertThatThrownBy(() -> folderService.update(
                 1L,
                 user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest("   ", null, null)
+                new UpdateFolderCommand("   ", null, null)
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("폴더명은 공백일 수 없습니다");

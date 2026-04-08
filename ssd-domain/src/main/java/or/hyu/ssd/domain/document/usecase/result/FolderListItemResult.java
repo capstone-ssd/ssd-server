@@ -1,10 +1,10 @@
-package or.hyu.ssd.domain.document.controller.dto;
+package or.hyu.ssd.domain.document.usecase.result;
 
 import or.hyu.ssd.domain.document.entity.Folder;
 
 import java.time.LocalDateTime;
 
-public record FolderListItemResponse(
+public record FolderListItemResult(
         Long id,
         String name,
         String color,
@@ -12,8 +12,8 @@ public record FolderListItemResponse(
         boolean hasChildren,
         LocalDateTime updatedAt
 ) {
-    public static FolderListItemResponse of(Folder folder, boolean hasChildren) {
-        return new FolderListItemResponse(
+    public static FolderListItemResult of(Folder folder, boolean hasChildren) {
+        return new FolderListItemResult(
                 folder.getId(),
                 folder.getName(),
                 folder.getColor(),

@@ -1,0 +1,17 @@
+package or.hyu.ssd.domain.document.controller.dto;
+
+import or.hyu.ssd.domain.document.usecase.result.DocumentLogResult;
+
+import java.util.List;
+
+public record DocumentLogResponse(
+        Long documentId,
+        List<DocumentLogDateGroupResponse> records
+) {
+    public static DocumentLogResponse from(DocumentLogResult result) {
+        return new DocumentLogResponse(
+                result.documentId(),
+                result.records().stream().map(DocumentLogDateGroupResponse::from).toList()
+        );
+    }
+}
