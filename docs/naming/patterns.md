@@ -18,12 +18,15 @@
 - Exception handler: `*Handler`
 
 ## DTO
-- API 요청: `*Request`
-- API 응답: `*Response`
-- 내부 유스케이스 입력: `*Command` 검토
-- 내부 유스케이스 결과: `*Result` 검토
+- API 요청: `*Request`이며 `ssd-api/.../controller/dto`에 둔다.
+- API 응답: `*Response`이며 `ssd-api/.../controller/dto`에 둔다.
+- 내부 유스케이스 입력: `*Command`
+- 내부 유스케이스 결과: `*Result`
+- 검색/필터 입력: 필요 시 `*Criteria`, `*Query`
+- 외부 연동 payload: `*Request`, `*Response`, `*DTO`를 사용할 수 있으나 `ssd-domain/.../client/dto`에 둔다.
 - 리스트 아이템 응답: `*ListItemResponse`
 - 상세 응답: `*DetailResponse`
+- 레거시 `ssd-domain/.../controller/dto`는 확장하지 않는다.
 
 ## 메서드명
 - 조회: `get`, `find`, `list`, `load`

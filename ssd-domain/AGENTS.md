@@ -21,6 +21,7 @@
 ## Naming Reference
 - 도메인 용어의 정본은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/glossary.md`다.
 - 새 도메인 용어 추가 또는 기존 용어 재정의는 같은 PR에서 `decision-log.md`까지 갱신한다.
+- DTO 경계 원칙은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/architecture/dto-boundary.md`를 따른다.
 
 ## Implementation Patterns
 
@@ -37,7 +38,10 @@
 
 ### Entity and DTO Pattern
 - 엔티티는 생성 팩토리(`of`)와 의미 있는 업데이트 메서드를 유지한다.
-- 요청/응답 DTO는 현재 구조(`domain/.../controller/dto`)를 유지하되, API 직렬화 계약 변경 시 하위호환 영향을 점검한다.
+- 새 웹 요청/응답 DTO는 이 모듈에 추가하지 않는다.
+- 도메인 유스케이스 입력/출력 모델이 필요하면 `usecase/command`, `usecase/result`, `usecase/query` 패키지를 우선 검토한다.
+- 외부 연동 payload는 해당 `client/dto` 패키지에 둔다.
+- 기존 `domain/.../controller/dto`는 레거시 위치로 간주하고 후속 이슈에서 단계적으로 정리한다.
 - Querydsl 생성 파일은 생성 산출물로 간주하고 수동 수정하지 않는다.
 
 ## Testing Strategy
