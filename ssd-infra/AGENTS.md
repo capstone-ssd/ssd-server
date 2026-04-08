@@ -16,6 +16,10 @@
   - 인프라 계층에서 `ResponseEntity`, 컨트롤러, 보안 필터를 추가하지 않는다.
   - 권한/인증 판단 로직은 도메인 계층으로 유지한다.
 
+## Naming Reference
+- 저장소/어댑터 네이밍 규칙은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/patterns.md`를 따른다.
+- 도메인 용어와 충돌하는 조회 메서드명은 `glossary.md` 기준으로 정리한다.
+
 ## Implementation Patterns
 
 ### Repository Adapter Pattern

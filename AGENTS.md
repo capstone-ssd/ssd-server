@@ -58,6 +58,7 @@
   - 인터페이스를 `ssd-domain`에 추가하고
   - 구현/JPA 어댑터를 `ssd-infra`에 추가한다.
 - 신규 API는 Swagger 어노테이션과 입력 검증(`@Valid`)을 함께 제공한다.
+- 신규 도메인 용어, 네이밍 정책, 금지 단어 변경 시 `docs/naming` 문서를 같은 PR에서 갱신한다.
 - 규칙/아키텍처 변경 시 해당 모듈 `AGENTS.md`도 같은 PR에서 갱신한다.
 
 ### Don't
@@ -78,6 +79,14 @@
   - 인프라 구현체: `*RepositoryImpl`, `*JpaRepository`
   - 요청/응답 DTO: `*Request`, `*Response`
 - null/권한 검증은 조기 반환보다 명시적 예외(`UserExceptionHandler` 등)로 처리한다.
+
+### Naming References
+- 네이밍 정본 문서: [`docs/naming/README.md`](./docs/naming/README.md)
+- 도메인 용어 사전: [`docs/naming/glossary.md`](./docs/naming/glossary.md)
+- 네이밍 패턴: [`docs/naming/patterns.md`](./docs/naming/patterns.md)
+- 지양 단어: [`docs/naming/banned-words.md`](./docs/naming/banned-words.md)
+- 용어 결정 이력: [`docs/naming/decision-log.md`](./docs/naming/decision-log.md)
+- rename 사전 합의표: [`docs/naming/rename-mapping.md`](./docs/naming/rename-mapping.md)
 
 ### Git & Collaboration
 - 기본 브랜치 흐름: `feature/*`, `fix/*` -> `develop` -> `main`
