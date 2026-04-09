@@ -46,7 +46,7 @@ public class OAuthService {
 
     private final KaKaoOAuthClient kaKaoOAuthClient;
     private final KaKaoUserInfoClient kaKaoUserInfoClient;
-    private final MemberRepository userRepository;
+    private final MemberRepository memberRepository;
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -55,16 +55,6 @@ public class OAuthService {
     private final KaKaoConfig kaKaoConfig;
     private final CookieConfig cookieConfig;
     private final OAuthProperties oAuthProperties;
-
-    /**
-     * 카카오 authorize URL 생성 (동적 콜백)
-     * - Origin 기반 또는 요청의 스킴/호스트/포트로 "{base}/oauth/kakao/callback"을 계산합니다.
-     * - 프론트 콜백 플로우에 사용합니다.
-     */
-    public String requestRedirect(HttpServletRequest request) {
-        String redirectUri = resolveDynamicCallbackUri(request);
-        return buildAuthorizeUrl(redirectUri, null);
-    }
 
     /**
      * 카카오 로그인 시작(고정 /redirect 리다이렉트)
@@ -80,15 +70,6 @@ public class OAuthService {
     }
 
     /**
-     * 프론트에서 받은 code를 기반으로 토큰 교환/회원 처리/JWT 발급을 수행합니다.
-     */
-    public Boolean kakaoLoginNoState(String accessCode, HttpServletRequest request, HttpServletResponse response) {
-        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, resolveDynamicCallbackUri(request));
-        writeTokens(response, loginResult);
-        return loginResult.isNewUser();
-    }
-
-    /**
      * redirect 로그인 콜백
      * - state에 저장된 최종 클라이언트 redirect 주소를 복원합니다.
      * - 로그인 완료 후 refresh cookie를 설정하고 access token은 URL fragment로 전달합니다.
@@ -101,39 +82,42 @@ public class OAuthService {
         String redirectUri = oAuthRedirectStateRepository.consume(state)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.REQUEST_PARAMETER_INVALID, "'state' 파라미터가 올바르지 않습니다"));
 
-        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, resolveServerCallbackUri(request));
+        KakaoLoginResult loginResult = loginWithKakao(accessCode, resolveServerCallbackUri(request));
         writeTokens(response, loginResult);
         response.setHeader("Location", buildRedirectLocation(redirectUri, loginResult));
         response.setStatus(HttpServletResponse.SC_FOUND);
     }
 
-    /**
-     * 항상 서버 콜백 방식 - 시작 단계 (yml redirect_uri 사용)
-     * - yml에 설정된 redirect_uri를 그대로 사용합니다.
-     */
-    public String requestRedirectServer(HttpServletRequest request) {
-        return buildAuthorizeUrl(kaKaoConfig.getRedirectUri(), null);
-    }
-
-    /**
-     * 항상 서버 콜백 방식 - 카카오로부터 서버 콜백을 받을 때 호출 (yml redirect_uri 사용)
-     * - 설정된 redirect_uri로 토큰 교환을 수행합니다.
-     */
-    public Boolean kakaoLoginServer(String accessCode, HttpServletRequest request, HttpServletResponse response) {
-        KakaoLoginResult loginResult = completeKakaoLogin(accessCode, kaKaoConfig.getRedirectUri());
-        writeTokens(response, loginResult);
-        return loginResult.isNewUser();
-    }
-
-    private KakaoLoginResult completeKakaoLogin(String accessCode, String redirectUri) {
+    private KakaoLoginResult loginWithKakao(String accessCode, String redirectUri) {
         if (!StringUtils.hasText(accessCode)) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
 
-        KaKaoOAuthTokenDTO authorizationCode;
+        KaKaoOAuthTokenDTO kakaoToken = exchangeAuthorizationCode(accessCode, redirectUri);
+        String bearerAccessToken = "Bearer " + kakaoToken.getAccess_token();
+        KaKaoUserInfoResponse userInfo = fetchUserInfo(bearerAccessToken);
+        NormalizedKakaoProfile profile = requireProfileWithEmail(userInfo, bearerAccessToken);
+        boolean isNewUser = createMemberIfAbsent(profile);
+        Member member = loadMemberByEmail(profile.email());
+        return issueLoginResult(member, isNewUser);
+    }
+
+    private boolean createMemberIfAbsent(NormalizedKakaoProfile profile) {
+        Boolean userExist = memberRepository.existsByEmail(profile.email());
+        if (Boolean.TRUE.equals(userExist)) {
+            return false;
+        }
+
+        String profileImageKey = "kakao:" + (profile.kakaoId() != null ? profile.kakaoId() : UUID.randomUUID());
+        Member newMember = Member.join(profile.nickname(), profile.email(), profile.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
+        memberRepository.save(newMember);
+        return true;
+    }
+
+    private KaKaoOAuthTokenDTO exchangeAuthorizationCode(String accessCode, String redirectUri) {
         try {
             log.info("액세스 토큰 발급을 시작합니다");
-            authorizationCode = kaKaoOAuthClient.getToken(
+            return kaKaoOAuthClient.getToken(
                     "authorization_code",
                     kaKaoConfig.getClientId(),
                     redirectUri,
@@ -143,56 +127,49 @@ public class OAuthService {
             log.info(e.getMessage());
             throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
         }
+    }
 
-        KaKaoUserInfoResponse userInfo;
-        String bearerAccessToken = "Bearer " + authorizationCode.getAccess_token();
+    private KaKaoUserInfoResponse fetchUserInfo(String bearerAccessToken) {
         try {
-            userInfo = kaKaoUserInfoClient.getUserInfo(bearerAccessToken);
+            return kaKaoUserInfoClient.getUserInfo(bearerAccessToken);
         } catch (FeignException e) {
             throw new UserExceptionHandler(ErrorCode.KAKAO_ACCESSTOKEN_INVALID);
         }
+    }
 
+    private NormalizedKakaoProfile requireProfileWithEmail(KaKaoUserInfoResponse userInfo, String bearerAccessToken) {
         NormalizedKakaoProfile profile = KakaoProfileExtractor.extract(userInfo);
-        if (!StringUtils.hasText(profile.email())) {
-            KaKaoUserInfoResponse.KakaoAccount kakaoAccount = userInfo != null ? userInfo.getKakaoAccount() : null;
-            log.warn(
-                    "카카오 로그인 실패: 이메일이 응답에 없습니다. kakaoId={}, email={}, hasEmail={}, emailNeedsAgreement={}, isEmailValid={}, isEmailVerified={}, nickname={}, connectedAt={}",
-                    profile.kakaoId(),
-                    kakaoAccount != null ? kakaoAccount.getEmail() : null,
-                    kakaoAccount != null ? kakaoAccount.getHasEmail() : null,
-                    kakaoAccount != null ? kakaoAccount.getEmailNeedsAgreement() : null,
-                    kakaoAccount != null ? kakaoAccount.getIsEmailValid() : null,
-                    kakaoAccount != null ? kakaoAccount.getIsEmailVerified() : null,
-                    profile.nickname(),
-                    userInfo != null ? userInfo.getConnectedAt() : null
-            );
-            logRawKakaoUserInfoResponse(bearerAccessToken);
-            throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
+        if (StringUtils.hasText(profile.email())) {
+            return profile;
         }
 
-        boolean isNewUser = createMemberIfAbsent(profile);
+        KaKaoUserInfoResponse.KakaoAccount kakaoAccount = userInfo != null ? userInfo.getKakaoAccount() : null;
+        log.warn(
+                "카카오 로그인 실패: 이메일이 응답에 없습니다. kakaoId={}, email={}, hasEmail={}, emailNeedsAgreement={}, isEmailValid={}, isEmailVerified={}, nickname={}, connectedAt={}",
+                profile.kakaoId(),
+                kakaoAccount != null ? kakaoAccount.getEmail() : null,
+                kakaoAccount != null ? kakaoAccount.getHasEmail() : null,
+                kakaoAccount != null ? kakaoAccount.getEmailNeedsAgreement() : null,
+                kakaoAccount != null ? kakaoAccount.getIsEmailValid() : null,
+                kakaoAccount != null ? kakaoAccount.getIsEmailVerified() : null,
+                profile.nickname(),
+                userInfo != null ? userInfo.getConnectedAt() : null
+        );
+        logRawKakaoUserInfoResponse(bearerAccessToken);
+        throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
+    }
 
-        Member member = userRepository.findByEmail(profile.email())
+    private Member loadMemberByEmail(String email) {
+        return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
+    }
 
+    private KakaoLoginResult issueLoginResult(Member member, boolean isNewUser) {
         String access = jwtUtil.createJwt("access", member.getId(), member.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
         String refresh = jwtUtil.createJwt("refresh", member.getId(), member.getRole().toString(), jwtConfig.getRefreshTokenValidityInSeconds());
 
         refreshTokenRepository.saveRefreshToken(member.getId(), refresh, jwtConfig.getRefreshTokenValidityInSeconds());
-
         return new KakaoLoginResult(access, refresh, isNewUser);
-    }
-
-    private boolean createMemberIfAbsent(NormalizedKakaoProfile profile) {
-        Boolean userExist = userRepository.existsByEmail(profile.email());
-        if (Boolean.TRUE.equals(userExist)) {
-            return false;
-        }
-
-        String profileImageKey = "kakao:" + (profile.kakaoId() != null ? profile.kakaoId() : UUID.randomUUID());
-        Member newMember = Member.join(profile.nickname(), profile.email(), profile.profileImageUrl(), profileImageKey, Role.ROLE_AUTHOR);
-        userRepository.save(newMember);
-        return true;
     }
 
     private void writeTokens(HttpServletResponse response, KakaoLoginResult loginResult) {
@@ -234,42 +211,8 @@ public class OAuthService {
         }
     }
 
-    private String resolveDynamicCallbackUri(HttpServletRequest request) {
-        return resolveRequestBase(request) + DYNAMIC_CALLBACK_PATH;
-    }
-
     private String resolveServerCallbackUri(HttpServletRequest request) {
         return resolveServerBase(request) + DYNAMIC_CALLBACK_PATH;
-    }
-
-    private String resolveRequestBase(HttpServletRequest request) {
-        String origin = request.getHeader("Origin");
-        if (StringUtils.hasText(origin)) {
-            if (!isAllowedOrigin(origin)) {
-                log.warn("허용되지 않은 Origin: {}", origin);
-                throw new UserExceptionHandler(ErrorCode.KAKAO_AUTH_CODE_INVALID);
-            }
-            return origin;
-        }
-
-        String scheme = String.valueOf(request.getHeader("X-Forwarded-Proto"));
-        if (!StringUtils.hasText(scheme) || "null".equalsIgnoreCase(scheme)) {
-            scheme = request.getScheme();
-        }
-
-        String forwardedHost = extractForwardedAuthority(request.getHeader("X-Forwarded-Host"));
-        if (StringUtils.hasText(forwardedHost)) {
-            return normalizeBase(scheme, forwardedHost);
-        }
-
-        String hostHeader = extractForwardedAuthority(request.getHeader("Host"));
-        if (StringUtils.hasText(hostHeader)) {
-            return normalizeBase(scheme, hostHeader);
-        }
-
-        String host = request.getServerName();
-        int port = request.getServerPort();
-        return normalizeHostPort(scheme, host, port);
     }
 
     private String resolveServerBase(HttpServletRequest request) {

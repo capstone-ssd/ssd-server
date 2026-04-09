@@ -13,7 +13,4 @@ public class KaKaoConfig {
 
     @Value("${spring.security.oauth2.client.registration.kakao.scope}")
     private String scope;
-
-    @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
-    private String redirectUri;
 }
