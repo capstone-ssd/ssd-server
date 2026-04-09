@@ -15,9 +15,10 @@ class WhiteListConfigTest {
     }
 
     @Test
-    @DisplayName("oauthWhitelist()는 카카오 로그인 redirect 시작 엔드포인트를 포함한다")
-    void oauthWhitelist_containsKakaoRedirectLoginEndpoint() {
+    @DisplayName("oauthWhitelist()는 메인 카카오 로그인 플로우만 허용한다")
+    void oauthWhitelist_containsOnlyMainKakaoLoginFlow() {
         assertThat(WhiteListConfig.oauthWhitelist())
-                .contains("/oauth/kakao/login");
+                .contains("/oauth/kakao/login", "/oauth/kakao/callback")
+                .doesNotContain("/oauth/kakao", "/oauth/kakao/server", "/oauth/kakao/server/callback");
     }
 }

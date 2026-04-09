@@ -49,7 +49,7 @@ class OAuthServiceTest {
     @Mock
     private KaKaoUserInfoClient kaKaoUserInfoClient;
     @Mock
-    private MemberRepository userRepository;
+    private MemberRepository memberRepository;
     @Mock
     private JWTUtil jwtUtil;
     @Mock
@@ -73,7 +73,6 @@ class OAuthServiceTest {
         kaKaoConfig = new KaKaoConfig();
         ReflectionTestUtils.setField(kaKaoConfig, "clientId", "kakao-client-id");
         ReflectionTestUtils.setField(kaKaoConfig, "scope", "profile_nickname,account_email");
-        ReflectionTestUtils.setField(kaKaoConfig, "redirectUri", "https://api.example.com/oauth/kakao/server/callback");
 
         cookieConfig = new CookieConfig();
         ReflectionTestUtils.setField(cookieConfig, "domain", "example.com");
@@ -91,7 +90,7 @@ class OAuthServiceTest {
         oAuthService = new OAuthService(
                 kaKaoOAuthClient,
                 kaKaoUserInfoClient,
-                userRepository,
+                memberRepository,
                 jwtUtil,
                 jwtConfig,
                 refreshTokenRepository,
@@ -176,8 +175,8 @@ class OAuthServiceTest {
         )).thenReturn(kakaoToken("kakao-access-token"));
         when(kaKaoUserInfoClient.getUserInfo("Bearer kakao-access-token"))
                 .thenReturn(kakaoUserInfo("tester@example.com", "테스터"));
-        when(userRepository.existsByEmail("tester@example.com")).thenReturn(true);
-        when(userRepository.findByEmail("tester@example.com")).thenReturn(Optional.of(member(1L)));
+        when(memberRepository.existsByEmail("tester@example.com")).thenReturn(true);
+        when(memberRepository.findByEmail("tester@example.com")).thenReturn(Optional.of(member(1L)));
         when(jwtUtil.createJwt(eq("access"), eq(1L), eq(Role.ROLE_AUTHOR.toString()), anyLong())).thenReturn("access-jwt");
         when(jwtUtil.createJwt(eq("refresh"), eq(1L), eq(Role.ROLE_AUTHOR.toString()), anyLong())).thenReturn("refresh-jwt");
 
@@ -218,8 +217,8 @@ class OAuthServiceTest {
         )).thenReturn(kakaoToken("kakao-access-token"));
         when(kaKaoUserInfoClient.getUserInfo("Bearer kakao-access-token"))
                 .thenReturn(kakaoUserInfo("tester@example.com", "테스터"));
-        when(userRepository.existsByEmail("tester@example.com")).thenReturn(true);
-        when(userRepository.findByEmail("tester@example.com")).thenReturn(Optional.of(member(1L)));
+        when(memberRepository.existsByEmail("tester@example.com")).thenReturn(true);
+        when(memberRepository.findByEmail("tester@example.com")).thenReturn(Optional.of(member(1L)));
         when(jwtUtil.createJwt(eq("access"), eq(1L), eq(Role.ROLE_AUTHOR.toString()), anyLong())).thenReturn("access-jwt");
         when(jwtUtil.createJwt(eq("refresh"), eq(1L), eq(Role.ROLE_AUTHOR.toString()), anyLong())).thenReturn("refresh-jwt");
 
