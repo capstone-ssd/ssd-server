@@ -21,8 +21,9 @@
   - 보안 예외/일반 예외 처리는 전역 핸들러(`ssd-core`) 규약을 따른다.
 
 ## Naming Reference
-- 공통 네이밍 기준은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/README.md`를 따른다.
+- 공통 네이밍 기준은 `docs/naming/README.md`를 따른다.
 - API 요청/응답 DTO 이름과 도메인 용어가 충돌하면 `glossary.md`를 먼저 확인한다.
+- DTO 경계 원칙은 `docs/architecture/dto-boundary.md`를 따른다.
 
 ## Implementation Patterns
 
@@ -39,10 +40,13 @@
   - 인증 정보 주입
   - 도메인 서비스 호출
   - `ApiResponse.ok(...)`로 래핑
+- API 요청/응답 DTO는 이 모듈의 `controller/dto`에 둔다.
+- 컨트롤러는 API DTO를 그대로 도메인에 누수시키지 말고, 필요하면 도메인 command/result로 경계에서 변환한다.
 - 금지
   - 트랜잭션/비즈니스 분기 직접 구현
   - DB 접근 코드 작성
   - 도메인 예외코드 우회 처리
+  - 외부 시스템 client payload를 API 응답 DTO처럼 재사용
 
 ### Security Rules
 - `SecurityConfig`의 기본 정책은 `anyRequest().authenticated()`를 유지한다.

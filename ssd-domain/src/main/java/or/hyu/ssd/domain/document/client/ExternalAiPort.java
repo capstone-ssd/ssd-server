@@ -1,13 +1,13 @@
 package or.hyu.ssd.domain.document.client;
 
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalCheckNewTextRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalCheckNewTextResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluationRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluationResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationKeywordRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationKeywordResponse;
 
 public interface ExternalAiPort {
     ExternalEvaluationResponse evaluate(ExternalEvaluationRequest request);

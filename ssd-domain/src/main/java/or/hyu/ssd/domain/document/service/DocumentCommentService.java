@@ -1,16 +1,16 @@
 package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.DocumentCommentItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentCommentRequest;
-import or.hyu.ssd.domain.document.controller.dto.DocumentCommentResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentCommentUpdateRequest;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentComment;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommentCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommentCommand;
+import or.hyu.ssd.domain.document.usecase.result.DocumentCommentItemResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentCommentResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
@@ -30,28 +30,28 @@ public class DocumentCommentService {
     private final DocumentParagraphRepository documentParagraphRepository;
     private final DocumentCommentRepository documentCommentRepository;
 
-    public DocumentCommentResponse create(Long documentId, CustomUserDetails user, DocumentCommentRequest request) {
+    public DocumentCommentResult create(Long documentId, CustomUserDetails user, CreateDocumentCommentCommand command) {
         Document doc = getDocument(documentId);
         ensureAuthenticated(user);
         ensureDocumentOwner(doc, user);
-        int blockId = request.blockId();
+        int blockId = command.blockId();
 
         // 문서와 blockId를 통해서 지정된 blockId를 조회합니다
         ensureBlockExists(doc, blockId);
 
         // 그걸 저장합니다
         DocumentComment saved = documentCommentRepository.save(
-                DocumentComment.of(blockId, request.comment(), doc, user.getMember())
+                DocumentComment.of(blockId, command.comment(), doc, user.getMember())
         );
-        return DocumentCommentResponse.of(saved.getId());
+        return DocumentCommentResult.of(saved.getId());
     }
 
-    public DocumentCommentResponse update(Long commentId, CustomUserDetails user, DocumentCommentUpdateRequest request) {
+    public DocumentCommentResult update(Long commentId, CustomUserDetails user, UpdateDocumentCommentCommand command) {
         ensureAuthenticated(user);
         DocumentComment comment = getComment(commentId);
         ensureCommentOwner(comment, user);
-        comment.updateComment(request.comment());
-        return DocumentCommentResponse.of(comment.getId());
+        comment.updateComment(command.comment());
+        return DocumentCommentResult.of(comment.getId());
     }
 
     public void delete(Long commentId, CustomUserDetails user) {
@@ -62,7 +62,7 @@ public class DocumentCommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentCommentItemResponse> list(Long documentId, CustomUserDetails user) {
+    public List<DocumentCommentItemResult> list(Long documentId, CustomUserDetails user) {
 
         // 문서 ID로 문서를 가져옵니다
         Document doc = getDocument(documentId);
@@ -80,7 +80,7 @@ public class DocumentCommentService {
 
         // 문서가 매핑된 주석을 가져옥 DTO에 매핑합니다
         return documentCommentRepository.findAllByDocumentOrderByCreatedAtAsc(doc).stream()
-                .map(comment -> DocumentCommentItemResponse.of(
+                .map(comment -> DocumentCommentItemResult.of(
                         comment.getMember() != null ? comment.getMember().getName() : null,
                         comment.getMember() != null ? comment.getMember().getEmail() : null,
                         comment.getCreatedAt(),

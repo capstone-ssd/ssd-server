@@ -6,11 +6,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import or.hyu.ssd.domain.document.controller.dto.DocumentLogResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentLog;
 import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.result.DocumentLogResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -71,7 +71,7 @@ class DocumentLogServiceTest {
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(documentLogRepository.findAllByDocumentOrderByCreatedAtDesc(document)).thenReturn(List.of(first, second, third));
 
-        DocumentLogResponse response = documentLogService.list(10L, user);
+        DocumentLogResult response = documentLogService.list(10L, user);
 
         assertThat(response.documentId()).isEqualTo(10L);
         assertThat(response.records()).hasSize(2);

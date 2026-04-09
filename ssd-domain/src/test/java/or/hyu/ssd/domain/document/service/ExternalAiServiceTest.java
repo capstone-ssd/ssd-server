@@ -7,18 +7,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiChecklistResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationReportResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluatorMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalCheckNewTextResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluationReportResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluationResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluatorMetricResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
@@ -26,6 +19,12 @@ import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.command.ExternalDocumentIdCommand;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiChecklistResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiDocumentCheckResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -68,9 +67,9 @@ class ExternalAiServiceTest {
                 new ExternalSummarizationBasicResponse("7", "핵심 요약", "짧은 요약")
         );
         when(externalAiPersistenceService.saveSummary(7L, "핵심 요약", "짧은 요약"))
-                .thenReturn(ExternalAiSummaryResponse.of(7L, "핵심 요약", "짧은 요약"));
+                .thenReturn(ExternalAiSummaryResult.of(7L, "핵심 요약", "짧은 요약"));
 
-        ExternalAiSummaryResponse response = externalAiService.summarizeBasic(new ExternalDocumentIdRequest("7"), user);
+        ExternalAiSummaryResult response = externalAiService.summarizeBasic(new ExternalDocumentIdCommand("7"), user);
 
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.summary()).isEqualTo("핵심 요약");
@@ -103,18 +102,18 @@ class ExternalAiServiceTest {
                 )
         );
         when(externalAiPersistenceService.saveEvaluation(any(), any(), any(), any(), any(), any(), any(), any(), any()))
-                .thenReturn(ExternalAiEvaluationCardResponse.of(
+                .thenReturn(ExternalAiEvaluationCardResult.of(
                         7L,
                         70,
-                        ExternalAiEvaluationMetricResponse.of("문제 인식", 70, "문제 리뷰"),
-                        ExternalAiEvaluationMetricResponse.of("실현 가능성", 80, "실현 가능성 리뷰"),
-                        ExternalAiEvaluationMetricResponse.of("성장 전략", 50, "성장 리뷰"),
-                        ExternalAiEvaluationMetricResponse.of("Business Model", 60, "BM 리뷰"),
-                        ExternalAiEvaluationMetricResponse.of("팀 구성", 90, "팀 리뷰"),
+                        ExternalAiEvaluationMetricResult.of("문제 인식", 70, "문제 리뷰"),
+                        ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현 가능성 리뷰"),
+                        ExternalAiEvaluationMetricResult.of("성장 전략", 50, "성장 리뷰"),
+                        ExternalAiEvaluationMetricResult.of("Business Model", 60, "BM 리뷰"),
+                        ExternalAiEvaluationMetricResult.of("팀 구성", 90, "팀 리뷰"),
                         Map.of("problem_is_clear", true)
                 ));
 
-        ExternalAiEvaluationCardResponse response = externalAiService.evaluate(new ExternalDocumentIdRequest("7"), user);
+        ExternalAiEvaluationCardResult response = externalAiService.evaluate(new ExternalDocumentIdCommand("7"), user);
 
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.totalScore()).isEqualTo(70);
@@ -134,7 +133,7 @@ class ExternalAiServiceTest {
         when(documentAiCheckSnapshotRepository.findAllByDocument(document))
                 .thenReturn(List.of(DocumentAiCheckSnapshot.of(document, 1, "본문")));
 
-        ExternalAiDocumentCheckResponse response = externalAiService.checkNewText(new ExternalDocumentIdRequest("7"), user);
+        ExternalAiDocumentCheckResult response = externalAiService.checkNewText(new ExternalDocumentIdCommand("7"), user);
 
         assertThat(response.changedBlockIds()).isEmpty();
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
@@ -150,7 +149,7 @@ class ExternalAiServiceTest {
         document.updateSummary("저장된 요약", "짧은 요약");
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
-        ExternalAiSummaryResponse response = externalAiService.getSummary(7L, user);
+        ExternalAiSummaryResult response = externalAiService.getSummary(7L, user);
 
         assertThat(response.summary()).isEqualTo("저장된 요약");
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
@@ -165,7 +164,7 @@ class ExternalAiServiceTest {
         document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
-        ExternalAiChecklistResponse response = externalAiService.getChecklist(7L, user);
+        ExternalAiChecklistResult response = externalAiService.getChecklist(7L, user);
 
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
@@ -177,7 +176,7 @@ class ExternalAiServiceTest {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
 
-        assertThatThrownBy(() -> externalAiService.evaluate(new ExternalDocumentIdRequest("abc"), user))
+        assertThatThrownBy(() -> externalAiService.evaluate(new ExternalDocumentIdCommand("abc"), user))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("docId는 1 이상의 숫자여야 합니다");
     }

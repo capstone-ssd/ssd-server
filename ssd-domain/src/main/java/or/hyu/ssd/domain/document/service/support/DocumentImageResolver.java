@@ -1,7 +1,6 @@
 package or.hyu.ssd.domain.document.service.support;
 
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
-import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
+import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +11,7 @@ public interface DocumentImageResolver {
     Map<String, DocumentImageUploadPart> indexUploadParts(List<DocumentImageUploadPart> imageUploadParts);
 
     String resolveImageUrl(
-            CreateDocumentParagraphRequest block,
+            DocumentBlockCommand block,
             int blockId,
             Map<String, DocumentImageUploadPart> imageUploadsByBlobKey,
             Long memberId

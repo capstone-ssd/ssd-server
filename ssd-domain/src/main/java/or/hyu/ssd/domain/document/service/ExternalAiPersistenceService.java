@@ -1,16 +1,16 @@
 package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiDocumentCheckResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiKeywordResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.stereotype.Service;
@@ -27,13 +27,13 @@ public class ExternalAiPersistenceService {
     private final DocumentRepository documentRepository;
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
 
-    public ExternalAiEvaluationCardResponse saveEvaluation(
+    public ExternalAiEvaluationCardResult saveEvaluation(
             Long documentId,
-            ExternalAiEvaluationMetricResponse problemRecognition,
-            ExternalAiEvaluationMetricResponse feasibility,
-            ExternalAiEvaluationMetricResponse growthStrategy,
-            ExternalAiEvaluationMetricResponse businessModel,
-            ExternalAiEvaluationMetricResponse teamComposition,
+            ExternalAiEvaluationMetricResult problemRecognition,
+            ExternalAiEvaluationMetricResult feasibility,
+            ExternalAiEvaluationMetricResult growthStrategy,
+            ExternalAiEvaluationMetricResult businessModel,
+            ExternalAiEvaluationMetricResult teamComposition,
             Integer totalScore,
             Map<String, Boolean> checkList,
             List<DocumentParagraph> currentParagraphs
@@ -62,7 +62,7 @@ public class ExternalAiPersistenceService {
                 teamComposition,
                 doc.getExternalChecklistSnapshot()
         ));
-        return ExternalAiEvaluationCardResponse.of(
+        return ExternalAiEvaluationCardResult.of(
                 doc.getId(),
                 doc.getExternalAiTotalScore(),
                 problemRecognition,
@@ -74,19 +74,19 @@ public class ExternalAiPersistenceService {
         );
     }
 
-    public ExternalAiSummaryResponse saveSummary(Long documentId, String summary, String shortSummary) {
+    public ExternalAiSummaryResult saveSummary(Long documentId, String summary, String shortSummary) {
         Document doc = getDocument(documentId);
         doc.updateSummary(summary, shortSummary);
-        return ExternalAiSummaryResponse.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
+        return ExternalAiSummaryResult.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
     }
 
-    public ExternalAiKeywordResponse saveKeyword(Long documentId, String keyword) {
+    public ExternalAiKeywordResult saveKeyword(Long documentId, String keyword) {
         Document doc = getDocument(documentId);
         doc.updateKeywords(keyword);
-        return ExternalAiKeywordResponse.of(doc.getId(), doc.getKeywords());
+        return ExternalAiKeywordResult.of(doc.getId(), doc.getKeywords());
     }
 
-    public ExternalAiDocumentCheckResponse mergeChecklist(
+    public ExternalAiDocumentCheckResult mergeChecklist(
             Long documentId,
             List<Integer> changedBlockIds,
             Map<String, Boolean> checkList,
@@ -95,7 +95,7 @@ public class ExternalAiPersistenceService {
         Document doc = getDocument(documentId);
         doc.mergeExternalChecklist(checkList);
         refreshAiCheckSnapshots(doc, currentParagraphs);
-        return ExternalAiDocumentCheckResponse.of(doc.getId(), changedBlockIds, doc.getExternalChecklistSnapshot());
+        return ExternalAiDocumentCheckResult.of(doc.getId(), changedBlockIds, doc.getExternalChecklistSnapshot());
     }
 
     private Document getDocument(Long documentId) {
@@ -115,11 +115,11 @@ public class ExternalAiPersistenceService {
     }
 
     private String buildEvaluationReport(
-            ExternalAiEvaluationMetricResponse problemRecognition,
-            ExternalAiEvaluationMetricResponse feasibility,
-            ExternalAiEvaluationMetricResponse growthStrategy,
-            ExternalAiEvaluationMetricResponse businessModel,
-            ExternalAiEvaluationMetricResponse teamComposition,
+            ExternalAiEvaluationMetricResult problemRecognition,
+            ExternalAiEvaluationMetricResult feasibility,
+            ExternalAiEvaluationMetricResult growthStrategy,
+            ExternalAiEvaluationMetricResult businessModel,
+            ExternalAiEvaluationMetricResult teamComposition,
             Map<String, Boolean> checkList
     ) {
         StringBuilder builder = new StringBuilder();
@@ -141,7 +141,7 @@ public class ExternalAiPersistenceService {
         return builder.toString().trim();
     }
 
-    private void appendMetric(StringBuilder builder, ExternalAiEvaluationMetricResponse metric) {
+    private void appendMetric(StringBuilder builder, ExternalAiEvaluationMetricResult metric) {
         if (metric == null) {
             return;
         }

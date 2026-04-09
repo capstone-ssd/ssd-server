@@ -1,9 +1,8 @@
 package or.hyu.ssd.domain.document.service.support;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
-import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
 import or.hyu.ssd.domain.document.port.DocumentImageStoragePort;
+import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
 import org.springframework.stereotype.Component;
@@ -52,7 +51,7 @@ public class DocumentImageResolverImpl implements DocumentImageResolver {
 
     @Override
     public String resolveImageUrl(
-            CreateDocumentParagraphRequest block,
+            DocumentBlockCommand block,
             int blockId,
             Map<String, DocumentImageUploadPart> imageUploadsByBlobKey,
             Long memberId
