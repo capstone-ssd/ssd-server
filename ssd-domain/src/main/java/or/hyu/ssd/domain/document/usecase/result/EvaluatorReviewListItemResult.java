@@ -1,6 +1,8 @@
 package or.hyu.ssd.domain.document.usecase.result;
 
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
+import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.global.api.handler.DocumentException;
 
 import java.time.LocalDateTime;
 
@@ -17,7 +19,7 @@ public record EvaluatorReviewListItemResult(
 ) {
     public static EvaluatorReviewListItemResult of(EvaluatorReview review) {
         if (review == null) {
-            throw new IllegalArgumentException("EvaluatorReview must not be null");
+            throw new DocumentException(ErrorCode.SERVER_EXCEPTION, "리뷰 결과 항목이 비어 있습니다");
         }
         return new EvaluatorReviewListItemResult(
                 review.getId(),

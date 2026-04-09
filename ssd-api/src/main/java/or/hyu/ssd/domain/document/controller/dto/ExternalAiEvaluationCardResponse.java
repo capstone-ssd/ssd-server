@@ -1,6 +1,8 @@
 package or.hyu.ssd.domain.document.controller.dto;
 
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.global.api.handler.DocumentException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,7 +19,7 @@ public record ExternalAiEvaluationCardResponse(
 ) {
     public static ExternalAiEvaluationCardResponse from(ExternalAiEvaluationCardResult result) {
         if (result == null) {
-            throw new IllegalArgumentException("ExternalAiEvaluationCardResult must not be null");
+            throw new DocumentException(ErrorCode.EXTERNAL_AI_RESPONSE_INVALID, "평가 카드 결과가 비어 있습니다");
         }
         return new ExternalAiEvaluationCardResponse(
                 result.documentId(),
