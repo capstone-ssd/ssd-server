@@ -1,11 +1,11 @@
 package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBatchResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
+import or.hyu.ssd.domain.document.usecase.command.ExternalDocumentIdCommand;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiBatchResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiKeywordResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +15,10 @@ public class ExternalAiBatchService {
 
     private final ExternalAiService externalAiService;
 
-    public ExternalAiBatchResponse generateAll(ExternalDocumentIdRequest request, CustomUserDetails user) {
-        ExternalAiEvaluationCardResponse evaluation = externalAiService.evaluate(request, user);
-        ExternalAiSummaryResponse summary = externalAiService.summarizeBasic(request, user);
-        ExternalAiKeywordResponse keyword = externalAiService.summarizeKeyword(request, user);
-        return ExternalAiBatchResponse.of(evaluation.documentId(), evaluation, summary, keyword);
+    public ExternalAiBatchResult generateAll(ExternalDocumentIdCommand command, CustomUserDetails user) {
+        ExternalAiEvaluationCardResult evaluation = externalAiService.evaluate(command, user);
+        ExternalAiSummaryResult summary = externalAiService.summarizeBasic(command, user);
+        ExternalAiKeywordResult keyword = externalAiService.summarizeKeyword(command, user);
+        return ExternalAiBatchResult.of(evaluation.documentId(), evaluation, summary, keyword);
     }
 }

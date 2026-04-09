@@ -2,29 +2,29 @@ package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.client.ExternalAiPort;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiChecklistResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextBlockRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalCheckNewTextResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluationResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalEvaluatorMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationBasicResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordRequest;
-import or.hyu.ssd.domain.document.controller.dto.ExternalSummarizationKeywordResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalCheckNewTextBlockRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalCheckNewTextRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalCheckNewTextResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluationRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluationResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalEvaluatorMetricResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicResponse;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationKeywordRequest;
+import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.command.ExternalDocumentIdCommand;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiChecklistResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiDocumentCheckResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiKeywordResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
@@ -48,8 +48,8 @@ public class ExternalAiService {
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
 
-    public ExternalAiEvaluationCardResponse evaluate(ExternalDocumentIdRequest request, CustomUserDetails user) {
-        Document doc = getOwnedDocument(request.docId(), user);
+    public ExternalAiEvaluationCardResult evaluate(ExternalDocumentIdCommand command, CustomUserDetails user) {
+        Document doc = getOwnedDocument(command.docId(), user);
         List<DocumentParagraph> currentParagraphs = documentParagraphRepository.findParagraphBlocks(doc);
 
         ExternalEvaluationResponse response = externalAiPort.evaluate(new ExternalEvaluationRequest(
@@ -57,15 +57,15 @@ public class ExternalAiService {
                 doc.getContent()
         ));
 
-        ExternalAiEvaluationMetricResponse problemRecognition =
+        ExternalAiEvaluationMetricResult problemRecognition =
                 toMetric("문제 인식", response.evaluationReport() != null ? response.evaluationReport().problemEvaluator() : null);
-        ExternalAiEvaluationMetricResponse feasibility =
+        ExternalAiEvaluationMetricResult feasibility =
                 toMetric("실현 가능성", response.evaluationReport() != null ? response.evaluationReport().solEvaluator() : null);
-        ExternalAiEvaluationMetricResponse growthStrategy =
+        ExternalAiEvaluationMetricResult growthStrategy =
                 toMetric("성장 전략", response.evaluationReport() != null ? response.evaluationReport().scaleUpEvaluator() : null);
-        ExternalAiEvaluationMetricResponse businessModel =
+        ExternalAiEvaluationMetricResult businessModel =
                 toMetric("Business Model", response.evaluationReport() != null ? response.evaluationReport().businessModelEvaluator() : null);
-        ExternalAiEvaluationMetricResponse teamComposition =
+        ExternalAiEvaluationMetricResult teamComposition =
                 toMetric("팀 구성", response.evaluationReport() != null ? response.evaluationReport().teamEvaluator() : null);
 
         Integer totalScore = calculateAverageScore(
@@ -89,8 +89,8 @@ public class ExternalAiService {
         );
     }
 
-    public ExternalAiSummaryResponse summarizeBasic(ExternalDocumentIdRequest request, CustomUserDetails user) {
-        Document doc = getOwnedDocument(request.docId(), user);
+    public ExternalAiSummaryResult summarizeBasic(ExternalDocumentIdCommand command, CustomUserDetails user) {
+        Document doc = getOwnedDocument(command.docId(), user);
         ExternalSummarizationBasicResponse response = externalAiPort.summarizeBasic(new ExternalSummarizationBasicRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
@@ -101,8 +101,8 @@ public class ExternalAiService {
         return externalAiPersistenceService.saveSummary(doc.getId(), summary, shortSummary);
     }
 
-    public ExternalAiKeywordResponse summarizeKeyword(ExternalDocumentIdRequest request, CustomUserDetails user) {
-        Document doc = getOwnedDocument(request.docId(), user);
+    public ExternalAiKeywordResult summarizeKeyword(ExternalDocumentIdCommand command, CustomUserDetails user) {
+        Document doc = getOwnedDocument(command.docId(), user);
         ExternalSummarizationKeywordResponse response = externalAiPort.summarizeKeyword(new ExternalSummarizationKeywordRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
@@ -111,8 +111,8 @@ public class ExternalAiService {
         return externalAiPersistenceService.saveKeyword(doc.getId(), normalize(response.keyword()));
     }
 
-    public ExternalAiDocumentCheckResponse checkNewText(ExternalDocumentIdRequest request, CustomUserDetails user) {
-        Document doc = getOwnedDocument(request.docId(), user);
+    public ExternalAiDocumentCheckResult checkNewText(ExternalDocumentIdCommand command, CustomUserDetails user) {
+        Document doc = getOwnedDocument(command.docId(), user);
         List<DocumentParagraph> currentParagraphs = documentParagraphRepository.findParagraphBlocks(doc);
         if (currentParagraphs.isEmpty()) {
             throw new DocumentException(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
@@ -120,7 +120,7 @@ public class ExternalAiService {
 
         List<DocumentParagraph> changedParagraphs = findChangedParagraphs(doc, currentParagraphs);
         if (changedParagraphs.isEmpty()) {
-            return ExternalAiDocumentCheckResponse.of(doc.getId(), List.of(), doc.getExternalChecklistSnapshot());
+            return ExternalAiDocumentCheckResult.of(doc.getId(), List.of(), doc.getExternalChecklistSnapshot());
         }
 
         ExternalCheckNewTextResponse response = externalAiPort.checkNewText(new ExternalCheckNewTextRequest(
@@ -142,36 +142,36 @@ public class ExternalAiService {
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiEvaluationCardResponse getEvaluation(Long documentId, CustomUserDetails user) {
+    public ExternalAiEvaluationCardResult getEvaluation(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, getMemberId(user));
-        return ExternalAiEvaluationCardResponse.of(
+        return ExternalAiEvaluationCardResult.of(
                 doc.getId(),
                 doc.getExternalAiTotalScore(),
-                ExternalAiEvaluationMetricResponse.of("문제 인식", doc.getExternalAiProblemRecognitionScore(), doc.getExternalAiProblemRecognitionReview()),
-                ExternalAiEvaluationMetricResponse.of("실현 가능성", doc.getExternalAiFeasibilityScore(), doc.getExternalAiFeasibilityReview()),
-                ExternalAiEvaluationMetricResponse.of("성장 전략", doc.getExternalAiGrowthStrategyScore(), doc.getExternalAiGrowthStrategyReview()),
-                ExternalAiEvaluationMetricResponse.of("Business Model", doc.getExternalAiBusinessModelScore(), doc.getExternalAiBusinessModelReview()),
-                ExternalAiEvaluationMetricResponse.of("팀 구성", doc.getExternalAiTeamCompositionScore(), doc.getExternalAiTeamCompositionReview()),
+                ExternalAiEvaluationMetricResult.of("문제 인식", doc.getExternalAiProblemRecognitionScore(), doc.getExternalAiProblemRecognitionReview()),
+                ExternalAiEvaluationMetricResult.of("실현 가능성", doc.getExternalAiFeasibilityScore(), doc.getExternalAiFeasibilityReview()),
+                ExternalAiEvaluationMetricResult.of("성장 전략", doc.getExternalAiGrowthStrategyScore(), doc.getExternalAiGrowthStrategyReview()),
+                ExternalAiEvaluationMetricResult.of("Business Model", doc.getExternalAiBusinessModelScore(), doc.getExternalAiBusinessModelReview()),
+                ExternalAiEvaluationMetricResult.of("팀 구성", doc.getExternalAiTeamCompositionScore(), doc.getExternalAiTeamCompositionReview()),
                 doc.getExternalChecklistSnapshot()
         );
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiSummaryResponse getSummary(Long documentId, CustomUserDetails user) {
+    public ExternalAiSummaryResult getSummary(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, getMemberId(user));
-        return ExternalAiSummaryResponse.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
+        return ExternalAiSummaryResult.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiKeywordResponse getKeyword(Long documentId, CustomUserDetails user) {
+    public ExternalAiKeywordResult getKeyword(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, getMemberId(user));
-        return ExternalAiKeywordResponse.of(doc.getId(), doc.getKeywords());
+        return ExternalAiKeywordResult.of(doc.getId(), doc.getKeywords());
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiChecklistResponse getChecklist(Long documentId, CustomUserDetails user) {
+    public ExternalAiChecklistResult getChecklist(Long documentId, CustomUserDetails user) {
         Document doc = getOwnedDocument(documentId, getMemberId(user));
-        return ExternalAiChecklistResponse.of(doc.getId(), doc.getExternalChecklistSnapshot());
+        return ExternalAiChecklistResult.of(doc.getId(), doc.getExternalChecklistSnapshot());
     }
 
     private Document getOwnedDocument(String rawDocId, CustomUserDetails user) {
@@ -223,11 +223,11 @@ public class ExternalAiService {
                 .toList();
     }
 
-    private ExternalAiEvaluationMetricResponse toMetric(String label, ExternalEvaluatorMetricResponse metric) {
+    private ExternalAiEvaluationMetricResult toMetric(String label, ExternalEvaluatorMetricResponse metric) {
         if (metric == null) {
-            return ExternalAiEvaluationMetricResponse.of(label, null, "");
+            return ExternalAiEvaluationMetricResult.of(label, null, "");
         }
-        return ExternalAiEvaluationMetricResponse.of(label, toScore(metric.averageScore()), normalize(metric.finalReview()));
+        return ExternalAiEvaluationMetricResult.of(label, toScore(metric.averageScore()), normalize(metric.finalReview()));
     }
 
     private Integer toScore(Double score) {

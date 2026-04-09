@@ -1,10 +1,10 @@
-package or.hyu.ssd.domain.document.controller.dto;
+package or.hyu.ssd.domain.document.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 
-public record ExternalSummarizationKeywordRequest(
+public record ExternalEvaluationRequest(
         @NotBlank
         @JsonProperty("doc_id")
         @JsonAlias("docId")

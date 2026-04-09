@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.document.controller.dto;
+package or.hyu.ssd.domain.document.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

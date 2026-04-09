@@ -21,7 +21,7 @@
 | `DocumentParagraphDto` | `DocumentBlockResponseItem` | 응답 모델이 텍스트 내용 자체보다 문서-로컬 block 단위를 표현한다는 점을 드러낸다. | `#139` | done |
 | `saveCreateParagraphsIfPresent` | `saveCreateBlocksIfPresent` | 서비스 내부 메서드와 실제 처리 대상을 일치시킨다. | `#141` | planned |
 | `replaceParagraphsAndSyncComments` | `replaceBlocksAndSyncComments` | 삭제/생성/주석 동기화 기준이 block 단위라는 점을 반영한다. | `#142` | planned |
-| `findByDocumentAndReviewer` | `findByDocumentAndEvaluator` | 평가자 역할명과 저장소 메서드명을 일치시킨다. | `#140` | planned |
-| `existsByDocumentAndReviewer` | `existsByDocumentAndEvaluator` | 평가자 역할명과 저장소 메서드명을 일치시킨다. | `#140` | planned |
-| `reviewer` 필드/변수/헬퍼 | `evaluator` 필드/변수/헬퍼 | `Evaluator*` 엔티티/API prefix와 내부 명칭을 일치시킨다. | `#140` | planned |
-| `summary` / `shortSummary` / `details` | 이름 유지, 의미만 고정 | 현재 저장/응답 필드가 이미 쓰이고 있어 이 단계에서는 rename보다 의미 정리가 우선이다. | `#140` | planned |
+| `findByDocumentAndReviewer` | `findByDocumentAndEvaluator` | 평가자 역할명과 저장소 메서드명을 일치시킨다. | `#142` | planned |
+| `existsByDocumentAndReviewer` | `existsByDocumentAndEvaluator` | 평가자 역할명과 저장소 메서드명을 일치시킨다. | `#142` | planned |
+| `reviewer` 필드/변수/헬퍼 | `evaluator` 필드/변수/헬퍼 | `Evaluator*` 엔티티/API prefix와 내부 명칭을 일치시킨다. | `#142` | planned |
+| `summary` / `shortSummary` / `details` | 이름 유지, 의미만 고정 | 현재 저장/응답 필드가 이미 쓰이고 있어 이 단계에서는 rename보다 의미 정리가 우선이다. | `#142` | planned |

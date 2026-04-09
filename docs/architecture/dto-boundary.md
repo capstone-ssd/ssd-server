@@ -102,6 +102,8 @@
 - `GetMyMemberResponse`
 
 > `#139`에서 Document 핵심 CRUD DTO(`CreateDocumentRequest`, `UpdateDocumentRequest`, `CreateDocumentBlockRequest`, `GetDocumentResponse`, `DocumentImageMetaRequest`)는 `ssd-api`로 이동했다.
+>
+> `#140`에서 Document 목록/북마크, Folder, Comment, Log, EvaluatorReview, External AI 요청/응답 DTO도 같은 기준으로 정리했다.
 
 ### B. `ssd-domain/.../client/dto`로 가야 하는 외부 연동 payload
 - `ExternalEvaluationRequest`
@@ -118,6 +120,8 @@
 - `KaKaoOAuthTokenDTO`
 - `KaKaoUserInfoResponse`
 - `KaKaoCallbackResponse`
+
+> `#140`에서 External AI payload는 `ssd-domain/.../client/dto`로 이동했다.
 
 ### C. 전역 `controller/dto` 대신 가까운 위치로 내려야 하는 내부 보조 모델
 - `DocumentImageUploadPart`
@@ -139,3 +143,7 @@
   - Member/Kakao DTO를 웹 DTO와 외부 client payload로 분리
 - `#144`
   - JWT/Auth 쪽에서 API 계약 DTO와 도메인 모델 경계 재점검
+
+## 현재 남은 레거시 DTO
+- `ssd-domain/.../controller/dto` 아래에서 아직 남아 있는 것은 Member/Kakao 관련 DTO뿐이다.
+- Document 컨텍스트의 신규 DTO 추가는 모두 이 문서의 경계 기준을 따라야 한다.

@@ -39,7 +39,9 @@ public class MockExternalAiController {
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiEvaluationCardResponse response = mockExternalAiService.evaluate(request);
+        ExternalAiEvaluationCardResponse response = ExternalAiEvaluationCardResponse.from(
+                mockExternalAiService.evaluate(request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 종합평가가 조회되었습니다"));
     }
 
@@ -50,7 +52,9 @@ public class MockExternalAiController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiEvaluationCardResponse response = mockExternalAiService.getEvaluation(documentId);
+        ExternalAiEvaluationCardResponse response = ExternalAiEvaluationCardResponse.from(
+                mockExternalAiService.getEvaluation(documentId)
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 종합평가가 조회되었습니다"));
     }
 
@@ -60,7 +64,9 @@ public class MockExternalAiController {
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiSummaryResponse response = mockExternalAiService.summarizeBasic(request);
+        ExternalAiSummaryResponse response = ExternalAiSummaryResponse.from(
+                mockExternalAiService.summarizeBasic(request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 요약이 조회되었습니다"));
     }
 
@@ -71,7 +77,9 @@ public class MockExternalAiController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiSummaryResponse response = mockExternalAiService.getSummary(documentId);
+        ExternalAiSummaryResponse response = ExternalAiSummaryResponse.from(
+                mockExternalAiService.getSummary(documentId)
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 요약이 조회되었습니다"));
     }
 
@@ -81,7 +89,9 @@ public class MockExternalAiController {
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiKeywordResponse response = mockExternalAiService.summarizeKeyword(request);
+        ExternalAiKeywordResponse response = ExternalAiKeywordResponse.from(
+                mockExternalAiService.summarizeKeyword(request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 키워드가 조회되었습니다"));
     }
 
@@ -92,7 +102,9 @@ public class MockExternalAiController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiKeywordResponse response = mockExternalAiService.getKeyword(documentId);
+        ExternalAiKeywordResponse response = ExternalAiKeywordResponse.from(
+                mockExternalAiService.getKeyword(documentId)
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 키워드가 조회되었습니다"));
     }
 
@@ -102,7 +114,9 @@ public class MockExternalAiController {
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiBatchResponse response = mockExternalAiService.generateAll(request);
+        ExternalAiBatchResponse response = ExternalAiBatchResponse.from(
+                mockExternalAiService.generateAll(request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 AI 결과가 일괄 조회되었습니다"));
     }
 
@@ -112,7 +126,9 @@ public class MockExternalAiController {
             @Valid @RequestBody ExternalDocumentIdRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiDocumentCheckResponse response = mockExternalAiService.checkNewText(request);
+        ExternalAiDocumentCheckResponse response = ExternalAiDocumentCheckResponse.from(
+                mockExternalAiService.checkNewText(request.toCommand())
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 체크리스트가 조회되었습니다"));
     }
 
@@ -123,7 +139,9 @@ public class MockExternalAiController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        ExternalAiChecklistResponse response = mockExternalAiService.getChecklist(documentId);
+        ExternalAiChecklistResponse response = ExternalAiChecklistResponse.from(
+                mockExternalAiService.getChecklist(documentId)
+        );
         return ResponseEntity.ok(ApiResponse.ok(response, "Mock 외부 체크리스트가 조회되었습니다"));
     }
 }

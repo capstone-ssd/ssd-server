@@ -3,6 +3,7 @@ package or.hyu.ssd.domain.document.controller.dto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import or.hyu.ssd.domain.document.usecase.command.ExternalDocumentIdCommand;
 
 public record ExternalDocumentIdRequest(
         @NotBlank(message = "docId는 필수입니다")
@@ -10,4 +11,7 @@ public record ExternalDocumentIdRequest(
         @JsonAlias("doc_id")
         String docId
 ) {
+    public ExternalDocumentIdCommand toCommand() {
+        return new ExternalDocumentIdCommand(docId);
+    }
 }
