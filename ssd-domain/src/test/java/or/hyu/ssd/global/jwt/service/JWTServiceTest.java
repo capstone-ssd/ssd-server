@@ -1,6 +1,5 @@
 package or.hyu.ssd.global.jwt.service;
 
-import jakarta.servlet.http.HttpServletResponse;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
 import or.hyu.ssd.domain.member.valid.RefreshTokenValidator;
 import or.hyu.ssd.global.config.properties.CookieConfig;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -73,7 +71,7 @@ class JWTServiceTest {
 
         jwtService.logout(1L, "valid-access-token", response);
 
-        verify(accessTokenBlacklistRepository).save("access-jti", 1800L);
+        verify(accessTokenBlacklistRepository).blacklist("access-jti", 1800L);
         verify(refreshTokenRepository).deleteById(1L);
         assertThat(response.getHeader("Set-Cookie"))
                 .contains("refresh-token=")
