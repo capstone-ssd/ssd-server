@@ -34,7 +34,7 @@ class FolderServiceTest {
     @Mock
     private DocumentRepository documentRepository;
     @Mock
-    private DocumentService documentService;
+    private DocumentCommandService documentCommandService;
 
     @InjectMocks
     private FolderService folderService;

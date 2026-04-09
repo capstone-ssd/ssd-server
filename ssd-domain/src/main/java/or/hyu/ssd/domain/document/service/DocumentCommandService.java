@@ -1,7 +1,8 @@
 package or.hyu.ssd.domain.document.service;
+
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.DocumentLog;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.entity.Folder;
@@ -10,29 +11,24 @@ import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
+import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
-import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentImageResolver;
 import or.hyu.ssd.domain.document.service.support.DocumentImageUploadPart;
-import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommand;
 import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
 import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommand;
 import or.hyu.ssd.domain.document.usecase.result.CreateDocumentResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentBookmarkResult;
-import or.hyu.ssd.domain.document.usecase.result.DocumentBlockResult;
-import or.hyu.ssd.domain.document.usecase.result.DocumentDetailResult;
-import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
 import or.hyu.ssd.domain.document.usecase.result.UpdateDocumentResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
-import org.springframework.data.domain.Sort;
+import or.hyu.ssd.global.util.OptimisticRetryExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import or.hyu.ssd.global.util.OptimisticRetryExecutor;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,7 +41,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class DocumentService {
+public class DocumentCommandService {
 
     private final DocumentRepository documentRepository;
     private final CheckListRepository checkListRepository;
@@ -63,19 +59,25 @@ public class DocumentService {
         return createDocument(user, command, List.of());
     }
 
-    public CreateDocumentResult createDocument(CustomUserDetails user, CreateDocumentCommand command, List<DocumentImageUploadPart> imageUploadParts) {
-        if (user == null || user.getMember() == null) {
-            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
-        }
+    public CreateDocumentResult createDocument(
+            CustomUserDetails user,
+            CreateDocumentCommand command,
+            List<DocumentImageUploadPart> imageUploadParts
+    ) {
+        assertAuthenticatedMember(user);
         validateFolderId(command.folderId());
 
-        List<ResolvedDocumentBlock> resolvedBlocks = resolveCreateBlocks(command.blocks(), imageUploadParts, user.getMember().getId());
+        List<ResolvedDocumentBlock> resolvedBlocks = resolveCreateBlocks(
+                command.blocks(),
+                imageUploadParts,
+                user.getMember().getId()
+        );
         String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
         String title = resolveTitle(command.title(), resolvedText, resolvedBlocks);
         Folder folder = resolveFolderOrNull(user, command.folderId());
-        Document doc = Document.of(title, resolvedText, folder, false, user.getMember());
+        Document document = Document.of(title, resolvedText, folder, false, user.getMember());
 
-        Document saved = documentRepository.save(doc);
+        Document saved = documentRepository.save(document);
         saveCreateParagraphsIfPresent(saved, resolvedBlocks);
         saveDocumentLog(saved, user);
         return CreateDocumentResult.of(saved.getId());
@@ -85,128 +87,88 @@ public class DocumentService {
         return updateDocument(documentId, user, command, List.of());
     }
 
-    public UpdateDocumentResult updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentCommand command, List<DocumentImageUploadPart> imageUploadParts) {
-        Document doc = getDocument(documentId);
-
-        if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
+    public UpdateDocumentResult updateDocument(
+            Long documentId,
+            CustomUserDetails user,
+            UpdateDocumentCommand command,
+            List<DocumentImageUploadPart> imageUploadParts
+    ) {
+        Document document = loadDocument(documentId);
+        assertDocumentOwner(document, user);
         validateUpdateRequest(command);
 
-        List<ResolvedDocumentBlock> resolvedBlocks = resolveUpdateBlocks(command.blocks(), imageUploadParts, user.getMember().getId());
+        List<ResolvedDocumentBlock> resolvedBlocks = resolveUpdateBlocks(
+                command.blocks(),
+                imageUploadParts,
+                user.getMember().getId()
+        );
         String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
-        String updatedTitle = resolveUpdatedTitle(doc.getTitle(), command.title());
-        doc.updateIfPresent(updatedTitle, resolvedText, null, null, null);
+        String updatedTitle = resolveUpdatedTitle(document.getTitle(), command.title());
+        document.updateIfPresent(updatedTitle, resolvedText, null, null, null);
+
         int deletedBlockCount = 0;
         int createdBlockCount = 0;
         if (command.blocks() != null) {
-            BlockChangeSummary blockChangeSummary = replaceParagraphsAndSyncComments(doc, resolvedBlocks);
+            BlockChangeSummary blockChangeSummary = replaceParagraphsAndSyncComments(document, resolvedBlocks);
             deletedBlockCount = blockChangeSummary.deletedBlockCount();
             createdBlockCount = blockChangeSummary.createdBlockCount();
         }
-        saveDocumentLog(doc, user, deletedBlockCount, createdBlockCount);
+        saveDocumentLog(document, user, deletedBlockCount, createdBlockCount);
 
-        return UpdateDocumentResult.of(doc.getId());
+        return UpdateDocumentResult.of(document.getId());
     }
 
     public void deleteDocument(Long documentId, CustomUserDetails user) {
-        Document doc = getDocument(documentId);
+        Document document = loadDocument(documentId);
+        assertDocumentOwner(document, user);
 
-        if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-
-        checkListRepository.deleteAllByDocument(doc);
-        evaluatorCheckListRepository.deleteAllByDocument(doc);
-        documentAiCheckSnapshotRepository.deleteAllByDocument(doc);
-        documentParagraphRepository.deleteAllByDocument(doc);
-        documentCommentRepository.deleteAllByDocument(doc);
-        documentLogRepository.deleteAllByDocument(doc);
-        evaluatorReviewRepository.deleteAllByDocument(doc);
-        documentRepository.delete(doc);
-    }
-
-    @Transactional(readOnly = true)
-    public DocumentDetailResult getDocument(Long documentId, CustomUserDetails user) {
-        Document doc = getDocument(documentId);
-
-        if (doc.getMember() == null || user == null || user.getMember() == null) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        if (!doc.getMember().getId().equals(user.getMember().getId())) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-
-        List<DocumentBlockResult> blocks = fetchBlocks(doc);
-        return DocumentDetailResult.of(doc, blocks);
-    }
-
-    @Transactional(readOnly = true)
-    public List<DocumentListItemResult> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
-        if (user == null || user.getMember() == null) {
-            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
-        }
-
-        Sort sort = switch (sortOption) {
-            case LATEST -> Sort.by(Sort.Order.desc("createdAt"));
-            case OLDEST -> Sort.by(Sort.Order.asc("createdAt"));
-            case NAME -> Sort.by(Sort.Order.asc("title"));
-            case MODIFIED -> Sort.by(Sort.Order.desc("updatedAt"));
-        };
-        List<Document> documents;
-        Long memberId = user.getMember().getId();
-
-        if (folderId == null) {
-            documents = documentRepository.findAllByMember_Id(memberId, sort);
-        } else if (folderId == 0L) {
-            documents = documentRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
-        } else {
-            Folder folder = resolveFolderOrNull(user, folderId);
-            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, folder.getId(), sort);
-        }
-
-        return documents.stream()
-                .map(DocumentListItemResult::of)
-                .collect(Collectors.toList());
+        checkListRepository.deleteAllByDocument(document);
+        evaluatorCheckListRepository.deleteAllByDocument(document);
+        documentAiCheckSnapshotRepository.deleteAllByDocument(document);
+        documentParagraphRepository.deleteAllByDocument(document);
+        documentCommentRepository.deleteAllByDocument(document);
+        documentLogRepository.deleteAllByDocument(document);
+        evaluatorReviewRepository.deleteAllByDocument(document);
+        documentRepository.delete(document);
     }
 
     public DocumentBookmarkResult toggleBookmark(Long documentId, CustomUserDetails user) {
-        DocumentBookmarkResult result = optimisticRetryExecutor.execute(3, () -> {
-            Document doc = getDocument(documentId);
+        return optimisticRetryExecutor.execute(3, () -> {
+            Document document = loadDocument(documentId);
+            assertDocumentOwner(document, user);
 
-            if (doc.getMember() == null || user == null || user.getMember() == null) {
-                throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-            }
-            if (!doc.getMember().getId().equals(user.getMember().getId())) {
-                throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-            }
-
-            boolean newVal = !doc.isBookmark();
-            doc.updateIfPresent(null, null, null, null, newVal);
+            boolean newValue = !document.isBookmark();
+            document.updateIfPresent(null, null, null, null, newValue);
             documentRepository.flush();
-            return DocumentBookmarkResult.of(doc.getId(), doc.isBookmark());
+            return DocumentBookmarkResult.of(document.getId(), document.isBookmark());
         });
-        return result;
     }
 
-
-    
-
-    private Document getDocument(Long documentId) {
+    private Document loadDocument(Long documentId) {
         return documentRepository.findById(documentId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
+    }
+
+    private void assertAuthenticatedMember(CustomUserDetails user) {
+        if (user == null || user.getMember() == null) {
+            throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+    }
+
+    private void assertDocumentOwner(Document document, CustomUserDetails user) {
+        if (document.getMember() == null || user == null || user.getMember() == null) {
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!document.getMember().getId().equals(user.getMember().getId())) {
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
     }
 
     private Folder resolveFolderOrNull(CustomUserDetails user, Long folderId) {
         if (folderId == null || folderId == 0L) {
             return null;
         }
+
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.FOLDER_NOT_FOUND));
         if (folder.getMember() == null || user == null || user.getMember() == null) {
@@ -292,19 +254,19 @@ public class DocumentService {
         return null;
     }
 
-    private void saveCreateParagraphsIfPresent(Document doc, List<ResolvedDocumentBlock> blocks) {
+    private void saveCreateParagraphsIfPresent(Document document, List<ResolvedDocumentBlock> blocks) {
         if (blocks == null || blocks.isEmpty()) {
             return;
         }
         List<DocumentParagraph> entities = new ArrayList<>(blocks.size());
         for (ResolvedDocumentBlock block : blocks) {
-            entities.add(DocumentParagraph.of(block.type(), block.content(), block.role(), 1, block.blockId(), doc));
+            entities.add(DocumentParagraph.of(block.type(), block.content(), block.role(), 1, block.blockId(), document));
         }
         documentParagraphRepository.saveAll(entities);
     }
 
-    private BlockChangeSummary replaceParagraphsAndSyncComments(Document doc, List<ResolvedDocumentBlock> blocks) {
-        List<DocumentParagraph> existingParagraphs = documentParagraphRepository.findBlocks(doc);
+    private BlockChangeSummary replaceParagraphsAndSyncComments(Document document, List<ResolvedDocumentBlock> blocks) {
+        List<DocumentParagraph> existingParagraphs = documentParagraphRepository.findBlocks(document);
         Set<Integer> existingBlockIds = existingParagraphs.stream()
                 .map(DocumentParagraph::getBlockId)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -320,12 +282,12 @@ public class DocumentService {
             }
         }
 
-        documentParagraphRepository.deleteAllByDocument(doc);
+        documentParagraphRepository.deleteAllByDocument(document);
         documentParagraphRepository.flush();
-        saveUpdatedParagraphs(doc, blocks);
+        saveUpdatedParagraphs(document, blocks);
 
         if (!removedBlockIds.isEmpty()) {
-            documentCommentRepository.deleteAllByDocumentAndBlockIdIn(doc, removedBlockIds);
+            documentCommentRepository.deleteAllByDocumentAndBlockIdIn(document, removedBlockIds);
         }
 
         return new BlockChangeSummary(removedBlockIds.size(), createdBlockCount);
@@ -352,24 +314,16 @@ public class DocumentService {
         return requestedBlockIds;
     }
 
-    private void saveUpdatedParagraphs(Document doc, List<ResolvedDocumentBlock> blocks) {
+    private void saveUpdatedParagraphs(Document document, List<ResolvedDocumentBlock> blocks) {
         if (blocks == null || blocks.isEmpty()) {
             return;
         }
 
         List<DocumentParagraph> entities = new ArrayList<>(blocks.size());
         for (ResolvedDocumentBlock block : blocks) {
-            entities.add(DocumentParagraph.of(block.type(), block.content(), block.role(), 1, block.blockId(), doc));
+            entities.add(DocumentParagraph.of(block.type(), block.content(), block.role(), 1, block.blockId(), document));
         }
         documentParagraphRepository.saveAll(entities);
-    }
-
-    private List<DocumentBlockResult> fetchBlocks(Document doc) {
-        return documentParagraphRepository.findBlocks(doc).stream()
-                .map(p -> p.isImageBlock()
-                        ? new DocumentBlockResult(p.getTypeOrDefault(), null, null, p.getPageNumber(), p.getBlockId(), p.getContent())
-                        : new DocumentBlockResult(p.getTypeOrDefault(), p.getContent(), p.getRole(), p.getPageNumber(), p.getBlockId(), null))
-                .collect(Collectors.toList());
     }
 
     private List<ResolvedDocumentBlock> resolveCreateBlocks(
@@ -470,13 +424,15 @@ public class DocumentService {
                 ));
     }
 
-    private void saveDocumentLog(Document doc, CustomUserDetails user) {
-        saveDocumentLog(doc, user, 0, 0);
+    private void saveDocumentLog(Document document, CustomUserDetails user) {
+        saveDocumentLog(document, user, 0, 0);
     }
 
-    private void saveDocumentLog(Document doc, CustomUserDetails user, int deletedBlockCount, int createdBlockCount) {
+    private void saveDocumentLog(Document document, CustomUserDetails user, int deletedBlockCount, int createdBlockCount) {
         String editorName = resolveEditorName(user);
-        documentLogRepository.save(DocumentLog.of(editorName, resolveEditorEmail(user), deletedBlockCount, createdBlockCount, doc));
+        documentLogRepository.save(
+                DocumentLog.of(editorName, resolveEditorEmail(user), deletedBlockCount, createdBlockCount, document)
+        );
     }
 
     private String resolveEditorName(CustomUserDetails user) {
