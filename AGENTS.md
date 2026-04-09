@@ -46,6 +46,7 @@
   - `ssd-infra` -> `ssd-domain`/`ssd-core`
   - `ssd-core`는 다른 프로젝트 모듈에 의존하지 않는다.
 - 웹 계층은 `ssd-api`만 담당한다. 컨트롤러/보안 필터를 다른 모듈에 추가하지 않는다.
+- HTTP 요청/응답 DTO도 기본적으로 `ssd-api`에 둔다. `ssd-domain/.../controller/dto`는 레거시 위치로만 취급한다.
 - 도메인 서비스는 도메인 리포지토리 인터페이스(`ssd-domain`)에만 의존하고, 구현체(`ssd-infra`)를 직접 참조하지 않는다.
 - API 응답은 `ApiResponse` 포맷을 유지한다. 예외는 `ErrorCode` + `CustomException` 계열로 통일한다.
 - 인증/인가 기본 정책은 `authenticated`이며, 화이트리스트는 명시적으로만 열어야 한다.
@@ -87,6 +88,9 @@
 - 지양 단어: [`docs/naming/banned-words.md`](./docs/naming/banned-words.md)
 - 용어 결정 이력: [`docs/naming/decision-log.md`](./docs/naming/decision-log.md)
 - rename 사전 합의표: [`docs/naming/rename-mapping.md`](./docs/naming/rename-mapping.md)
+
+### Architecture References
+- DTO 경계 전략: [`docs/architecture/dto-boundary.md`](./docs/architecture/dto-boundary.md)
 
 ### Git & Collaboration
 - 기본 브랜치 흐름: `feature/*`, `fix/*` -> `develop` -> `main`

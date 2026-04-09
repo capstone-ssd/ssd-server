@@ -1,10 +1,5 @@
 package or.hyu.ssd.domain.document.service;
 
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
-import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
@@ -18,6 +13,11 @@ import or.hyu.ssd.domain.document.repository.EvaluatorCheckListRepository;
 import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentImageResolver;
+import or.hyu.ssd.domain.document.service.support.DocumentImageUploadPart;
+import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommand;
+import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommand;
+import or.hyu.ssd.domain.document.usecase.result.CreateDocumentResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -77,12 +77,12 @@ class DocumentServiceTest {
     void createDocument_defaultsPageNumberAndResolvesTitleFromParagraph() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
-        CreateDocumentRequest request = new CreateDocumentRequest(
+        CreateDocumentCommand command = new CreateDocumentCommand(
                 null,
                 "   ",
                 List.of(
-                        new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "첫 문단 제목", "#", 99, null, null),
-                        new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "둘째 문단", "", 100, null, null)
+                        new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "첫 문단 제목", "#", 99, null, null),
+                        new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "둘째 문단", "", 100, null, null)
                 ),
                 0L
         );
@@ -106,7 +106,7 @@ class DocumentServiceTest {
         });
         when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CreateDocumentResponse response = documentService.createDocument(user, request);
+        CreateDocumentResult result = documentService.createDocument(user, command);
 
         ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
         verify(documentRepository).save(documentCaptor.capture());
@@ -125,7 +125,7 @@ class DocumentServiceTest {
         assertThat(savedParagraphs)
                 .extracting(DocumentParagraph::getBlockId)
                 .containsExactly(99, 100);
-        assertThat(response.id()).isEqualTo(42L);
+        assertThat(result.id()).isEqualTo(42L);
     }
 
     @Test
@@ -139,7 +139,7 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentRequest(
+                new UpdateDocumentCommand(
                         "   ", "본문", null
                 )
         ))
@@ -149,7 +149,7 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentRequest(
+                new UpdateDocumentCommand(
                         null, "   ", null
                 )
         ))
@@ -175,12 +175,12 @@ class DocumentServiceTest {
         documentService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentRequest(
+                new UpdateDocumentCommand(
                         null,
                         "새 본문",
                         List.of(
-                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "기존 문단 1 수정", "#", 1, null, null),
-                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "새 문단", "", 3, null, null)
+                                new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "기존 문단 1 수정", "#", 1, null, null),
+                                new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "새 문단", "", 3, null, null)
                         )
                 )
         );
@@ -230,10 +230,10 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentRequest(
+                new UpdateDocumentCommand(
                         null,
                         "본문",
-                        List.of(new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단", "#", null, null, null))
+                        List.of(new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "문단", "#", null, null, null))
                 )
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
@@ -242,12 +242,12 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentRequest(
+                new UpdateDocumentCommand(
                         null,
                         "본문",
                         List.of(
-                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단 1", "#", 1, null, null),
-                                new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단 2", "##", 1, null, null)
+                                new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "문단 1", "#", 1, null, null),
+                                new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "문단 2", "##", 1, null, null)
                         )
                 )
         ))
@@ -260,12 +260,12 @@ class DocumentServiceTest {
     void createDocument_uploadsImageBlocksAndPersistsImageType() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
-        CreateDocumentRequest request = new CreateDocumentRequest(
+        CreateDocumentCommand command = new CreateDocumentCommand(
                 "이미지 문서",
                 "본문",
                 List.of(
-                        new CreateDocumentParagraphRequest(DocumentBlockType.PARAGRAPH, "문단1", "#", 1, null, null),
-                        new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null)
+                        new DocumentBlockCommand(DocumentBlockType.PARAGRAPH, "문단1", "#", 1, null, null),
+                        new DocumentBlockCommand(DocumentBlockType.IMAGE, null, null, 2, "img-1", null)
                 ),
                 0L
         );
@@ -287,7 +287,7 @@ class DocumentServiceTest {
 
         documentService.createDocument(
                 user,
-                request,
+                command,
                 List.of(new DocumentImageUploadPart("img-1", 2, "image.png", "image/png", new byte[]{1, 2, 3}))
         );
 
@@ -304,7 +304,7 @@ class DocumentServiceTest {
         assertThat(savedParagraphs.get(1).getContent()).isEqualTo("https://s3.example.com/documents/image.png");
         assertThat(savedParagraphs.get(1).getBlockId()).isEqualTo(2);
         verify(documentRepository).save(any(Document.class));
-        assertThat(request.text()).isEqualTo("본문");
+        assertThat(command.text()).isEqualTo("본문");
     }
 
     @Test
@@ -312,10 +312,10 @@ class DocumentServiceTest {
     void createDocument_replacesBlobKeyInsideText() {
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
-        CreateDocumentRequest request = new CreateDocumentRequest(
+        CreateDocumentCommand command = new CreateDocumentCommand(
                 "이미지 본문",
                 "<img src=\"img-1\" />",
-                List.of(new CreateDocumentParagraphRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null)),
+                List.of(new DocumentBlockCommand(DocumentBlockType.IMAGE, null, null, 2, "img-1", null)),
                 0L
         );
 
@@ -325,7 +325,7 @@ class DocumentServiceTest {
 
         documentService.createDocument(
                 user,
-                request,
+                command,
                 List.of(new DocumentImageUploadPart("img-1", 2, "image.png", "image/png", new byte[]{1, 2, 3}))
         );
 

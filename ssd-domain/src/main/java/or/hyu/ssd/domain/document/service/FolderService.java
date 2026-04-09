@@ -1,17 +1,17 @@
 package or.hyu.ssd.domain.document.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.CreateFolderRequest;
-import or.hyu.ssd.domain.document.controller.dto.CreateFolderResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.FolderContentResponse;
-import or.hyu.ssd.domain.document.controller.dto.FolderListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest;
-import or.hyu.ssd.domain.document.controller.dto.UpdateFolderResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
+import or.hyu.ssd.domain.document.usecase.command.CreateFolderCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateFolderCommand;
+import or.hyu.ssd.domain.document.usecase.result.CreateFolderResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
+import or.hyu.ssd.domain.document.usecase.result.FolderContentResult;
+import or.hyu.ssd.domain.document.usecase.result.FolderListItemResult;
+import or.hyu.ssd.domain.document.usecase.result.UpdateFolderResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
@@ -31,39 +31,39 @@ public class FolderService {
     private final DocumentRepository documentRepository;
     private final DocumentService documentService;
 
-    public CreateFolderResponse create(CustomUserDetails user, CreateFolderRequest request) {
+    public CreateFolderResult create(CustomUserDetails user, CreateFolderCommand command) {
+        validateCreateRequest(command);
         ensureAuthenticated(user);
-        validateParentId(request.parentId());
 
-        String name = request.name().trim();
-        String color = trimOrNull(request.color());
-        Folder parent = resolveParent(user, request.parentId());
+        String name = command.name().trim();
+        String color = trimOrNull(command.color());
+        Folder parent = resolveParent(user, command.parentId());
 
         Folder saved = folderRepository.save(Folder.of(name, color, parent, user.getMember()));
-        return CreateFolderResponse.of(saved.getId());
+        return CreateFolderResult.of(saved.getId());
     }
 
-    public UpdateFolderResponse update(Long folderId, CustomUserDetails user, UpdateFolderRequest request) {
+    public UpdateFolderResult update(Long folderId, CustomUserDetails user, UpdateFolderCommand command) {
         Folder folder = getFolderOwned(folderId, user);
-        validateUpdateRequest(request);
+        validateUpdateRequest(command);
 
-        String name = trimOrNull(request.name());
-        String color = trimOrNull(request.color());
+        String name = trimOrNull(command.name());
+        String color = trimOrNull(command.color());
         if (name != null || color != null) {
             folder.updateIfPresent(name, color, null);
         }
 
-        if (request.parentId() != null) {
-            if (request.parentId() == 0L) {
+        if (command.parentId() != null) {
+            if (command.parentId() == 0L) {
                 folder.updateParent(null);
             } else {
-                Folder newParent = getFolderOwned(request.parentId(), user);
+                Folder newParent = getFolderOwned(command.parentId(), user);
                 ensureMovable(folder, newParent);
                 folder.updateParent(newParent);
             }
         }
 
-        return UpdateFolderResponse.of(folder.getId());
+        return UpdateFolderResult.of(folder.getId());
     }
 
     public void delete(Long folderId, CustomUserDetails user) {
@@ -72,33 +72,38 @@ public class FolderService {
     }
 
     @Transactional(readOnly = true)
-    public FolderContentResponse listContent(CustomUserDetails user, Long parentId) {
+    public FolderContentResult listContent(CustomUserDetails user, Long parentId) {
         ensureAuthenticated(user);
         Long memberId = user.getMember().getId();
-        Long resolvedParentId = (parentId == null) ? 0L : parentId;
+        Long requestedFolderId = (parentId == null) ? 0L : parentId;
+        Long currentFolderId = 0L;
+        Long parentFolderId = 0L;
 
         List<Folder> folders;
         List<Document> documents;
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
 
-        if (resolvedParentId == 0L) {
+        if (requestedFolderId == 0L) {
             folders = folderRepository.findAllByMember_IdAndParentIsNull(memberId);
             documents = documentRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
         } else {
-            getFolderOwned(resolvedParentId, user);
-            folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, resolvedParentId);
-            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, resolvedParentId, sort);
+            Folder currentFolder = getFolderOwned(requestedFolderId, user);
+            currentFolderId = currentFolder.getId();
+            parentFolderId = currentFolder.getParent() == null ? 0L : currentFolder.getParent().getId();
+            folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, requestedFolderId);
+            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, requestedFolderId, sort);
         }
 
-        return FolderContentResponse.of(
-                resolvedParentId,
+        return FolderContentResult.of(
+                parentFolderId,
+                currentFolderId,
                 toFolderItems(memberId, folders),
                 toDocumentItems(documents)
         );
     }
 
     @Transactional(readOnly = true)
-    public FolderContentResponse listAllContent(CustomUserDetails user) {
+    public FolderContentResult listAllContent(CustomUserDetails user) {
         ensureAuthenticated(user);
         Long memberId = user.getMember().getId();
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
@@ -106,7 +111,8 @@ public class FolderService {
         List<Folder> folders = folderRepository.findAllByMember_Id(memberId, sort);
         List<Document> documents = documentRepository.findAllByMember_Id(memberId, sort);
 
-        return FolderContentResponse.of(
+        return FolderContentResult.of(
+                0L,
                 0L,
                 toFolderItems(memberId, folders),
                 toDocumentItems(documents)
@@ -180,15 +186,25 @@ public class FolderService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private void validateUpdateRequest(UpdateFolderRequest request) {
-        if (request == null) {
-            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
+    private void validateCreateRequest(CreateFolderCommand command) {
+        if (command == null) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "생성 요청 본문이 비어 있습니다");
         }
-        if (request.name() != null && request.name().trim().isEmpty()) {
+        if (command.name() == null || command.name().trim().isEmpty()) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더명은 공백일 수 없습니다");
         }
-        validateParentId(request.parentId());
-        if (request.name() == null && request.color() == null && request.parentId() == null) {
+        validateParentId(command.parentId());
+    }
+
+    private void validateUpdateRequest(UpdateFolderCommand command) {
+        if (command == null) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
+        }
+        if (command.name() != null && command.name().trim().isEmpty()) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더명은 공백일 수 없습니다");
+        }
+        validateParentId(command.parentId());
+        if (command.name() == null && command.color() == null && command.parentId() == null) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정할 값을 하나 이상 입력해 주세요");
         }
     }
@@ -199,18 +215,18 @@ public class FolderService {
         }
     }
 
-    private List<FolderListItemResponse> toFolderItems(Long memberId, List<Folder> folders) {
+    private List<FolderListItemResult> toFolderItems(Long memberId, List<Folder> folders) {
         return folders.stream()
-                .map(folder -> FolderListItemResponse.of(
+                .map(folder -> FolderListItemResult.of(
                         folder,
                         folderRepository.existsByMember_IdAndParent_Id(memberId, folder.getId())
                 ))
                 .collect(Collectors.toList());
     }
 
-    private List<DocumentListItemResponse> toDocumentItems(List<Document> documents) {
+    private List<DocumentListItemResult> toDocumentItems(List<Document> documents) {
         return documents.stream()
-                .map(DocumentListItemResponse::of)
+                .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
     }
 }

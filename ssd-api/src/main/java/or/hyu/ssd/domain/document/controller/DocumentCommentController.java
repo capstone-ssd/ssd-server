@@ -66,7 +66,7 @@ public class DocumentCommentController {
             @Valid @RequestBody DocumentCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentCommentResponse dto = documentCommentService.create(documentId, user, request);
+        DocumentCommentResponse dto = DocumentCommentResponse.from(documentCommentService.create(documentId, user, request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 저장되었습니다"));
     }
 
@@ -100,7 +100,7 @@ public class DocumentCommentController {
             @Valid @RequestBody DocumentCommentUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentCommentResponse dto = documentCommentService.update(id, user, request);
+        DocumentCommentResponse dto = DocumentCommentResponse.from(documentCommentService.update(id, user, request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 수정되었습니다"));
     }
 
@@ -161,7 +161,9 @@ public class DocumentCommentController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        List<DocumentCommentItemResponse> items = documentCommentService.list(documentId, user);
+        List<DocumentCommentItemResponse> items = documentCommentService.list(documentId, user).stream()
+                .map(DocumentCommentItemResponse::from)
+                .toList();
         return ResponseEntity.ok(ApiResponse.ok(items, "주석이 조회되었습니다"));
     }
 }

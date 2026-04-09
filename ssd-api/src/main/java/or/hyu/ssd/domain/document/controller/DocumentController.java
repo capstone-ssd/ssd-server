@@ -5,17 +5,18 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
 import or.hyu.ssd.domain.document.controller.dto.DocumentImageMetaRequest;
-import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
-import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
+import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
 import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
 import or.hyu.ssd.domain.document.service.DocumentService;
+import or.hyu.ssd.domain.document.service.support.DocumentImageUploadPart;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
+import or.hyu.ssd.domain.document.usecase.result.DocumentDetailResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ApiResponse;
 import or.hyu.ssd.global.api.ErrorCode;
@@ -80,7 +81,7 @@ public class DocumentController {
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CreateDocumentResponse dto = documentService.createDocument(user, request);
+        CreateDocumentResponse dto = CreateDocumentResponse.from(documentService.createDocument(user, request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
@@ -103,7 +104,9 @@ public class DocumentController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CreateDocumentResponse dto = documentService.createDocument(user, request, toImageUploadParts(imageMetas, files));
+        CreateDocumentResponse dto = CreateDocumentResponse.from(
+                documentService.createDocument(user, request.toCommand(), toImageUploadParts(imageMetas, files))
+        );
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
@@ -149,7 +152,7 @@ public class DocumentController {
             @Valid @RequestBody UpdateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UpdateDocumentResponse dto = documentService.updateDocument(id, user, request);
+        UpdateDocumentResponse dto = UpdateDocumentResponse.from(documentService.updateDocument(id, user, request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
@@ -170,7 +173,9 @@ public class DocumentController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UpdateDocumentResponse dto = documentService.updateDocument(id, user, request, toImageUploadParts(imageMetas, files));
+        UpdateDocumentResponse dto = UpdateDocumentResponse.from(
+                documentService.updateDocument(id, user, request.toCommand(), toImageUploadParts(imageMetas, files))
+        );
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
@@ -238,7 +243,8 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        GetDocumentResponse dto = documentService.getDocument(id, user);
+        DocumentDetailResult result = documentService.getDocument(id, user);
+        GetDocumentResponse dto = GetDocumentResponse.from(result);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 조회되었습니다"));
     }
 
@@ -283,7 +289,9 @@ public class DocumentController {
             @Parameter(description = "폴더 ID (없으면 전체, 0이면 루트)")
             @RequestParam(name = "folderId", required = false) @PositiveOrZero(message = "folderId는 0 이상이어야 합니다") Long folderId
     ) {
-        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort, folderId);
+        List<DocumentListItemResponse> list = documentService.listDocuments(user, sort, folderId).stream()
+                .map(DocumentListItemResponse::from)
+                .toList();
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
     }
 
@@ -318,7 +326,7 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentBookmarkResponse dto = documentService.toggleBookmark(id, user);
+        DocumentBookmarkResponse dto = DocumentBookmarkResponse.from(documentService.toggleBookmark(id, user));
         return ResponseEntity.ok(ApiResponse.ok(dto, "즐겨찾기 상태가 토글되었습니다"));
     }
 

@@ -6,11 +6,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import or.hyu.ssd.domain.document.controller.dto.DocumentCommentRequest;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommentCommand;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -44,7 +44,7 @@ class DocumentCommentServiceTest {
         assertThatThrownBy(() -> documentCommentService.create(
                 10L,
                 new CustomUserDetails(other),
-                new DocumentCommentRequest(1, "주석")
+                new CreateDocumentCommentCommand(1, "주석")
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");

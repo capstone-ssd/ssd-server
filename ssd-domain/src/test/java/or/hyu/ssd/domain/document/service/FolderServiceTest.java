@@ -1,10 +1,12 @@
 package or.hyu.ssd.domain.document.service;
 
-import or.hyu.ssd.domain.document.controller.dto.FolderContentResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.Folder;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
+import or.hyu.ssd.domain.document.usecase.command.CreateFolderCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateFolderCommand;
+import or.hyu.ssd.domain.document.usecase.result.FolderContentResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -53,7 +55,7 @@ class FolderServiceTest {
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 1L)).thenReturn(true);
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 2L)).thenReturn(false);
 
-        FolderContentResponse result = folderService.listContent(user, null);
+        FolderContentResult result = folderService.listContent(user, null);
 
         assertThat(result.parentId()).isEqualTo(0L);
         assertThat(result.currentFolderId()).isEqualTo(0L);
@@ -61,6 +63,30 @@ class FolderServiceTest {
         assertThat(result.documents()).hasSize(1);
         assertThat(result.folders().get(0).parentId()).isEqualTo(0L);
         assertThat(result.folders().get(0).hasChildren()).isTrue();
+    }
+
+    @Test
+    @DisplayName("listContent()는 현재 폴더와 상위 폴더 식별자를 구분해 반환한다")
+    void listContent_distinguishParentIdAndCurrentFolderId() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+        Folder parent = folder(10L, "상위", null, member);
+        Folder current = folder(20L, "현재", parent, member);
+        Folder child = folder(21L, "하위", current, member);
+        Document doc = document(101L, "현재 폴더 문서", current, member);
+
+        when(folderRepository.findById(20L)).thenReturn(Optional.of(current));
+        when(folderRepository.findAllByMember_IdAndParent_Id(1L, 20L)).thenReturn(List.of(child));
+        when(documentRepository.findAllByMember_IdAndFolder_Id(1L, 20L, Sort.by(Sort.Order.desc("updatedAt"))))
+                .thenReturn(List.of(doc));
+        when(folderRepository.existsByMember_IdAndParent_Id(1L, 21L)).thenReturn(false);
+
+        FolderContentResult result = folderService.listContent(user, 20L);
+
+        assertThat(result.parentId()).isEqualTo(10L);
+        assertThat(result.currentFolderId()).isEqualTo(20L);
+        assertThat(result.folders()).hasSize(1);
+        assertThat(result.documents()).hasSize(1);
     }
 
     @Test
@@ -81,7 +107,7 @@ class FolderServiceTest {
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 1L)).thenReturn(true);
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 11L)).thenReturn(false);
 
-        FolderContentResponse result = folderService.listAllContent(user);
+        FolderContentResult result = folderService.listAllContent(user);
 
         assertThat(result.parentId()).isEqualTo(0L);
         assertThat(result.currentFolderId()).isEqualTo(0L);
@@ -104,7 +130,7 @@ class FolderServiceTest {
         assertThatThrownBy(() -> folderService.update(
                 1L,
                 user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest(null, null, null)
+                new UpdateFolderCommand(null, null, null)
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정할 값을 하나 이상 입력해 주세요");
@@ -121,8 +147,19 @@ class FolderServiceTest {
         assertThatThrownBy(() -> folderService.update(
                 1L,
                 user,
-                new or.hyu.ssd.domain.document.controller.dto.UpdateFolderRequest("   ", null, null)
+                new UpdateFolderCommand("   ", null, null)
         ))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .hasMessage("폴더명은 공백일 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("create()는 공백 폴더명을 거부한다")
+    void create_rejectsBlankName() {
+        Member member = member(1L);
+        CustomUserDetails user = new CustomUserDetails(member);
+
+        assertThatThrownBy(() -> folderService.create(user, new CreateFolderCommand("   ", null, 0L)))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("폴더명은 공백일 수 없습니다");
     }

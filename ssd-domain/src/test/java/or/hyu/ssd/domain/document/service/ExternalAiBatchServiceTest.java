@@ -7,12 +7,12 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiBatchResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiKeywordResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalDocumentIdRequest;
+import or.hyu.ssd.domain.document.usecase.command.ExternalDocumentIdCommand;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiBatchResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiKeywordResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
@@ -39,31 +39,31 @@ class ExternalAiBatchServiceTest {
     @DisplayName("generateAll()은 평가, 요약, 키워드 순서로 호출한다")
     void generateAll_callsAiApisInOrder() {
         CustomUserDetails user = new CustomUserDetails(member(1L));
-        ExternalDocumentIdRequest request = new ExternalDocumentIdRequest("7");
+        ExternalDocumentIdCommand command = new ExternalDocumentIdCommand("7");
 
-        ExternalAiEvaluationCardResponse evaluation = ExternalAiEvaluationCardResponse.of(
+        ExternalAiEvaluationCardResult evaluation = ExternalAiEvaluationCardResult.of(
                 7L,
                 80,
-                ExternalAiEvaluationMetricResponse.of("문제 인식", 80, "문제"),
-                ExternalAiEvaluationMetricResponse.of("실현 가능성", 80, "실현"),
-                ExternalAiEvaluationMetricResponse.of("성장 전략", 80, "성장"),
-                ExternalAiEvaluationMetricResponse.of("Business Model", 80, "BM"),
-                ExternalAiEvaluationMetricResponse.of("팀 구성", 80, "팀"),
+                ExternalAiEvaluationMetricResult.of("문제 인식", 80, "문제"),
+                ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현"),
+                ExternalAiEvaluationMetricResult.of("성장 전략", 80, "성장"),
+                ExternalAiEvaluationMetricResult.of("Business Model", 80, "BM"),
+                ExternalAiEvaluationMetricResult.of("팀 구성", 80, "팀"),
                 Map.of("problem_is_clear", true)
         );
-        ExternalAiSummaryResponse summary = ExternalAiSummaryResponse.of(7L, "긴 요약", "짧은 요약");
-        ExternalAiKeywordResponse keyword = ExternalAiKeywordResponse.of(7L, "공실, SaaS");
+        ExternalAiSummaryResult summary = ExternalAiSummaryResult.of(7L, "긴 요약", "짧은 요약");
+        ExternalAiKeywordResult keyword = ExternalAiKeywordResult.of(7L, "공실, SaaS");
 
-        when(externalAiService.evaluate(request, user)).thenReturn(evaluation);
-        when(externalAiService.summarizeBasic(request, user)).thenReturn(summary);
-        when(externalAiService.summarizeKeyword(request, user)).thenReturn(keyword);
+        when(externalAiService.evaluate(command, user)).thenReturn(evaluation);
+        when(externalAiService.summarizeBasic(command, user)).thenReturn(summary);
+        when(externalAiService.summarizeKeyword(command, user)).thenReturn(keyword);
 
-        ExternalAiBatchResponse response = externalAiBatchService.generateAll(request, user);
+        ExternalAiBatchResult response = externalAiBatchService.generateAll(command, user);
 
         InOrder inOrder = inOrder(externalAiService);
-        inOrder.verify(externalAiService).evaluate(request, user);
-        inOrder.verify(externalAiService).summarizeBasic(request, user);
-        inOrder.verify(externalAiService).summarizeKeyword(request, user);
+        inOrder.verify(externalAiService).evaluate(command, user);
+        inOrder.verify(externalAiService).summarizeBasic(command, user);
+        inOrder.verify(externalAiService).summarizeKeyword(command, user);
 
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.evaluation()).isEqualTo(evaluation);
@@ -75,26 +75,26 @@ class ExternalAiBatchServiceTest {
     @DisplayName("generateAll()은 요약 단계에서 실패하면 키워드는 호출하지 않는다")
     void generateAll_stopsWhenSummaryFails() {
         CustomUserDetails user = new CustomUserDetails(member(1L));
-        ExternalDocumentIdRequest request = new ExternalDocumentIdRequest("7");
+        ExternalDocumentIdCommand command = new ExternalDocumentIdCommand("7");
 
-        when(externalAiService.evaluate(request, user)).thenReturn(ExternalAiEvaluationCardResponse.of(
+        when(externalAiService.evaluate(command, user)).thenReturn(ExternalAiEvaluationCardResult.of(
                 7L,
                 80,
-                ExternalAiEvaluationMetricResponse.of("문제 인식", 80, "문제"),
-                ExternalAiEvaluationMetricResponse.of("실현 가능성", 80, "실현"),
-                ExternalAiEvaluationMetricResponse.of("성장 전략", 80, "성장"),
-                ExternalAiEvaluationMetricResponse.of("Business Model", 80, "BM"),
-                ExternalAiEvaluationMetricResponse.of("팀 구성", 80, "팀"),
+                ExternalAiEvaluationMetricResult.of("문제 인식", 80, "문제"),
+                ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현"),
+                ExternalAiEvaluationMetricResult.of("성장 전략", 80, "성장"),
+                ExternalAiEvaluationMetricResult.of("Business Model", 80, "BM"),
+                ExternalAiEvaluationMetricResult.of("팀 구성", 80, "팀"),
                 Map.of()
         ));
-        when(externalAiService.summarizeBasic(request, user)).thenThrow(new IllegalStateException("summary failed"));
+        when(externalAiService.summarizeBasic(command, user)).thenThrow(new IllegalStateException("summary failed"));
 
-        assertThatThrownBy(() -> externalAiBatchService.generateAll(request, user))
+        assertThatThrownBy(() -> externalAiBatchService.generateAll(command, user))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("summary failed");
 
-        verify(externalAiService).evaluate(request, user);
-        verify(externalAiService).summarizeBasic(request, user);
+        verify(externalAiService).evaluate(command, user);
+        verify(externalAiService).summarizeBasic(command, user);
         verifyNoMoreInteractions(externalAiService);
     }
 

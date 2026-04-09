@@ -1,15 +1,5 @@
 package or.hyu.ssd.domain.document.service;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.controller.dto.DocumentImageUploadPart;
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentParagraphRequest;
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentRequest;
-import or.hyu.ssd.domain.document.controller.dto.CreateDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentListItemResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentParagraphDto;
-import or.hyu.ssd.domain.document.controller.dto.GetDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentRequest;
-import or.hyu.ssd.domain.document.controller.dto.UpdateDocumentResponse;
-import or.hyu.ssd.domain.document.controller.dto.DocumentBookmarkResponse;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentLog;
@@ -25,7 +15,17 @@ import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.domain.document.repository.FolderRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.service.support.DocumentImageResolver;
+import or.hyu.ssd.domain.document.service.support.DocumentImageUploadPart;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
+import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommand;
+import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
+import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommand;
+import or.hyu.ssd.domain.document.usecase.result.CreateDocumentResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentBookmarkResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentBlockResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentDetailResult;
+import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
+import or.hyu.ssd.domain.document.usecase.result.UpdateDocumentResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.DocumentException;
@@ -59,33 +59,33 @@ public class DocumentService {
     private final OptimisticRetryExecutor optimisticRetryExecutor;
     private final DocumentImageResolver documentImageResolver;
 
-    public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req) {
-        return createDocument(user, req, List.of());
+    public CreateDocumentResult createDocument(CustomUserDetails user, CreateDocumentCommand command) {
+        return createDocument(user, command, List.of());
     }
 
-    public CreateDocumentResponse createDocument(CustomUserDetails user, CreateDocumentRequest req, List<DocumentImageUploadPart> imageUploadParts) {
+    public CreateDocumentResult createDocument(CustomUserDetails user, CreateDocumentCommand command, List<DocumentImageUploadPart> imageUploadParts) {
         if (user == null || user.getMember() == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
-        validateFolderId(req.folderId());
+        validateFolderId(command.folderId());
 
-        List<ResolvedDocumentBlock> resolvedBlocks = resolveCreateBlocks(req.paragraphs(), imageUploadParts, user.getMember().getId());
-        String resolvedText = documentImageResolver.replaceBlobKeys(req.text(), collectUploadedImageUrls(resolvedBlocks));
-        String title = resolveTitle(req.title(), resolvedText, resolvedBlocks);
-        Folder folder = resolveFolderOrNull(user, req.folderId());
+        List<ResolvedDocumentBlock> resolvedBlocks = resolveCreateBlocks(command.blocks(), imageUploadParts, user.getMember().getId());
+        String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
+        String title = resolveTitle(command.title(), resolvedText, resolvedBlocks);
+        Folder folder = resolveFolderOrNull(user, command.folderId());
         Document doc = Document.of(title, resolvedText, folder, false, user.getMember());
 
         Document saved = documentRepository.save(doc);
         saveCreateParagraphsIfPresent(saved, resolvedBlocks);
         saveDocumentLog(saved, user);
-        return CreateDocumentResponse.of(saved.getId());
+        return CreateDocumentResult.of(saved.getId());
     }
 
-    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req) {
-        return updateDocument(documentId, user, req, List.of());
+    public UpdateDocumentResult updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentCommand command) {
+        return updateDocument(documentId, user, command, List.of());
     }
 
-    public UpdateDocumentResponse updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentRequest req, List<DocumentImageUploadPart> imageUploadParts) {
+    public UpdateDocumentResult updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentCommand command, List<DocumentImageUploadPart> imageUploadParts) {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -94,22 +94,22 @@ public class DocumentService {
         if (!doc.getMember().getId().equals(user.getMember().getId())) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
-        validateUpdateRequest(req);
+        validateUpdateRequest(command);
 
-        List<ResolvedDocumentBlock> resolvedBlocks = resolveUpdateBlocks(req.paragraphs(), imageUploadParts, user.getMember().getId());
-        String resolvedText = documentImageResolver.replaceBlobKeys(req.text(), collectUploadedImageUrls(resolvedBlocks));
-        String updatedTitle = resolveUpdatedTitle(doc.getTitle(), req.title());
+        List<ResolvedDocumentBlock> resolvedBlocks = resolveUpdateBlocks(command.blocks(), imageUploadParts, user.getMember().getId());
+        String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
+        String updatedTitle = resolveUpdatedTitle(doc.getTitle(), command.title());
         doc.updateIfPresent(updatedTitle, resolvedText, null, null, null);
         int deletedBlockCount = 0;
         int createdBlockCount = 0;
-        if (req.paragraphs() != null) {
+        if (command.blocks() != null) {
             BlockChangeSummary blockChangeSummary = replaceParagraphsAndSyncComments(doc, resolvedBlocks);
             deletedBlockCount = blockChangeSummary.deletedBlockCount();
             createdBlockCount = blockChangeSummary.createdBlockCount();
         }
         saveDocumentLog(doc, user, deletedBlockCount, createdBlockCount);
 
-        return UpdateDocumentResponse.of(doc.getId());
+        return UpdateDocumentResult.of(doc.getId());
     }
 
     public void deleteDocument(Long documentId, CustomUserDetails user) {
@@ -133,7 +133,7 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public GetDocumentResponse getDocument(Long documentId, CustomUserDetails user) {
+    public DocumentDetailResult getDocument(Long documentId, CustomUserDetails user) {
         Document doc = getDocument(documentId);
 
         if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -143,12 +143,12 @@ public class DocumentService {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
 
-        List<DocumentParagraphDto> paragraphs = fetchParagraphs(doc);
-        return GetDocumentResponse.of(doc, paragraphs);
+        List<DocumentBlockResult> blocks = fetchBlocks(doc);
+        return DocumentDetailResult.of(doc, blocks);
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentListItemResponse> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
+    public List<DocumentListItemResult> listDocuments(CustomUserDetails user, DocumentSort sortOption, Long folderId) {
         if (user == null || user.getMember() == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
@@ -172,12 +172,12 @@ public class DocumentService {
         }
 
         return documents.stream()
-                .map(DocumentListItemResponse::of)
+                .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
     }
 
-    public DocumentBookmarkResponse toggleBookmark(Long documentId, CustomUserDetails user) {
-        DocumentBookmarkResponse result = optimisticRetryExecutor.execute(3, () -> {
+    public DocumentBookmarkResult toggleBookmark(Long documentId, CustomUserDetails user) {
+        DocumentBookmarkResult result = optimisticRetryExecutor.execute(3, () -> {
             Document doc = getDocument(documentId);
 
             if (doc.getMember() == null || user == null || user.getMember() == null) {
@@ -190,7 +190,7 @@ public class DocumentService {
             boolean newVal = !doc.isBookmark();
             doc.updateIfPresent(null, null, null, null, newVal);
             documentRepository.flush();
-            return DocumentBookmarkResponse.of(doc.getId(), doc.isBookmark());
+            return DocumentBookmarkResult.of(doc.getId(), doc.isBookmark());
         });
         return result;
     }
@@ -245,14 +245,14 @@ public class DocumentService {
         return title != null ? title : currentTitle;
     }
 
-    private void validateUpdateRequest(UpdateDocumentRequest req) {
-        if (req == null) {
+    private void validateUpdateRequest(UpdateDocumentCommand command) {
+        if (command == null) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청 본문이 비어 있습니다");
         }
-        if (isBlankProvided(req.title())) {
+        if (isBlankProvided(command.title())) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "제목은 공백일 수 없습니다");
         }
-        if (req.text() == null || req.text().trim().isEmpty()) {
+        if (command.text() == null || command.text().trim().isEmpty()) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
         }
     }
@@ -364,16 +364,16 @@ public class DocumentService {
         documentParagraphRepository.saveAll(entities);
     }
 
-    private List<DocumentParagraphDto> fetchParagraphs(Document doc) {
+    private List<DocumentBlockResult> fetchBlocks(Document doc) {
         return documentParagraphRepository.findBlocks(doc).stream()
                 .map(p -> p.isImageBlock()
-                        ? new DocumentParagraphDto(p.getTypeOrDefault(), null, null, p.getPageNumber(), p.getBlockId(), p.getContent())
-                        : new DocumentParagraphDto(p.getTypeOrDefault(), p.getContent(), p.getRole(), p.getPageNumber(), p.getBlockId(), null))
+                        ? new DocumentBlockResult(p.getTypeOrDefault(), null, null, p.getPageNumber(), p.getBlockId(), p.getContent())
+                        : new DocumentBlockResult(p.getTypeOrDefault(), p.getContent(), p.getRole(), p.getPageNumber(), p.getBlockId(), null))
                 .collect(Collectors.toList());
     }
 
     private List<ResolvedDocumentBlock> resolveCreateBlocks(
-            List<CreateDocumentParagraphRequest> blocks,
+            List<DocumentBlockCommand> blocks,
             List<DocumentImageUploadPart> imageUploadParts,
             Long memberId
     ) {
@@ -386,7 +386,7 @@ public class DocumentService {
         Set<Integer> usedBlockIds = new LinkedHashSet<>();
         int nextBlockId = 1;
 
-        for (CreateDocumentParagraphRequest block : blocks) {
+        for (DocumentBlockCommand block : blocks) {
             int resolvedBlockId = block.blockId() != null
                     ? block.blockId()
                     : nextAvailableBlockId(usedBlockIds, nextBlockId);
@@ -404,7 +404,7 @@ public class DocumentService {
     }
 
     private List<ResolvedDocumentBlock> resolveUpdateBlocks(
-            List<CreateDocumentParagraphRequest> blocks,
+            List<DocumentBlockCommand> blocks,
             List<DocumentImageUploadPart> imageUploadParts,
             Long memberId
     ) {
@@ -415,7 +415,7 @@ public class DocumentService {
         Map<String, DocumentImageUploadPart> imageUploadsByBlobKey = documentImageResolver.indexUploadParts(imageUploadParts);
         List<ResolvedDocumentBlock> resolvedBlocks = new ArrayList<>(blocks.size());
 
-        for (CreateDocumentParagraphRequest block : blocks) {
+        for (DocumentBlockCommand block : blocks) {
             if (block.blockId() == null) {
                 throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "수정 요청의 모든 블록에는 blockId가 필요합니다");
             }
@@ -427,7 +427,7 @@ public class DocumentService {
     }
 
     private ResolvedDocumentBlock resolveBlock(
-            CreateDocumentParagraphRequest block,
+            DocumentBlockCommand block,
             int blockId,
             Map<String, DocumentImageUploadPart> imageUploadsByBlobKey,
             Long memberId

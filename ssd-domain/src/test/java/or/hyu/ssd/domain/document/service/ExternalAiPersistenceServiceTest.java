@@ -6,15 +6,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiDocumentCheckResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationCardResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiEvaluationMetricResponse;
-import or.hyu.ssd.domain.document.controller.dto.ExternalAiSummaryResponse;
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiDocumentCheckResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 
@@ -44,7 +44,7 @@ class ExternalAiPersistenceServiceTest {
         Document document = document(7L);
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
-        ExternalAiSummaryResponse response = externalAiPersistenceService.saveSummary(7L, "요약", "짧은 요약");
+        ExternalAiSummaryResult response = externalAiPersistenceService.saveSummary(7L, "요약", "짧은 요약");
 
         assertThat(response.summary()).isEqualTo("요약");
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
@@ -58,13 +58,13 @@ class ExternalAiPersistenceServiceTest {
         Document document = document(7L);
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
-        ExternalAiEvaluationCardResponse response = externalAiPersistenceService.saveEvaluation(
+        ExternalAiEvaluationCardResult response = externalAiPersistenceService.saveEvaluation(
                 7L,
-                ExternalAiEvaluationMetricResponse.of("문제 인식", 70, "문제 리뷰"),
-                ExternalAiEvaluationMetricResponse.of("실현 가능성", 80, "실현 가능성 리뷰"),
-                ExternalAiEvaluationMetricResponse.of("성장 전략", 50, "성장 리뷰"),
-                ExternalAiEvaluationMetricResponse.of("Business Model", 60, "BM 리뷰"),
-                ExternalAiEvaluationMetricResponse.of("팀 구성", 90, "팀 리뷰"),
+                ExternalAiEvaluationMetricResult.of("문제 인식", 70, "문제 리뷰"),
+                ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현 가능성 리뷰"),
+                ExternalAiEvaluationMetricResult.of("성장 전략", 50, "성장 리뷰"),
+                ExternalAiEvaluationMetricResult.of("Business Model", 60, "BM 리뷰"),
+                ExternalAiEvaluationMetricResult.of("팀 구성", 90, "팀 리뷰"),
                 70,
                 Map.of("problem_is_clear", true),
                 List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 1, document))
@@ -90,7 +90,7 @@ class ExternalAiPersistenceServiceTest {
         ));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
-        ExternalAiDocumentCheckResponse response = externalAiPersistenceService.mergeChecklist(
+        ExternalAiDocumentCheckResult response = externalAiPersistenceService.mergeChecklist(
                 7L,
                 List.of(3),
                 Map.of(
