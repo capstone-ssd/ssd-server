@@ -37,6 +37,6 @@ public record CreateDocumentBlockRequest(
     }
 
     public DocumentBlockCommand toCommand() {
-        return new DocumentBlockCommand(type, content, role, blockId, blobKey, url);
+        return new DocumentBlockCommand(resolvedType(), content, role, blockId, blobKey, url);
     }
 }

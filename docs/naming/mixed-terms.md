@@ -18,15 +18,15 @@
 
 ## 예시 위치
 - `Member` / `user` 혼용
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-domain/src/main/java/or/hyu/ssd/global/jwt/service/JWTService.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/global/jwt/service/JWTService.java`
 - `Paragraph` / `Block` 혼용
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-domain/src/main/java/or/hyu/ssd/domain/document/service/DocumentService.java`
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-domain/src/main/java/or/hyu/ssd/domain/document/entity/DocumentParagraph.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/domain/document/service/DocumentService.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/domain/document/entity/DocumentParagraph.java`
 - `Author` / `Member` 혼용
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-api/src/main/java/or/hyu/ssd/domain/document/controller/dto/GetDocumentResponse.java`
+  - `ssd-api/src/main/java/or/hyu/ssd/domain/document/controller/dto/GetDocumentResponse.java`
 - `Evaluator` / `reviewer` 혼용
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-domain/src/main/java/or/hyu/ssd/domain/document/repository/EvaluatorReviewRepository.java`
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-domain/src/main/java/or/hyu/ssd/domain/document/service/EvaluatorReviewService.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/domain/document/repository/EvaluatorReviewRepository.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/domain/document/service/EvaluatorReviewService.java`
 - `Reissue` / `Rotate` 혼용
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-api/src/main/java/or/hyu/ssd/global/jwt/controller/JWTController.java`
-  - `/Users/jeonjaeyeon/Desktop/capstone/ssd/ssd-domain/src/main/java/or/hyu/ssd/global/jwt/service/JWTService.java`
+  - `ssd-api/src/main/java/or/hyu/ssd/global/jwt/controller/JWTController.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/global/jwt/service/JWTService.java`

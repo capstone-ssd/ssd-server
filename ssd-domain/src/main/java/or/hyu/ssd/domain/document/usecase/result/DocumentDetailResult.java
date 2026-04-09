@@ -23,7 +23,7 @@ public record DocumentDetailResult(
                 document.getId(),
                 document.getTitle(),
                 document.getContent(),
-                blocks,
+                blocks == null ? List.of() : List.copyOf(blocks),
                 document.getSummary(),
                 document.getDetails(),
                 document.getFolder() != null ? document.getFolder().getId() : null,

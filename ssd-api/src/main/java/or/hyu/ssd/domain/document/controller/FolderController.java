@@ -136,8 +136,8 @@ public class FolderController {
                     ### 응답
                     - 200 OK
                     - data[]
-                      - parentId: 현재 조회한 폴더 ID (루트는 0)
-                      - currentFolderId: 현재 탐색 중인 폴더 ID (루트는 0)
+                      - parentId: 현재 폴더의 상위 폴더 ID (루트는 0)
+                      - currentFolderId: 현재 조회 중인 폴더 ID (루트는 0)
                       - folders[]: 하위 폴더 목록
                       - documents[]: 해당 폴더 내부 문서 목록
                     """

@@ -56,6 +56,16 @@ class EvaluatorReviewServiceTest {
     }
 
     @Test
+    @DisplayName("리뷰 생성은 null 요청 본문을 거부한다")
+    void create_rejectsNullCommand() {
+        Member member = member(1L, "reviewer@example.com");
+
+        assertThatThrownBy(() -> evaluatorReviewService.create(10L, new CustomUserDetails(member), null))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .hasMessage("리뷰 요청 본문이 비어 있습니다");
+    }
+
+    @Test
     @DisplayName("리뷰 수정은 기존 리뷰를 갱신하고 문서 평균을 재집계한다")
     void update_recalculatesAverages() {
         Member owner = member(1L, "owner@example.com");
@@ -82,6 +92,16 @@ class EvaluatorReviewServiceTest {
         assertThat(document.getReviewFinancialAvg()).isEqualTo(75.0);
         assertThat(document.getReviewTotalAvg()).isEqualTo(85.0);
         assertThat(document.getReviewCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("리뷰 수정은 null 요청 본문을 거부한다")
+    void update_rejectsNullCommand() {
+        Member reviewer = member(2L, "reviewer@example.com");
+
+        assertThatThrownBy(() -> evaluatorReviewService.update(10L, new CustomUserDetails(reviewer), null))
+                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .hasMessage("리뷰 요청 본문이 비어 있습니다");
     }
 
     @Test

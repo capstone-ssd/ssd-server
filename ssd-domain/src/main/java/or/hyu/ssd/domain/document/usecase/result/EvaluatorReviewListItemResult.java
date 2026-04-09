@@ -16,6 +16,9 @@ public record EvaluatorReviewListItemResult(
         String comment
 ) {
     public static EvaluatorReviewListItemResult of(EvaluatorReview review) {
+        if (review == null) {
+            throw new IllegalArgumentException("EvaluatorReview must not be null");
+        }
         return new EvaluatorReviewListItemResult(
                 review.getId(),
                 review.getReviewer() == null ? null : review.getReviewer().getName(),

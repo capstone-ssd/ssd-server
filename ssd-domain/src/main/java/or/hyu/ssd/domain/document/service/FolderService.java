@@ -32,8 +32,8 @@ public class FolderService {
     private final DocumentService documentService;
 
     public CreateFolderResult create(CustomUserDetails user, CreateFolderCommand command) {
+        validateCreateRequest(command);
         ensureAuthenticated(user);
-        validateParentId(command.parentId());
 
         String name = command.name().trim();
         String color = trimOrNull(command.color());
@@ -75,23 +75,28 @@ public class FolderService {
     public FolderContentResult listContent(CustomUserDetails user, Long parentId) {
         ensureAuthenticated(user);
         Long memberId = user.getMember().getId();
-        Long resolvedParentId = (parentId == null) ? 0L : parentId;
+        Long requestedFolderId = (parentId == null) ? 0L : parentId;
+        Long currentFolderId = 0L;
+        Long parentFolderId = 0L;
 
         List<Folder> folders;
         List<Document> documents;
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
 
-        if (resolvedParentId == 0L) {
+        if (requestedFolderId == 0L) {
             folders = folderRepository.findAllByMember_IdAndParentIsNull(memberId);
             documents = documentRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
         } else {
-            getFolderOwned(resolvedParentId, user);
-            folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, resolvedParentId);
-            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, resolvedParentId, sort);
+            Folder currentFolder = getFolderOwned(requestedFolderId, user);
+            currentFolderId = currentFolder.getId();
+            parentFolderId = currentFolder.getParent() == null ? 0L : currentFolder.getParent().getId();
+            folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, requestedFolderId);
+            documents = documentRepository.findAllByMember_IdAndFolder_Id(memberId, requestedFolderId, sort);
         }
 
         return FolderContentResult.of(
-                resolvedParentId,
+                parentFolderId,
+                currentFolderId,
                 toFolderItems(memberId, folders),
                 toDocumentItems(documents)
         );
@@ -107,6 +112,7 @@ public class FolderService {
         List<Document> documents = documentRepository.findAllByMember_Id(memberId, sort);
 
         return FolderContentResult.of(
+                0L,
                 0L,
                 toFolderItems(memberId, folders),
                 toDocumentItems(documents)
@@ -178,6 +184,16 @@ public class FolderService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void validateCreateRequest(CreateFolderCommand command) {
+        if (command == null) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "생성 요청 본문이 비어 있습니다");
+        }
+        if (command.name() == null || command.name().trim().isEmpty()) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더명은 공백일 수 없습니다");
+        }
+        validateParentId(command.parentId());
     }
 
     private void validateUpdateRequest(UpdateFolderCommand command) {

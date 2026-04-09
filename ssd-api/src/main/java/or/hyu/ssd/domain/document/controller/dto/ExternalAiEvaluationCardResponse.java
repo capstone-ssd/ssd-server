@@ -16,6 +16,9 @@ public record ExternalAiEvaluationCardResponse(
         Map<String, Boolean> checkList
 ) {
     public static ExternalAiEvaluationCardResponse from(ExternalAiEvaluationCardResult result) {
+        if (result == null) {
+            throw new IllegalArgumentException("ExternalAiEvaluationCardResult must not be null");
+        }
         return new ExternalAiEvaluationCardResponse(
                 result.documentId(),
                 result.totalScore(),

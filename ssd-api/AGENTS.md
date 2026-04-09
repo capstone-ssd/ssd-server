@@ -21,9 +21,9 @@
   - 보안 예외/일반 예외 처리는 전역 핸들러(`ssd-core`) 규약을 따른다.
 
 ## Naming Reference
-- 공통 네이밍 기준은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/README.md`를 따른다.
+- 공통 네이밍 기준은 `docs/naming/README.md`를 따른다.
 - API 요청/응답 DTO 이름과 도메인 용어가 충돌하면 `glossary.md`를 먼저 확인한다.
-- DTO 경계 원칙은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/architecture/dto-boundary.md`를 따른다.
+- DTO 경계 원칙은 `docs/architecture/dto-boundary.md`를 따른다.
 
 ## Implementation Patterns
 

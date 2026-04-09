@@ -29,6 +29,7 @@ public class EvaluatorReviewService {
     private final DocumentRepository documentRepository;
 
     public EvaluatorReviewIdResult create(Long documentId, CustomUserDetails user, CreateEvaluatorReviewCommand command) {
+        validateCommand(command);
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
 
@@ -50,6 +51,7 @@ public class EvaluatorReviewService {
     }
 
     public EvaluatorReviewDetailResult update(Long documentId, CustomUserDetails user, UpdateEvaluatorReviewCommand command) {
+        validateCommand(command);
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(user);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
@@ -136,5 +138,17 @@ public class EvaluatorReviewService {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
         return user.getMember();
+    }
+
+    private void validateCommand(CreateEvaluatorReviewCommand command) {
+        if (command == null) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "리뷰 요청 본문이 비어 있습니다");
+        }
+    }
+
+    private void validateCommand(UpdateEvaluatorReviewCommand command) {
+        if (command == null) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "리뷰 요청 본문이 비어 있습니다");
+        }
     }
 }
