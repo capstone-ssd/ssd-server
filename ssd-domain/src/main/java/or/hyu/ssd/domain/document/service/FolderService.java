@@ -29,7 +29,7 @@ public class FolderService {
 
     private final FolderRepository folderRepository;
     private final DocumentRepository documentRepository;
-    private final DocumentService documentService;
+    private final DocumentCommandService documentCommandService;
 
     public CreateFolderResult create(CustomUserDetails user, CreateFolderCommand command) {
         validateCreateRequest(command);
@@ -122,7 +122,7 @@ public class FolderService {
     private void deleteRecursively(Folder folder, CustomUserDetails user) {
         List<Document> documents = documentRepository.findAllByFolder_Id(folder.getId());
         for (Document document : documents) {
-            documentService.deleteDocument(document.getId(), user);
+            documentCommandService.deleteDocument(document.getId(), user);
         }
 
         List<Folder> children = folderRepository.findAllByMember_IdAndParent_Id(
