@@ -1,7 +1,7 @@
 package or.hyu.ssd.domain.document.service;
 
-import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.domain.document.entity.DocumentBlockType;
 import or.hyu.ssd.domain.document.entity.DocumentParagraph;
 import or.hyu.ssd.domain.document.repository.CheckListRepository;
 import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class DocumentServiceTest {
+class DocumentCommandServiceTest {
 
     @Mock
     private DocumentRepository documentRepository;
@@ -70,7 +70,7 @@ class DocumentServiceTest {
     private DocumentImageResolver documentImageResolver;
 
     @InjectMocks
-    private DocumentService documentService;
+    private DocumentCommandService documentCommandService;
 
     @Test
     @DisplayName("createDocument()는 생성 요청 블록의 pageNumber를 1로 저장하고 blockId와 첫 문단 제목을 유지한다")
@@ -88,14 +88,14 @@ class DocumentServiceTest {
         );
 
         when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
-            Document doc = invocation.getArgument(0);
+            Document document = invocation.getArgument(0);
             return Document.builder()
                     .id(42L)
-                    .title(doc.getTitle())
-                    .content(doc.getContent())
-                    .folder(doc.getFolder())
-                    .bookmark(doc.isBookmark())
-                    .member(doc.getMember())
+                    .title(document.getTitle())
+                    .content(document.getContent())
+                    .folder(document.getFolder())
+                    .bookmark(document.isBookmark())
+                    .member(document.getMember())
                     .build();
         });
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> {
@@ -106,7 +106,7 @@ class DocumentServiceTest {
         });
         when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CreateDocumentResult result = documentService.createDocument(user, command);
+        CreateDocumentResult result = documentCommandService.createDocument(user, command);
 
         ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
         verify(documentRepository).save(documentCaptor.capture());
@@ -136,22 +136,18 @@ class DocumentServiceTest {
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
 
-        assertThatThrownBy(() -> documentService.updateDocument(
+        assertThatThrownBy(() -> documentCommandService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentCommand(
-                        "   ", "본문", null
-                )
+                new UpdateDocumentCommand("   ", "본문", null)
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("제목은 공백일 수 없습니다");
 
-        assertThatThrownBy(() -> documentService.updateDocument(
+        assertThatThrownBy(() -> documentCommandService.updateDocument(
                 42L,
                 user,
-                new UpdateDocumentCommand(
-                        null, "   ", null
-                )
+                new UpdateDocumentCommand(null, "   ", null)
         ))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("내용은 공백일 수 없습니다");
@@ -172,7 +168,7 @@ class DocumentServiceTest {
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        documentService.updateDocument(
+        documentCommandService.updateDocument(
                 42L,
                 user,
                 new UpdateDocumentCommand(
@@ -227,7 +223,7 @@ class DocumentServiceTest {
         when(documentParagraphRepository.findBlocks(document)).thenReturn(List.of());
         when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThatThrownBy(() -> documentService.updateDocument(
+        assertThatThrownBy(() -> documentCommandService.updateDocument(
                 42L,
                 user,
                 new UpdateDocumentCommand(
@@ -239,7 +235,7 @@ class DocumentServiceTest {
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("수정 요청의 모든 블록에는 blockId가 필요합니다");
 
-        assertThatThrownBy(() -> documentService.updateDocument(
+        assertThatThrownBy(() -> documentCommandService.updateDocument(
                 42L,
                 user,
                 new UpdateDocumentCommand(
@@ -271,21 +267,21 @@ class DocumentServiceTest {
         );
 
         when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
-            Document doc = invocation.getArgument(0);
+            Document document = invocation.getArgument(0);
             return Document.builder()
                     .id(50L)
-                    .title(doc.getTitle())
-                    .content(doc.getContent())
-                    .folder(doc.getFolder())
-                    .bookmark(doc.isBookmark())
-                    .member(doc.getMember())
+                    .title(document.getTitle())
+                    .content(document.getContent())
+                    .folder(document.getFolder())
+                    .bookmark(document.isBookmark())
+                    .member(document.getMember())
                     .build();
         });
         when(documentParagraphRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
         when(documentImageResolver.replaceBlobKeys(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        documentService.createDocument(
+        documentCommandService.createDocument(
                 user,
                 command,
                 List.of(new DocumentImageUploadPart("img-1", 2, "image.png", "image/png", new byte[]{1, 2, 3}))
@@ -323,7 +319,7 @@ class DocumentServiceTest {
         when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any())).thenReturn("https://s3.example.com/documents/image.png");
         when(documentImageResolver.replaceBlobKeys(any(), any())).thenReturn("<img src=\"https://s3.example.com/documents/image.png\" />");
 
-        documentService.createDocument(
+        documentCommandService.createDocument(
                 user,
                 command,
                 List.of(new DocumentImageUploadPart("img-1", 2, "image.png", "image/png", new byte[]{1, 2, 3}))
