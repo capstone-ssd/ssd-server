@@ -7,10 +7,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.global.api.ApiResponse;
 import or.hyu.ssd.global.config.properties.JWTConfig;
 import or.hyu.ssd.global.jwt.BearerTokenExtractor;
 import or.hyu.ssd.global.jwt.service.JWTService;
-import or.hyu.ssd.global.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,8 +42,8 @@ public class JWTController {
                     - data: "테스트용 액세스 토큰이 발급되었습니다. 헤더를 확인해주세요"
                     """
     )
-    public ResponseEntity<ApiResponse<String>> createAccess(HttpServletResponse response){
-        jwtService.createToken(response);
+    public ResponseEntity<ApiResponse<String>> issueTestAccessToken(HttpServletResponse response) {
+        jwtService.issueTestAccessToken(response);
 
         return ResponseEntity.ok(ApiResponse.ok("테스트용 액세스 토큰이 발급되었습니다. 헤더를 확인해주세요"));
     }
@@ -65,8 +65,7 @@ public class JWTController {
                     - data: "액세스 토큰이 성공적으로 작동합니다"
                     """
     )
-    public ResponseEntity<ApiResponse<String>> accessTest(@AuthenticationPrincipal CustomUserDetails userDetails, HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<String>> accessTest(@AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info(userDetails.getEmail());
         return ResponseEntity.ok(ApiResponse.ok("액세스 토큰이 성공적으로 작동합니다"));
     }
@@ -91,8 +90,7 @@ public class JWTController {
                     """
     )
     public ResponseEntity<ApiResponse<String>> reissue(HttpServletRequest request, HttpServletResponse response) {
-
-        jwtService.refreshRotate(request,response);
+        jwtService.reissueTokens(request, response);
 
         return ResponseEntity.ok(ApiResponse.ok("성공적으로 재생성되었습니다"));
     }
@@ -122,7 +120,6 @@ public class JWTController {
         String accessToken = BearerTokenExtractor.extract(request.getHeader(jwtConfig.getHeader()));
 
         jwtService.logout(userDetails.getMember().getId(), accessToken, response);
-
         return ResponseEntity.ok(ApiResponse.ok(null, "성공적으로 로그아웃되었습니다"));
     }
 }

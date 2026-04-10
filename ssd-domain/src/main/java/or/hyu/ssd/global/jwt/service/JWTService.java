@@ -21,15 +21,15 @@ import org.springframework.stereotype.Service;
 public class JWTService {
     private final JWTUtil jwtUtil;
     private final JWTConfig jwtConfig;
-    private final MemberRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRedisTemplateUtil;
+    private final MemberRepository memberRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
     private final CookieConfig cookieConfig;
     private final RefreshTokenValidator refreshTokenValidator;
 
 
     // 토큰 발급기를 위한 메서드입니다
-    public void createToken(HttpServletResponse response) {
+    public void issueTestAccessToken(HttpServletResponse response) {
 
         String access = jwtUtil.createJwt("access", 1L, "ROLE_AUTHOR", jwtConfig.getAccessTokenValidityInSeconds());
         response.setHeader("access-token", access);
@@ -44,55 +44,47 @@ public class JWTService {
      *
      * 만약 여기서 걸리는 경우가 존재한다면, 새롭게 로그인을 하여 리프레시 토큰을 발급받아야 합니다.
      * */
-    public void refreshRotate(HttpServletRequest request, HttpServletResponse response){
-
-
-        Long userIdFromRefreshToken = refreshTokenValidator.validateRefreshToken(request);
-
-        /**
-         * 위의 모든 검증절차를 통과하였다면
-         * 기존의 리프레시 토큰은 서버에서 삭제하고
-         *
-         * 액세스 토큰과 리프레시 토큰을 새롭게 발급합니다
-         * */
-        Member findUser = userRepository.findById(userIdFromRefreshToken)
+    public void reissueTokens(HttpServletRequest request, HttpServletResponse response){
+        Long memberId = refreshTokenValidator.extractValidMemberId(request);
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
 
+        String accessToken = jwtUtil.createJwt("access", member.getId(), member.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
+        String refreshToken = jwtUtil.createJwt("refresh", member.getId(), member.getRole().toString(), jwtConfig.getRefreshTokenValidityInSeconds());
 
-        String access = jwtUtil.createJwt("access", findUser.getId(), findUser.getRole().toString(), jwtConfig.getAccessTokenValidityInSeconds());
-        String newRefresh = jwtUtil.createJwt("refresh", findUser.getId(), findUser.getRole().toString(), jwtConfig.getRefreshTokenValidityInSeconds());
-
-
-        refreshTokenRedisTemplateUtil.deleteById(userIdFromRefreshToken);
-
-        refreshTokenRedisTemplateUtil.saveRefreshToken(userIdFromRefreshToken,newRefresh,jwtConfig.getRefreshTokenValidityInSeconds());
-
-        response.setHeader("access-token", access);
-
-        CookieUtil.addSameSiteCookie(
-                response,
-                "refresh-token",
-                newRefresh,
-                jwtConfig.getRefreshTokenValidityInSeconds().intValue(),
-                cookieConfig.getDomain(),
-                cookieConfig.isSecure(),
-                cookieConfig.getSameSite()
-        );
-
-
+        rotateRefreshToken(memberId, refreshToken);
+        writeIssuedTokens(response, accessToken, refreshToken);
     }
 
     public void logout(Long userId, String accessToken, HttpServletResponse response) {
         long remainingExpiration = jwtUtil.getRemainingExpiration(accessToken);
         if (remainingExpiration > 0) {
-            accessTokenBlacklistRepository.save(jwtUtil.getJti(accessToken), remainingExpiration);
+            accessTokenBlacklistRepository.blacklist(jwtUtil.getJti(accessToken), remainingExpiration);
         }
 
-        refreshTokenRedisTemplateUtil.deleteById(userId);
+        refreshTokenRepository.deleteById(userId);
 
         CookieUtil.expireSameSiteCookie(
                 response,
                 "refresh-token",
+                cookieConfig.getDomain(),
+                cookieConfig.isSecure(),
+                cookieConfig.getSameSite()
+        );
+    }
+
+    private void rotateRefreshToken(Long memberId, String refreshToken) {
+        refreshTokenRepository.deleteById(memberId);
+        refreshTokenRepository.saveRefreshToken(memberId, refreshToken, jwtConfig.getRefreshTokenValidityInSeconds());
+    }
+
+    private void writeIssuedTokens(HttpServletResponse response, String accessToken, String refreshToken) {
+        response.setHeader("access-token", accessToken);
+        CookieUtil.addSameSiteCookie(
+                response,
+                "refresh-token",
+                refreshToken,
+                jwtConfig.getRefreshTokenValidityInSeconds().intValue(),
                 cookieConfig.getDomain(),
                 cookieConfig.isSecure(),
                 cookieConfig.getSameSite()

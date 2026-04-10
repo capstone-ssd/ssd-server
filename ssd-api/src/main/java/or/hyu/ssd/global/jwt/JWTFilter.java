@@ -14,7 +14,9 @@ import or.hyu.ssd.domain.member.service.CustomUserDetailsService;
 import or.hyu.ssd.global.api.ErrorCode;
 import or.hyu.ssd.global.api.handler.UserExceptionHandler;
 import or.hyu.ssd.global.config.properties.JWTConfig;
+import or.hyu.ssd.global.api.handler.TokenHandler;
 import or.hyu.ssd.global.jwt.repository.AccessTokenBlacklistRepository;
+import or.hyu.ssd.global.support.ApiErrorResponseWriter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,22 +52,17 @@ public class JWTFilter extends OncePerRequestFilter{
             filterChain.doFilter(request, response);
             return;
         }
-        if (!authorizationHeader.startsWith("Bearer ")) {
-            setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
-            return;
-        }
-        String accessToken = BearerTokenExtractor.extract(authorizationHeader);
-
         try {
+            String accessToken = BearerTokenExtractor.extract(authorizationHeader);
             jwtUtil.isExpired(accessToken);
             String category = jwtUtil.getCategory(accessToken);
             if (!"access".equals(category)) {
-                setErrorResponse(response, ErrorCode.ACCESS_INVALID_TYPE);
+                ApiErrorResponseWriter.write(response, ErrorCode.ACCESS_INVALID_TYPE);
                 return;
             }
             String jti = jwtUtil.getJti(accessToken);
-            if (accessTokenBlacklistRepository.exists(jti)) {
-                setErrorResponse(response, ErrorCode.ACCESS_TOKEN_BLACKLISTED);
+            if (accessTokenBlacklistRepository.isBlacklisted(jti)) {
+                ApiErrorResponseWriter.write(response, ErrorCode.ACCESS_TOKEN_BLACKLISTED);
                 return;
             }
             Long id = jwtUtil.getId(accessToken);
@@ -80,33 +77,21 @@ public class JWTFilter extends OncePerRequestFilter{
             );
             SecurityContextHolder.getContext().setAuthentication(authToken);
             filterChain.doFilter(request, response);
+        } catch (TokenHandler e) {
+            ApiErrorResponseWriter.write(response, e.getErrorCode());
         } catch (ExpiredJwtException e) {
-            setErrorResponse(response, ErrorCode.ACCESS_TOKEN_EXPIRED);
+            ApiErrorResponseWriter.write(response, ErrorCode.ACCESS_TOKEN_EXPIRED);
         } catch (IllegalArgumentException e) {
-            setErrorResponse(response, ErrorCode.ROLE_INVALID_TYPE);
+            ApiErrorResponseWriter.write(response, ErrorCode.ROLE_INVALID_TYPE);
         } catch (UserExceptionHandler e) {
             if (e.getErrorCode() == ErrorCode.MEMBER_NOT_FOUND) {
-                setErrorResponse(response, ErrorCode.TOKEN_MEMBER_NOT_FOUND);
+                ApiErrorResponseWriter.write(response, ErrorCode.TOKEN_MEMBER_NOT_FOUND);
                 return;
             }
             throw e;
         } catch (JwtException e) {
-            setErrorResponse(response, resolveJwtErrorCode(e));
+            ApiErrorResponseWriter.write(response, resolveJwtErrorCode(e));
         }
-    }
-
-
-    /**
-     * 필터단에서 발생하는 예외는 저희가 만든 예외 핸들러로는 캐치 할 수 없습니다.
-     * 서블렛까지 들어가기 전에 예외가 발생하면 return 시켜버리기 때문이죠. 그래서 이렇게 리스폰스에 직접 데이터를 넣어서 반환합니다
-     * */
-    private void setErrorResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
-        response.setStatus(errorCode.getStatus().value());
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(String.format(
-                "{\"code\":\"%s\", \"msg\":\"%s\"}",
-                errorCode.getCode(), errorCode.getMessage()
-        ));
     }
 
     private ErrorCode resolveJwtErrorCode(JwtException e) {

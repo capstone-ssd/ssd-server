@@ -18,7 +18,7 @@ public class RefreshTokenValidator {
     private final JWTUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public Long validateRefreshToken(HttpServletRequest request) {
+    public Long extractValidMemberId(HttpServletRequest request) {
 
         Cookie[] cookies = request.getCookies();
         if (cookies == null) throw new TokenHandler(ErrorCode.COOKIE_NULL);

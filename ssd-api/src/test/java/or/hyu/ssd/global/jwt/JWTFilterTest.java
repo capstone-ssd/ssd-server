@@ -86,7 +86,7 @@ class JWTFilterTest {
         when(jwtUtil.isExpired("valid-token")).thenReturn(false);
         when(jwtUtil.getCategory("valid-token")).thenReturn("access");
         when(jwtUtil.getJti("valid-token")).thenReturn("test-jti");
-        when(accessTokenBlacklistRepository.exists("test-jti")).thenReturn(false);
+        when(accessTokenBlacklistRepository.isBlacklisted("test-jti")).thenReturn(false);
         when(jwtUtil.getId("valid-token")).thenReturn(1L);
         when(jwtUtil.getRole("valid-token")).thenReturn("ROLE_AUTHOR");
         when(customUserDetailsService.loadUserById(1L))
@@ -112,7 +112,7 @@ class JWTFilterTest {
         when(jwtUtil.isExpired("blacklisted-token")).thenReturn(false);
         when(jwtUtil.getCategory("blacklisted-token")).thenReturn("access");
         when(jwtUtil.getJti("blacklisted-token")).thenReturn("access-jti");
-        when(accessTokenBlacklistRepository.exists("access-jti")).thenReturn(true);
+        when(accessTokenBlacklistRepository.isBlacklisted("access-jti")).thenReturn(true);
 
         jwtFilter.doFilterInternal(request, response, filterChain);
 
