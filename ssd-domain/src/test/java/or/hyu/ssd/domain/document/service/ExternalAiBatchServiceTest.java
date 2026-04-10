@@ -38,9 +38,11 @@ class ExternalAiBatchServiceTest {
     @Test
     @DisplayName("generateAll()은 평가, 요약, 키워드 순서로 호출한다")
     void generateAll_callsAiApisInOrder() {
+        // given
         CustomUserDetails user = new CustomUserDetails(member(1L));
         ExternalDocumentIdCommand command = new ExternalDocumentIdCommand("7");
 
+        // when
         ExternalAiEvaluationCardResult evaluation = ExternalAiEvaluationCardResult.of(
                 7L,
                 80,
@@ -54,6 +56,7 @@ class ExternalAiBatchServiceTest {
         ExternalAiSummaryResult summary = ExternalAiSummaryResult.of(7L, "긴 요약", "짧은 요약");
         ExternalAiKeywordResult keyword = ExternalAiKeywordResult.of(7L, "공실, SaaS");
 
+        // then
         when(externalAiService.evaluate(command, user)).thenReturn(evaluation);
         when(externalAiService.summarizeBasic(command, user)).thenReturn(summary);
         when(externalAiService.summarizeKeyword(command, user)).thenReturn(keyword);
@@ -74,9 +77,11 @@ class ExternalAiBatchServiceTest {
     @Test
     @DisplayName("generateAll()은 요약 단계에서 실패하면 키워드는 호출하지 않는다")
     void generateAll_stopsWhenSummaryFails() {
+        // given
         CustomUserDetails user = new CustomUserDetails(member(1L));
         ExternalDocumentIdCommand command = new ExternalDocumentIdCommand("7");
 
+        // when
         when(externalAiService.evaluate(command, user)).thenReturn(ExternalAiEvaluationCardResult.of(
                 7L,
                 80,
@@ -89,6 +94,7 @@ class ExternalAiBatchServiceTest {
         ));
         when(externalAiService.summarizeBasic(command, user)).thenThrow(new IllegalStateException("summary failed"));
 
+        // then
         assertThatThrownBy(() -> externalAiBatchService.generateAll(command, user))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("summary failed");

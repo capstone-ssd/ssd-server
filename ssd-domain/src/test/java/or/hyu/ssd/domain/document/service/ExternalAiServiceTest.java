@@ -59,6 +59,7 @@ class ExternalAiServiceTest {
     @Test
     @DisplayName("summarizeBasic()는 외부 요약 결과를 DB 반영 서비스에 위임한다")
     void summarizeBasic_delegatesPersistence() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
@@ -69,8 +70,10 @@ class ExternalAiServiceTest {
         when(externalAiPersistenceService.saveSummary(7L, "핵심 요약", "짧은 요약"))
                 .thenReturn(ExternalAiSummaryResult.of(7L, "핵심 요약", "짧은 요약"));
 
+        // when
         ExternalAiSummaryResult response = externalAiService.summarizeBasic(new ExternalDocumentIdCommand("7"), user);
 
+        // then
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.summary()).isEqualTo("핵심 요약");
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
@@ -79,6 +82,7 @@ class ExternalAiServiceTest {
     @Test
     @DisplayName("evaluate()는 외부 평가 결과를 DB 반영 서비스에 위임한다")
     void evaluate_delegatesPersistence() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
@@ -113,8 +117,10 @@ class ExternalAiServiceTest {
                         Map.of("problem_is_clear", true)
                 ));
 
+        // when
         ExternalAiEvaluationCardResult response = externalAiService.evaluate(new ExternalDocumentIdCommand("7"), user);
 
+        // then
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.totalScore()).isEqualTo(70);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
@@ -123,6 +129,7 @@ class ExternalAiServiceTest {
     @Test
     @DisplayName("checkNewText()는 변경 블록이 없으면 외부 AI를 호출하지 않는다")
     void checkNewText_returnsStoredChecklistWhenNoChangedBlock() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
@@ -133,8 +140,10 @@ class ExternalAiServiceTest {
         when(documentAiCheckSnapshotRepository.findAllByDocument(document))
                 .thenReturn(List.of(DocumentAiCheckSnapshot.of(document, 1, "본문")));
 
+        // when
         ExternalAiDocumentCheckResult response = externalAiService.checkNewText(new ExternalDocumentIdCommand("7"), user);
 
+        // then
         assertThat(response.changedBlockIds()).isEmpty();
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
         verifyNoInteractions(externalAiPort);
@@ -143,14 +152,17 @@ class ExternalAiServiceTest {
     @Test
     @DisplayName("getSummary()는 저장된 summary와 shortSummary를 반환한다")
     void getSummary_returnsStoredValues() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
         document.updateSummary("저장된 요약", "짧은 요약");
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
+        // when
         ExternalAiSummaryResult response = externalAiService.getSummary(7L, user);
 
+        // then
         assertThat(response.summary()).isEqualTo("저장된 요약");
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
     }
@@ -158,14 +170,17 @@ class ExternalAiServiceTest {
     @Test
     @DisplayName("getChecklist()는 저장된 체크리스트만 반환한다")
     void getChecklist_returnsStoredChecklist() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(7L, member);
         document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
+        // when
         ExternalAiChecklistResult response = externalAiService.getChecklist(7L, user);
 
+        // then
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
     }
@@ -173,9 +188,12 @@ class ExternalAiServiceTest {
     @Test
     @DisplayName("evaluate()는 숫자가 아닌 docId를 400 예외로 거부한다")
     void evaluate_rejectsInvalidDocId() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
 
+        // when
+        // then
         assertThatThrownBy(() -> externalAiService.evaluate(new ExternalDocumentIdCommand("abc"), user))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("docId는 1 이상의 숫자여야 합니다");

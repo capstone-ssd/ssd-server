@@ -36,11 +36,14 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleGeneralException()는 5xx CustomException에서 Discord 알림을 보낸다")
     void handleGeneralException_notifiesDiscordForServerErrors() {
+        // given
         GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
         HttpServletRequest request = request("POST", "/api/v1/external-ai/evaluate");
 
+        // when
         handler.handleGeneralException(new DocumentException(ErrorCode.EXTERNAL_AI_CALL_FAILED), request);
 
+        // then
         ArgumentCaptor<ErrorAlertContext> contextCaptor = ArgumentCaptor.forClass(ErrorAlertContext.class);
         verify(errorAlertNotifier).notify(contextCaptor.capture());
         assertThat(contextCaptor.getValue().errorCode()).isEqualTo("AI50201");
@@ -50,17 +53,21 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleNotFound()는 4xx 예외에서 Discord 알림을 보내지 않는다")
     void handleNotFound_doesNotNotifyDiscordForClientErrors() {
+        // given
         GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
         HttpServletRequest request = request("GET", "/api/v1/folders");
 
+        // when
         handler.handleNotFound(new NoHandlerFoundException("GET", "/api/v1/folders", null), request);
 
+        // then
         verify(errorAlertNotifier, never()).notify(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     @DisplayName("handleMethodArgumentNotValid()는 첫 번째 검증 메시지를 반환한다")
     void handleMethodArgumentNotValid_returnsFieldValidationMessage() throws NoSuchMethodException {
+        // given
         GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
         HttpServletRequest request = request("POST", "/api/v1/folders");
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
@@ -69,8 +76,10 @@ class GlobalExceptionHandlerTest {
         MethodParameter methodParameter = new MethodParameter(method, 0);
         MethodArgumentNotValidException exception = new MethodArgumentNotValidException(methodParameter, bindingResult);
 
+        // when
         var response = handler.handleMethodArgumentNotValid(exception, request);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_BODY_INVALID_VALUE.getStatus());
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().msg()).isEqualTo("폴더명은 필수입니다");
@@ -80,6 +89,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleTypeMismatch()는 파라미터 이름을 포함한 메시지를 반환한다")
     void handleTypeMismatch_returnsReadableMessage() {
+        // given
         GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
         HttpServletRequest request = request("GET", "/api/v1/documents");
         MethodArgumentTypeMismatchException exception = new MethodArgumentTypeMismatchException(
@@ -90,8 +100,10 @@ class GlobalExceptionHandlerTest {
                 new IllegalArgumentException("bad request")
         );
 
+        // when
         var response = handler.handleTypeMismatch(exception, request);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_PARAMETER_INVALID.getStatus());
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().msg()).isEqualTo("'folderId' 파라미터 형식이 올바르지 않습니다");
@@ -100,6 +112,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleNotReadable()는 trailing token JSON 오류를 사람이 읽을 수 있게 변환한다")
     void handleNotReadable_returnsReadableJsonMessage() {
+        // given
         GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(errorAlertNotifier));
         HttpServletRequest request = request("POST", "/api/v1/documents");
         HttpMessageNotReadableException exception = new HttpMessageNotReadableException(
@@ -107,8 +120,10 @@ class GlobalExceptionHandlerTest {
                 new MockHttpInputMessage(new byte[0])
         );
 
+        // when
         var response = handler.handleNotReadable(exception, request);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_BODY_INVALID_JSON.getStatus());
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().msg()).isEqualTo("요청 본문에는 JSON 객체 하나만 포함되어야 합니다");

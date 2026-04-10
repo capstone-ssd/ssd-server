@@ -42,13 +42,16 @@ class FolderServiceTest {
     @Test
     @DisplayName("listContent()는 현재 탐색 폴더 식별자를 포함해 직계 폴더/문서를 반환한다")
     void listContent_includeCurrentFolderId() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
 
+        // when
         Folder rootA = folder(1L, "작성하기", null, member);
         Folder rootB = folder(2L, "평가하기", null, member);
         Document rootDoc = document(101L, "루트 문서", null, member);
 
+        // then
         when(folderRepository.findAllByMember_IdAndParentIsNull(1L)).thenReturn(List.of(rootA, rootB));
         when(documentRepository.findAllByMember_IdAndFolderIsNull(any(Long.class), any(Sort.class)))
                 .thenReturn(List.of(rootDoc));
@@ -68,6 +71,7 @@ class FolderServiceTest {
     @Test
     @DisplayName("listContent()는 현재 폴더와 상위 폴더 식별자를 구분해 반환한다")
     void listContent_distinguishParentIdAndCurrentFolderId() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Folder parent = folder(10L, "상위", null, member);
@@ -75,12 +79,14 @@ class FolderServiceTest {
         Folder child = folder(21L, "하위", current, member);
         Document doc = document(101L, "현재 폴더 문서", current, member);
 
+        // when
         when(folderRepository.findById(20L)).thenReturn(Optional.of(current));
         when(folderRepository.findAllByMember_IdAndParent_Id(1L, 20L)).thenReturn(List.of(child));
         when(documentRepository.findAllByMember_IdAndFolder_Id(1L, 20L, Sort.by(Sort.Order.desc("updatedAt"))))
                 .thenReturn(List.of(doc));
         when(folderRepository.existsByMember_IdAndParent_Id(1L, 21L)).thenReturn(false);
 
+        // then
         FolderContentResult result = folderService.listContent(user, 20L);
 
         assertThat(result.parentId()).isEqualTo(10L);
@@ -92,14 +98,17 @@ class FolderServiceTest {
     @Test
     @DisplayName("listAllContent()는 회원의 전체 폴더/문서를 반환한다")
     void listAllContent_returnsAllFoldersAndDocuments() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
 
+        // when
         Folder root = folder(1L, "작성하기", null, member);
         Folder child = folder(11L, "1분기 계획서", root, member);
         Document docInRoot = document(101L, "사업계획서_v1.pdf", root, member);
         Document docInChild = document(102L, "사업계획서_v2_최종.pdf", child, member);
 
+        // then
         when(folderRepository.findAllByMember_Id(any(Long.class), any(Sort.class)))
                 .thenReturn(List.of(root, child));
         when(documentRepository.findAllByMember_Id(any(Long.class), any(Sort.class)))
@@ -122,11 +131,14 @@ class FolderServiceTest {
     @Test
     @DisplayName("update()는 수정할 값이 하나도 없으면 예외를 던진다")
     void update_throwsWhenNoChangesProvided() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Folder folder = folder(1L, "작성하기", null, member);
         when(folderRepository.findById(1L)).thenReturn(Optional.of(folder));
 
+        // when
+        // then
         assertThatThrownBy(() -> folderService.update(
                 1L,
                 user,
@@ -139,11 +151,14 @@ class FolderServiceTest {
     @Test
     @DisplayName("update()는 공백 폴더명을 거부한다")
     void update_rejectsBlankName() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Folder folder = folder(1L, "작성하기", null, member);
         when(folderRepository.findById(1L)).thenReturn(Optional.of(folder));
 
+        // when
+        // then
         assertThatThrownBy(() -> folderService.update(
                 1L,
                 user,
@@ -156,9 +171,12 @@ class FolderServiceTest {
     @Test
     @DisplayName("create()는 공백 폴더명을 거부한다")
     void create_rejectsBlankName() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
 
+        // when
+        // then
         assertThatThrownBy(() -> folderService.create(user, new CreateFolderCommand("   ", null, 0L)))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("폴더명은 공백일 수 없습니다");

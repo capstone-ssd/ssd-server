@@ -37,10 +37,12 @@ class DocumentLogServiceTest {
     @Test
     @DisplayName("문서 기록은 날짜별로 그룹핑되어 최신 날짜 순으로 조회된다")
     void list_groupsLogsByDate() {
+        // given
         Member member = member(1L, "owner@example.com");
         Document document = document(10L, member);
         CustomUserDetails user = new CustomUserDetails(member);
 
+        // when
         DocumentLog first = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
@@ -50,6 +52,7 @@ class DocumentLogServiceTest {
                 .build();
         setCreatedAt(first, LocalDateTime.of(2026, 3, 17, 15, 10));
 
+        // then
         DocumentLog second = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
@@ -86,12 +89,15 @@ class DocumentLogServiceTest {
     @Test
     @DisplayName("문서 기록은 문서 소유자가 아니면 조회할 수 없다")
     void list_forbiddenWhenNotOwner() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Member other = member(2L, "other@example.com");
         Document document = document(10L, owner);
 
+        // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
+        // then
         assertThatThrownBy(() -> documentLogService.list(10L, new CustomUserDetails(other)))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");

@@ -13,6 +13,7 @@ class KaKaoUserInfoResponseTest {
     @Test
     @DisplayName("카카오 user/me 응답의 snake_case 필드를 내부 DTO까지 매핑한다")
     void shouldMapSnakeCaseFieldsForNestedKakaoAccount() throws Exception {
+        // given
         String json = """
                 {
                   "id": 4818858663,
@@ -35,8 +36,10 @@ class KaKaoUserInfoResponseTest {
                 }
                 """;
 
+        // when
         KaKaoUserInfoResponse response = objectMapper.readValue(json, KaKaoUserInfoResponse.class);
 
+        // then
         assertThat(response.getId()).isEqualTo(4818858663L);
         assertThat(response.getConnectedAt()).isEqualTo("2026-03-28T18:17:37Z");
         assertThat(response.getProperties().getNickname()).isEqualTo("tester");

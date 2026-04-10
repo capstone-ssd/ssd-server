@@ -29,12 +29,15 @@ class MemberServiceTest {
     @Test
     @DisplayName("getMyInfo()는 로그인한 회원의 최신 정보를 반환한다")
     void getMyInfo_returnsLatestMemberInfo() {
+        // given
         Member principalMember = member(1L, "principal@example.com", "기존 이름");
         Member persistedMember = member(1L, "principal@example.com", "최신 이름");
         CustomUserDetails user = new CustomUserDetails(principalMember);
 
+        // when
         when(memberRepository.findById(1L)).thenReturn(Optional.of(persistedMember));
 
+        // then
         GetMyMemberResponse response = memberService.getMyInfo(user);
 
         assertThat(response.memberId()).isEqualTo(1L);
@@ -47,9 +50,12 @@ class MemberServiceTest {
     @Test
     @DisplayName("getMyInfo()는 회원이 없으면 MEMBER_NOT_FOUND를 던진다")
     void getMyInfo_throwsWhenMemberMissing() {
+        // given
         CustomUserDetails user = new CustomUserDetails(member(1L, "principal@example.com", "이름"));
         when(memberRepository.findById(1L)).thenReturn(Optional.empty());
 
+        // when
+        // then
         assertThatThrownBy(() -> memberService.getMyInfo(user))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
                 .hasMessage("회원을 찾지 못했습니다");

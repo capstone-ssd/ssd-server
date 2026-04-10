@@ -41,11 +41,14 @@ class ExternalAiPersistenceServiceTest {
     @Test
     @DisplayName("saveSummary()는 summary와 shortSummary를 함께 저장한다")
     void saveSummary_savesSummaryAndShortSummary() {
+        // given
         Document document = document(7L);
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
+        // when
         ExternalAiSummaryResult response = externalAiPersistenceService.saveSummary(7L, "요약", "짧은 요약");
 
+        // then
         assertThat(response.summary()).isEqualTo("요약");
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
         assertThat(document.getSummary()).isEqualTo("요약");
@@ -55,9 +58,11 @@ class ExternalAiPersistenceServiceTest {
     @Test
     @DisplayName("saveEvaluation()는 평가 점수와 체크리스트를 저장하고 snapshot을 갱신한다")
     void saveEvaluation_updatesMetricsChecklistAndSnapshots() {
+        // given
         Document document = document(7L);
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
+        // when
         ExternalAiEvaluationCardResult response = externalAiPersistenceService.saveEvaluation(
                 7L,
                 ExternalAiEvaluationMetricResult.of("문제 인식", 70, "문제 리뷰"),
@@ -70,6 +75,7 @@ class ExternalAiPersistenceServiceTest {
                 List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 1, document))
         );
 
+        // then
         assertThat(response.totalScore()).isEqualTo(70);
         assertThat(document.getExternalAiTotalScore()).isEqualTo(70);
         assertThat(document.getExternalAiProblemRecognitionScore()).isEqualTo(70);
@@ -83,6 +89,7 @@ class ExternalAiPersistenceServiceTest {
     @Test
     @DisplayName("mergeChecklist()는 false->true만 누적 반영한다")
     void mergeChecklist_orMergesChecklist() {
+        // given
         Document document = document(7L);
         document.overwriteExternalChecklist(Map.of(
                 "problem_is_clear", false,
@@ -90,6 +97,7 @@ class ExternalAiPersistenceServiceTest {
         ));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
+        // when
         ExternalAiDocumentCheckResult response = externalAiPersistenceService.mergeChecklist(
                 7L,
                 List.of(3),
@@ -100,6 +108,7 @@ class ExternalAiPersistenceServiceTest {
                 List.of(DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "본문", "", 1, 3, document))
         );
 
+        // then
         assertThat(response.changedBlockIds()).containsExactly(3);
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();

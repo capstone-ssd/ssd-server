@@ -41,11 +41,14 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("이미 작성한 리뷰가 있으면 생성은 409 예외를 던진다")
     void create_throwsConflictWhenReviewAlreadyExists() {
+        // given
         Member member = member(1L, "reviewer@example.com");
         Document document = document(10L, member(2L, "owner@example.com"));
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(evaluatorReviewRepository.existsByDocumentAndReviewer(document, member)).thenReturn(true);
 
+        // when
+        // then
         assertThatThrownBy(() -> evaluatorReviewService.create(
                 10L,
                 new CustomUserDetails(member),
@@ -58,8 +61,11 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("리뷰 생성은 null 요청 본문을 거부한다")
     void create_rejectsNullCommand() {
+        // given
         Member member = member(1L, "reviewer@example.com");
 
+        // when
+        // then
         assertThatThrownBy(() -> evaluatorReviewService.create(10L, new CustomUserDetails(member), null))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("리뷰 요청 본문이 비어 있습니다");
@@ -68,17 +74,20 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("리뷰 수정은 기존 리뷰를 갱신하고 문서 평균을 재집계한다")
     void update_recalculatesAverages() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Member reviewer = member(2L, "reviewer@example.com");
         Document document = document(10L, owner);
         EvaluatorReview review = EvaluatorReview.of(60, 70, 80, "초기 의견", document, reviewer);
         EvaluatorReview other = EvaluatorReview.of(90, 90, 90, "다른 의견", document, member(3L, "third@example.com"));
 
+        // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)).thenReturn(Optional.of(review));
         when(evaluatorReviewRepository.findAllByDocument(document)).thenReturn(List.of(review, other));
         when(evaluatorReviewRepository.save(any(EvaluatorReview.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // then
         EvaluatorReviewDetailResult response = evaluatorReviewService.update(
                 10L,
                 new CustomUserDetails(reviewer),
@@ -97,8 +106,11 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("리뷰 수정은 null 요청 본문을 거부한다")
     void update_rejectsNullCommand() {
+        // given
         Member reviewer = member(2L, "reviewer@example.com");
 
+        // when
+        // then
         assertThatThrownBy(() -> evaluatorReviewService.update(10L, new CustomUserDetails(reviewer), null))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("리뷰 요청 본문이 비어 있습니다");
@@ -107,15 +119,18 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("리뷰 삭제 후 남은 리뷰가 없으면 평균값은 0으로 초기화된다")
     void delete_resetsSummaryToZeroWhenNoReviewsRemain() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Member reviewer = member(2L, "reviewer@example.com");
         Document document = document(10L, owner);
         EvaluatorReview review = EvaluatorReview.of(60, 70, 80, "초기 의견", document, reviewer);
 
+        // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)).thenReturn(Optional.of(review));
         when(evaluatorReviewRepository.findAllByDocument(document)).thenReturn(List.of());
 
+        // then
         evaluatorReviewService.delete(10L, new CustomUserDetails(reviewer));
 
         verify(evaluatorReviewRepository).delete(review);
@@ -129,12 +144,15 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("문서 리뷰 목록 조회는 문서 작성자만 가능하다")
     void list_isOwnerOnly() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Member other = member(2L, "other@example.com");
         Document document = document(10L, owner);
 
+        // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
+        // then
         assertThatThrownBy(() -> evaluatorReviewService.list(10L, new CustomUserDetails(other)))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
@@ -143,15 +161,18 @@ class EvaluatorReviewServiceTest {
     @Test
     @DisplayName("문서 리뷰 목록 조회는 문서 캐시값이 stale여도 실데이터 기준 평균을 반환한다")
     void list_returnsSummaryAndItems() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Document document = document(10L, owner);
         document.updateReviewSummary(100.0, 100.0, 100.0, 100.0, 1);
         EvaluatorReview first = EvaluatorReview.of(80, 70, 60, "의견1", document, member(2L, "first@example.com"));
         EvaluatorReview second = EvaluatorReview.of(90, 80, 70, "의견2", document, member(3L, "second@example.com"));
 
+        // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(evaluatorReviewRepository.findAllByDocumentOrderByUpdatedAtDesc(document)).thenReturn(List.of(first, second));
 
+        // then
         EvaluatorReviewListResult response = evaluatorReviewService.list(10L, new CustomUserDetails(owner));
 
         assertThat(response.documentId()).isEqualTo(10L);
