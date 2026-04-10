@@ -19,6 +19,8 @@
 ### Operational Commands
 - 전체 빌드: `./gradlew clean build`
 - 전체 테스트: `./gradlew test`
+- 통합 테스트: `./gradlew integrationTest`
+- 테스트 규칙 검증: `./gradlew verifyTestConventions`
 - API 서버 실행(local): `./gradlew :ssd-api:bootRun --args='--spring.profiles.active=local'`
 - API 서버 실행(dev): `./gradlew :ssd-api:bootRun --args='--spring.profiles.active=dev'`
 - 모듈 단위 테스트
@@ -26,6 +28,11 @@
   - `./gradlew :ssd-domain:test`
   - `./gradlew :ssd-core:test`
   - `./gradlew :ssd-infra:test`
+- 모듈 단위 통합 테스트
+  - `./gradlew :ssd-api:integrationTest`
+  - `./gradlew :ssd-domain:integrationTest`
+  - `./gradlew :ssd-core:integrationTest`
+  - `./gradlew :ssd-infra:integrationTest`
 - 커버리지 리포트(API 모듈): `./gradlew :ssd-api:jacocoTestReport`
 - CI 유사 검증: `./gradlew clean build jacocoTestReport -Dspring.profiles.active=test --no-daemon`
 - Docker 이미지 빌드: `docker build -f Dockerfile -t <tag> .`
@@ -91,6 +98,7 @@
 
 ### Architecture References
 - DTO 경계 전략: [`docs/architecture/dto-boundary.md`](./docs/architecture/dto-boundary.md)
+- 테스트 전략: [`docs/architecture/testing-strategy.md`](./docs/architecture/testing-strategy.md)
 
 ### Git & Collaboration
 - 기본 브랜치 흐름: `feature/*`, `fix/*` -> `develop` -> `main`
