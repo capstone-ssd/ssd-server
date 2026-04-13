@@ -41,8 +41,6 @@ class DocumentLogServiceTest {
         Member member = member(1L, "owner@example.com");
         Document document = document(10L, member);
         CustomUserDetails user = new CustomUserDetails(member);
-
-        // when
         DocumentLog first = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
@@ -52,7 +50,6 @@ class DocumentLogServiceTest {
                 .build();
         setCreatedAt(first, LocalDateTime.of(2026, 3, 17, 15, 10));
 
-        // then
         DocumentLog second = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
@@ -74,8 +71,10 @@ class DocumentLogServiceTest {
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
         when(documentLogRepository.findAllByDocumentOrderByCreatedAtDesc(document)).thenReturn(List.of(first, second, third));
 
+        // when
         DocumentLogResult response = documentLogService.list(10L, user);
 
+        // then
         assertThat(response.documentId()).isEqualTo(10L);
         assertThat(response.records()).hasSize(2);
         assertThat(response.records().get(0).savedDate()).isEqualTo("2026-03-17");
@@ -93,10 +92,9 @@ class DocumentLogServiceTest {
         Member owner = member(1L, "owner@example.com");
         Member other = member(2L, "other@example.com");
         Document document = document(10L, owner);
-
-        // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
+        // when
         // then
         assertThatThrownBy(() -> documentLogService.list(10L, new CustomUserDetails(other)))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)

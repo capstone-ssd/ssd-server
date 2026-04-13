@@ -18,6 +18,21 @@ def stripBlockComments = { String content ->
     content.replaceAll(/(?s)\/\*.*?\*\//, '')
 }
 
+def jupiterTestAnnotations = [
+        '@Test',
+        '@ParameterizedTest',
+        '@RepeatedTest',
+        '@TestFactory',
+        '@TestTemplate'
+]
+
+def looksLikeTestSource = { String content ->
+    List<String> markers = ['// given', '// when', '// then']
+    jupiterTestAnnotations.any { content.contains(it) } ||
+            content.contains('org.junit.jupiter') ||
+            markers.any { content.contains(it) }
+}
+
 def extractAnnotatedTestMethods = { String content ->
     List<Map<String, Object>> methods = []
     List<String> lines = content.readLines()
@@ -26,7 +41,7 @@ def extractAnnotatedTestMethods = { String content ->
     for (int i = 0; i < lines.size(); i++) {
         String line = lines[i]
 
-        if (line.contains('@Test')) {
+        if (jupiterTestAnnotations.any { line.contains(it) }) {
             waitingForMethod = true
             continue
         }
@@ -35,7 +50,11 @@ def extractAnnotatedTestMethods = { String content ->
             continue
         }
 
-        if (!(line =~ /\bvoid\s+\w+\s*\(.*\).*/)) {
+        if (line.trim().startsWith('@')) {
+            continue
+        }
+
+        if (!(line =~ /^\s*(?:public|protected|private)?\s*(?:static\s+)?(?:<[^>]+>\s+)?[\w<>\[\], ?]+\s+\w+\s*\([^;]*\)\s*(?:throws\s+[^{]+)?\s*(?:\{)?\s*$/)) {
             continue
         }
 
@@ -171,9 +190,14 @@ subprojects {
 
             [unitTestDir, integrationTestDir].findAll { it.exists() }.each { directory ->
                 fileTree(directory) {
-                    include '**/*Test.java'
+                    include '**/*.java'
                 }.files.each { File file ->
                     String content = stripBlockComments(file.getText(StandardCharsets.UTF_8.name()))
+
+                    // 잘못된 파일명 테스트도 잡아야 해서 전체 java를 스캔하되, 실제 테스트 소스만 규칙 검증 대상에 포함한다.
+                    if (!looksLikeTestSource(content)) {
+                        return
+                    }
 
                     if (directory == integrationTestDir && !file.name.endsWith('IntegrationTest.java')) {
                         violations << "${project.path}:${file.path} - integration test class name must end with IntegrationTest"

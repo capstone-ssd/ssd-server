@@ -33,13 +33,12 @@ class MemberServiceTest {
         Member principalMember = member(1L, "principal@example.com", "기존 이름");
         Member persistedMember = member(1L, "principal@example.com", "최신 이름");
         CustomUserDetails user = new CustomUserDetails(principalMember);
-
-        // when
         when(memberRepository.findById(1L)).thenReturn(Optional.of(persistedMember));
 
-        // then
+        // when
         GetMyMemberResponse response = memberService.getMyInfo(user);
 
+        // then
         assertThat(response.memberId()).isEqualTo(1L);
         assertThat(response.name()).isEqualTo("최신 이름");
         assertThat(response.email()).isEqualTo("principal@example.com");
