@@ -44,10 +44,13 @@ class S3ImageStorageUtilTest {
 
     @Test
     void uploadReturnsResolvedUrl() {
+        // given
         byte[] payload = "image-bytes".getBytes();
 
+        // when
         String url = s3ImageStorageUtil.upload("documents/test.png", payload, "image/png");
 
+        // then
         ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
         verify(s3Client).putObject(captor.capture(), any(software.amazon.awssdk.core.sync.RequestBody.class));
         assertThat(captor.getValue().bucket()).isEqualTo("ssd-images");
@@ -58,46 +61,61 @@ class S3ImageStorageUtilTest {
 
     @Test
     void downloadReturnsBytes() {
+        // given
         byte[] payload = "downloaded".getBytes();
         when(s3Client.getObjectAsBytes(any(GetObjectRequest.class)))
                 .thenReturn(ResponseBytes.fromByteArray(GetObjectResponse.builder().build(), payload));
 
+        // when
         byte[] result = s3ImageStorageUtil.download("documents/test.png");
 
+        // then
         assertThat(result).isEqualTo(payload);
     }
 
     @Test
     void deleteCallsS3() {
+        // given
         when(s3Client.deleteObject(any(DeleteObjectRequest.class))).thenReturn(DeleteObjectResponse.builder().build());
 
+        // when
         s3ImageStorageUtil.delete("documents/test.png");
 
+        // then
         verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
     }
 
     @Test
     void existsReturnsTrueWhenHeadSucceeds() {
+        // given
         when(s3Client.headObject(any(HeadObjectRequest.class)))
                 .thenReturn(HeadObjectResponse.builder().build());
 
+        // when
         boolean exists = s3ImageStorageUtil.exists("documents/test.png");
 
+        // then
         assertThat(exists).isTrue();
     }
 
     @Test
     void existsReturnsFalseWhenKeyMissing() {
+        // given
         when(s3Client.headObject(any(HeadObjectRequest.class)))
                 .thenThrow(NoSuchKeyException.builder().build());
 
+        // when
         boolean exists = s3ImageStorageUtil.exists("documents/test.png");
 
+        // then
         assertThat(exists).isFalse();
     }
 
     @Test
     void uploadThrowsStorageExceptionWhenKeyIsBlank() {
+        // given
+        // when
+        // then
         assertThatThrownBy(() -> s3ImageStorageUtil.upload(" ", "a".getBytes(), "image/png"))
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining("스토리지 key는 비어 있을 수 없습니다");
@@ -105,8 +123,11 @@ class S3ImageStorageUtilTest {
 
     @Test
     void downloadThrowsStorageExceptionWhenS3Fails() {
+        // given
         when(s3Client.getObjectAsBytes(any(GetObjectRequest.class))).thenThrow(new RuntimeException("boom"));
 
+        // when
+        // then
         assertThatThrownBy(() -> s3ImageStorageUtil.download("documents/test.png"))
                 .isInstanceOf(StorageException.class)
                 .hasMessageContaining("S3 조회에 실패했습니다");

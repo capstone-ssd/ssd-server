@@ -27,6 +27,7 @@ class CreateDocumentRequestValidationTest {
     @Test
     @DisplayName("문단 블록 목록은 null 항목을 허용하지 않는다")
     void paragraphsRejectNullItem() {
+        // given
         CreateDocumentRequest request = new CreateDocumentRequest(
                 "제목",
                 "본문",
@@ -34,7 +35,11 @@ class CreateDocumentRequestValidationTest {
                 0L
         );
 
-        assertThat(extractMessages(VALIDATOR.validate(request)))
+        // when
+        Set<String> messages = extractMessages(VALIDATOR.validate(request));
+
+        // then
+        assertThat(messages)
                 .contains("문단 블록 항목은 null일 수 없습니다");
     }
 

@@ -1,3 +1,5 @@
+import java.nio.charset.StandardCharsets
+
 plugins {
     id 'org.springframework.boot' apply false
     id 'io.spring.dependency-management' apply false
@@ -10,6 +12,93 @@ description = 'ssd'
 ext {
     set('springCloudVersion', "2025.1.0")
     set('springAiVersion', "2.0.0-M1")
+}
+
+def stripBlockComments = { String content ->
+    content.replaceAll(/(?s)\/\*.*?\*\//, '')
+}
+
+def jupiterTestAnnotations = [
+        '@Test',
+        '@ParameterizedTest',
+        '@RepeatedTest',
+        '@TestFactory',
+        '@TestTemplate'
+]
+
+def looksLikeTestSource = { String content ->
+    List<String> markers = ['// given', '// when', '// then']
+    jupiterTestAnnotations.any { content.contains(it) } ||
+            content.contains('org.junit.jupiter') ||
+            markers.any { content.contains(it) }
+}
+
+def extractAnnotatedTestMethods = { String content ->
+    List<Map<String, Object>> methods = []
+    List<String> lines = content.readLines()
+    boolean waitingForMethod = false
+
+    for (int i = 0; i < lines.size(); i++) {
+        String line = lines[i]
+
+        if (jupiterTestAnnotations.any { line.contains(it) }) {
+            waitingForMethod = true
+            continue
+        }
+
+        if (!waitingForMethod) {
+            continue
+        }
+
+        if (line.trim().startsWith('@')) {
+            continue
+        }
+
+        if (!(line =~ /^\s*(?:public|protected|private)?\s*(?:static\s+)?(?:<[^>]+>\s+)?[\w<>\[\], ?]+\s+\w+\s*\([^;]*\)\s*(?:throws\s+[^{]+)?\s*(?:\{)?\s*$/)) {
+            continue
+        }
+
+        int signatureLine = i
+        while (signatureLine < lines.size() && !lines[signatureLine].contains('{')) {
+            signatureLine++
+        }
+
+        if (signatureLine >= lines.size()) {
+            break
+        }
+
+        int braceDepth = 0
+        boolean started = false
+        int methodStartLine = i + 1
+        StringBuilder body = new StringBuilder()
+
+        for (int j = signatureLine; j < lines.size(); j++) {
+            String currentLine = lines[j]
+            int openCount = currentLine.count('{')
+            int closeCount = currentLine.count('}')
+
+            if (!started) {
+                braceDepth += openCount - closeCount
+                started = true
+                continue
+            }
+
+            body.append(currentLine).append('\n')
+            braceDepth += openCount - closeCount
+
+            if (braceDepth == 0) {
+                methods << [
+                        line: methodStartLine,
+                        body: body.toString()
+                ]
+                i = j
+                waitingForMethod = false
+                break
+            }
+        }
+    }
+
+    methods
 }
 
 allprojects {
@@ -37,6 +126,28 @@ subprojects {
         }
     }
 
+    sourceSets {
+        integrationTest {
+            java.srcDir 'src/integrationTest/java'
+            resources.srcDir 'src/integrationTest/resources'
+            compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+            runtimeClasspath += output + compileClasspath
+        }
+    }
+
+    configurations.named('integrationTestImplementation') {
+        extendsFrom configurations.testImplementation
+    }
+    configurations.named('integrationTestRuntimeOnly') {
+        extendsFrom configurations.testRuntimeOnly
+    }
+    configurations.named('integrationTestCompileOnly') {
+        extendsFrom configurations.testCompileOnly
+    }
+    configurations.named('integrationTestAnnotationProcessor') {
+        extendsFrom configurations.testAnnotationProcessor
+    }
+
     dependencies {
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
@@ -49,6 +160,73 @@ subprojects {
 
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
+    }
+
+    tasks.register('integrationTest', Test) {
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.integrationTest.output.classesDirs
+        classpath = sourceSets.integrationTest.runtimeClasspath
+        shouldRunAfter tasks.named('test')
+        useJUnitPlatform()
+    }
+
+    tasks.register('verifyTestConventions') {
+        group = 'verification'
+        description = 'Verifies test naming and Given/When/Then comments.'
+
+        def unitTestDir = file('src/test/java')
+        def integrationTestDir = file('src/integrationTest/java')
+        inputs.files(fileTree(unitTestDir), fileTree(integrationTestDir))
+
+        doLast {
+            List<String> violations = []
+            List<String> integrationAnnotations = [
+                    '@SpringBootTest',
+                    '@DataJpaTest',
+                    '@WebMvcTest',
+                    '@JdbcTest'
+            ]
+
+            [unitTestDir, integrationTestDir].findAll { it.exists() }.each { directory ->
+                fileTree(directory) {
+                    include '**/*.java'
+                }.files.each { File file ->
+                    String content = stripBlockComments(file.getText(StandardCharsets.UTF_8.name()))
+
+                    // 잘못된 파일명 테스트도 잡아야 해서 전체 java를 스캔하되, 실제 테스트 소스만 규칙 검증 대상에 포함한다.
+                    if (!looksLikeTestSource(content)) {
+                        return
+                    }
+
+                    if (directory == integrationTestDir && !file.name.endsWith('IntegrationTest.java')) {
+                        violations << "${project.path}:${file.path} - integration test class name must end with IntegrationTest"
+                    }
+
+                    if (directory == unitTestDir && integrationAnnotations.any { content.contains(it) }) {
+                        violations << "${project.path}:${file.path} - integration-style annotation found in src/test/java"
+                    }
+
+                    extractAnnotatedTestMethods(content).each { method ->
+                        List<String> markers = ['// given', '// when', '// then']
+                        markers.each { marker ->
+                            if (!method.body.contains(marker)) {
+                                violations << "${project.path}:${file.path}:${method.line} - missing '${marker}' comment"
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!violations.isEmpty()) {
+                throw new GradleException("Test convention violations found:\n - " + violations.join('\n - '))
+            }
+        }
+    }
+
+    tasks.named('check') {
+        dependsOn tasks.named('verifyTestConventions')
+        dependsOn tasks.named('integrationTest')
     }
 
     dependencyManagement {

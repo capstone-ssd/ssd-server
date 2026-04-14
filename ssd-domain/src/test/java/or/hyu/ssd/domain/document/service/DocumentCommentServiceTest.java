@@ -36,11 +36,14 @@ class DocumentCommentServiceTest {
     @Test
     @DisplayName("create()는 문서 소유자가 아니면 주석 생성을 거부한다")
     void create_rejectsNonOwner() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Member other = member(2L, "other@example.com");
         Document document = document(10L, owner);
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
+        // when
+        // then
         assertThatThrownBy(() -> documentCommentService.create(
                 10L,
                 new CustomUserDetails(other),
@@ -53,11 +56,14 @@ class DocumentCommentServiceTest {
     @Test
     @DisplayName("list()는 문서 소유자가 아니면 주석 조회를 거부한다")
     void list_rejectsNonOwner() {
+        // given
         Member owner = member(1L, "owner@example.com");
         Member other = member(2L, "other@example.com");
         Document document = document(10L, owner);
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
 
+        // when
+        // then
         assertThatThrownBy(() -> documentCommentService.list(
                 10L,
                 new CustomUserDetails(other)

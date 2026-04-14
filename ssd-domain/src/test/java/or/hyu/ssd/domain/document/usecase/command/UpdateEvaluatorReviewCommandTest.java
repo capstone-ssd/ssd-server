@@ -15,6 +15,11 @@ class UpdateEvaluatorReviewCommandTest {
     @MethodSource("nullScoreCases")
     @DisplayName("필수 점수 중 하나라도 null이면 커맨드 생성이 실패한다")
     void constructorRejectsNullScore(Integer feasibility, Integer differentiation, Integer financial) {
+        // given
+
+        // when
+
+        // then
         assertThatThrownBy(() -> new UpdateEvaluatorReviewCommand(feasibility, differentiation, financial, "의견"))
                 .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
                 .hasMessage("리뷰 점수는 모두 필수입니다");

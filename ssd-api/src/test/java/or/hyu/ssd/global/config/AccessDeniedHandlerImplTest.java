@@ -16,12 +16,15 @@ class AccessDeniedHandlerImplTest {
     @Test
     @DisplayName("인가되지 않은 요청은 403과 권한 없음 메시지를 반환한다")
     void handle_accessDenied_returnsForbidden() throws IOException, jakarta.servlet.ServletException {
+        // given
         AccessDeniedHandlerImpl handler = new AccessDeniedHandlerImpl();
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
+        // when
         handler.handle(request, response, new AccessDeniedException("forbidden"));
 
+        // then
         assertThat(response.getStatus()).isEqualTo(ErrorCode.REQUEST_ACCESS_DENIED.getStatus().value());
         assertThat(response.getContentAsString()).contains(ErrorCode.REQUEST_ACCESS_DENIED.getCode());
         assertThat(response.getContentAsString()).contains(ErrorCode.REQUEST_ACCESS_DENIED.getMessage());

@@ -26,26 +26,36 @@ class CreateDocumentBlockRequestValidationTest {
     @Test
     @DisplayName("문단 블록은 content와 role 조합을 검증한다")
     void createDocumentBlockRoleValidation() {
+        // given
         CreateDocumentBlockRequest validEmpty = new CreateDocumentBlockRequest(DocumentBlockType.PARAGRAPH, "본문", "", 1, null, null);
         CreateDocumentBlockRequest validHeading = new CreateDocumentBlockRequest(DocumentBlockType.PARAGRAPH, "본문", "#####", 1, null, null);
         CreateDocumentBlockRequest invalidBody = new CreateDocumentBlockRequest(DocumentBlockType.PARAGRAPH, "본문", "BODY", 1, null, null);
 
+        // when
+        Set<String> invalidMessages = extractMessages(VALIDATOR.validate(invalidBody));
+
+        // then
         assertThat(VALIDATOR.validate(validEmpty)).isEmpty();
         assertThat(VALIDATOR.validate(validHeading)).isEmpty();
-        assertThat(extractMessages(VALIDATOR.validate(invalidBody)))
+        assertThat(invalidMessages)
                 .contains("문단 블록은 content와 role이 필요하고, 이미지 블록은 blobKey 또는 url이 필요합니다");
     }
 
     @Test
     @DisplayName("이미지 블록은 blobKey 또는 url이 있어야 한다")
     void imageBlockValidation() {
+        // given
         CreateDocumentBlockRequest validBlobKey = new CreateDocumentBlockRequest(DocumentBlockType.IMAGE, null, null, 2, "img-1", null);
         CreateDocumentBlockRequest validUrl = new CreateDocumentBlockRequest(DocumentBlockType.IMAGE, null, null, 2, null, "https://example.com/image.png");
         CreateDocumentBlockRequest invalidImage = new CreateDocumentBlockRequest(DocumentBlockType.IMAGE, null, null, 2, null, null);
 
+        // when
+        Set<String> invalidMessages = extractMessages(VALIDATOR.validate(invalidImage));
+
+        // then
         assertThat(VALIDATOR.validate(validBlobKey)).isEmpty();
         assertThat(VALIDATOR.validate(validUrl)).isEmpty();
-        assertThat(extractMessages(VALIDATOR.validate(invalidImage)))
+        assertThat(invalidMessages)
                 .contains("문단 블록은 content와 role이 필요하고, 이미지 블록은 blobKey 또는 url이 필요합니다");
     }
 

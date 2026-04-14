@@ -43,16 +43,19 @@ class DocumentQueryServiceTest {
     @Test
     @DisplayName("getDocument()는 소유한 문서와 블록 목록을 반환한다")
     void getDocument_returnsOwnedDocumentWithBlocks() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document document = document(42L, "문서 제목", null, member);
 
+        // when
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
         when(documentParagraphRepository.findBlocks(document)).thenReturn(List.of(
                 DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "문단", "#", 1, 1, document),
                 DocumentParagraph.of(DocumentBlockType.IMAGE, "https://s3.example.com/image.png", null, 1, 2, document)
         ));
 
+        // then
         DocumentDetailResult result = documentQueryService.getDocument(42L, user);
 
         assertThat(result.id()).isEqualTo(42L);
@@ -65,13 +68,16 @@ class DocumentQueryServiceTest {
     @Test
     @DisplayName("listDocuments()는 루트 폴더 문서만 조회할 수 있다")
     void listDocuments_returnsRootDocuments() {
+        // given
         Member member = member(1L);
         CustomUserDetails user = new CustomUserDetails(member);
         Document rootDocument = document(100L, "루트 문서", null, member);
 
+        // when
         when(documentRepository.findAllByMember_IdAndFolderIsNull(1L, Sort.by(Sort.Order.desc("createdAt"))))
                 .thenReturn(List.of(rootDocument));
 
+        // then
         List<DocumentListItemResult> results = documentQueryService.listDocuments(user, DocumentSort.LATEST, 0L);
 
         assertThat(results).hasSize(1);
