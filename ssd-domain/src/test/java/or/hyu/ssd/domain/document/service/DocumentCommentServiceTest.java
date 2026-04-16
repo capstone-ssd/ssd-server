@@ -11,9 +11,9 @@ import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommentCommand;
-import or.hyu.ssd.domain.member.entity.Member;
-import or.hyu.ssd.domain.member.entity.Role;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 
 import java.util.Optional;
 

@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.member.entity;
+package or.hyu.ssd.member.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

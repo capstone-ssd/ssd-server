@@ -23,7 +23,7 @@ import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommand;
 import or.hyu.ssd.domain.document.usecase.result.CreateDocumentResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentBookmarkResult;
 import or.hyu.ssd.domain.document.usecase.result.UpdateDocumentResult;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import or.hyu.ssd.common.util.OptimisticRetryExecutor;

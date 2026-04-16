@@ -14,7 +14,7 @@ import or.hyu.ssd.api.document.response.ExternalAiSummaryResponse;
 import or.hyu.ssd.api.document.request.ExternalDocumentIdRequest;
 import or.hyu.ssd.domain.document.service.ExternalAiBatchService;
 import or.hyu.ssd.domain.document.service.ExternalAiService;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

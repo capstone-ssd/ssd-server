@@ -11,7 +11,7 @@ import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommentCommand;
 import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommentCommand;
 import or.hyu.ssd.domain.document.usecase.result.DocumentCommentItemResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentCommentResult;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;

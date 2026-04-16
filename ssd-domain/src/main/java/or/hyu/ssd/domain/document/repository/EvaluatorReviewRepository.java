@@ -2,7 +2,7 @@ package or.hyu.ssd.domain.document.repository;
 
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
-import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.member.domain.entity.Member;
 
 import java.util.List;
 import java.util.Optional;

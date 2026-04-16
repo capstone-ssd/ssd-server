@@ -2,7 +2,7 @@ package or.hyu.ssd.domain.document.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.global.entity.BaseEntity;
 import org.hibernate.annotations.Comment;
 

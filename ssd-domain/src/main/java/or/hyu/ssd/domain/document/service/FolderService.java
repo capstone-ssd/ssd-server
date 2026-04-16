@@ -12,7 +12,7 @@ import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
 import or.hyu.ssd.domain.document.usecase.result.FolderContentResult;
 import or.hyu.ssd.domain.document.usecase.result.FolderListItemResult;
 import or.hyu.ssd.domain.document.usecase.result.UpdateFolderResult;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.data.domain.Sort;

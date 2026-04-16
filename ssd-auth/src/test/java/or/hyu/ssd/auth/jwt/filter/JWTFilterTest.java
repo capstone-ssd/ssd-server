@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import or.hyu.ssd.auth.jwt.property.JWTConfig;
 import or.hyu.ssd.auth.jwt.repository.AccessTokenBlacklistRepository;
 import or.hyu.ssd.auth.jwt.support.JWTUtil;
-import or.hyu.ssd.domain.member.service.CustomUserDetailsService;
+import or.hyu.ssd.member.application.service.CustomUserDetailsService;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.UserExceptionHandler;
 import org.springframework.mock.web.MockHttpServletRequest;

@@ -1,9 +1,9 @@
-package or.hyu.ssd.domain.member.service;
+package or.hyu.ssd.member.application.service;
 
-import or.hyu.ssd.domain.member.controller.dto.GetMyMemberResponse;
-import or.hyu.ssd.domain.member.entity.Member;
-import or.hyu.ssd.domain.member.entity.Role;
-import or.hyu.ssd.domain.member.repository.MemberRepository;
+import or.hyu.ssd.member.application.result.GetMyMemberResult;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +36,7 @@ class MemberServiceTest {
         when(memberRepository.findById(1L)).thenReturn(Optional.of(persistedMember));
 
         // when
-        GetMyMemberResponse response = memberService.getMyInfo(user);
+        GetMyMemberResult response = memberService.getMyInfo(user);
 
         // then
         assertThat(response.memberId()).isEqualTo(1L);

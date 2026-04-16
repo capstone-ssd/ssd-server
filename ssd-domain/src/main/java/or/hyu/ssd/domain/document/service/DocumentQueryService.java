@@ -11,7 +11,7 @@ import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.document.usecase.result.DocumentBlockResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentDetailResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentListItemResult;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.data.domain.Sort;

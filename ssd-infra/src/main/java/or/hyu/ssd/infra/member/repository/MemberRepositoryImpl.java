@@ -1,8 +1,8 @@
 package or.hyu.ssd.infra.member.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.member.entity.Member;
-import or.hyu.ssd.domain.member.repository.MemberRepository;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.infra.member.repository.jpa.MemberJpaRepository;
 import org.springframework.stereotype.Repository;
 

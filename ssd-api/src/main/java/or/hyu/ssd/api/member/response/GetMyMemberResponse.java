@@ -8,7 +8,7 @@ public record GetMyMemberResponse(
         String role
 ) {
 
-    public static GetMyMemberResponse from(or.hyu.ssd.domain.member.controller.dto.GetMyMemberResponse response) {
+    public static GetMyMemberResponse from(or.hyu.ssd.member.application.result.GetMyMemberResult response) {
         return new GetMyMemberResponse(
                 response.memberId(),
                 response.name(),

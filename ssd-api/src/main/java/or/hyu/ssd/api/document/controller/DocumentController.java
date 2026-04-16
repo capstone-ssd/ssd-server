@@ -18,7 +18,7 @@ import or.hyu.ssd.domain.document.service.DocumentQueryService;
 import or.hyu.ssd.domain.document.service.support.DocumentImageUploadPart;
 import or.hyu.ssd.domain.document.service.support.DocumentSort;
 import or.hyu.ssd.domain.document.usecase.result.DocumentDetailResult;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;

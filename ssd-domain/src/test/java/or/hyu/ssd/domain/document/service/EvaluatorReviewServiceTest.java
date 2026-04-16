@@ -14,9 +14,9 @@ import or.hyu.ssd.domain.document.usecase.command.CreateEvaluatorReviewCommand;
 import or.hyu.ssd.domain.document.usecase.command.UpdateEvaluatorReviewCommand;
 import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewDetailResult;
 import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewListResult;
-import or.hyu.ssd.domain.member.entity.Member;
-import or.hyu.ssd.domain.member.entity.Role;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 
 import java.util.List;
 import java.util.Optional;

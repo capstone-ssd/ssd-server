@@ -25,9 +25,9 @@ import or.hyu.ssd.domain.document.usecase.result.ExternalAiDocumentCheckResult;
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
-import or.hyu.ssd.domain.member.entity.Member;
-import or.hyu.ssd.domain.member.entity.Role;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 
 import java.util.List;
 import java.util.Map;

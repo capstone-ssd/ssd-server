@@ -2,7 +2,7 @@ package or.hyu.ssd.infra.document.repository.jpa;
 
 import or.hyu.ssd.domain.document.entity.Document;
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
-import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.member.domain.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -8,7 +8,7 @@ import or.hyu.ssd.domain.document.repository.DocumentRepository;
 import or.hyu.ssd.domain.document.usecase.result.DocumentLogDateGroupResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentLogItemResult;
 import or.hyu.ssd.domain.document.usecase.result.DocumentLogResult;
-import or.hyu.ssd.domain.member.service.CustomUserDetails;
+import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;

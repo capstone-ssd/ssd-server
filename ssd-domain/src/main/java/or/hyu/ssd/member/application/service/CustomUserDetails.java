@@ -1,9 +1,9 @@
-package or.hyu.ssd.domain.member.service;
+package or.hyu.ssd.member.application.service;
 
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.UserExceptionHandler;
 import org.springframework.security.core.GrantedAuthority;

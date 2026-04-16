@@ -1,8 +1,8 @@
-package or.hyu.ssd.domain.member.controller.dto;
+package or.hyu.ssd.member.application.result;
 
-import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.member.domain.entity.Member;
 
-public record GetMyMemberResponse(
+public record GetMyMemberResult(
         Long memberId,
         String name,
         String email,
@@ -10,8 +10,8 @@ public record GetMyMemberResponse(
         String role
 ) {
 
-    public static GetMyMemberResponse from(Member member) {
-        return new GetMyMemberResponse(
+    public static GetMyMemberResult from(Member member) {
+        return new GetMyMemberResult(
                 member.getId(),
                 member.getName(),
                 member.getEmail(),

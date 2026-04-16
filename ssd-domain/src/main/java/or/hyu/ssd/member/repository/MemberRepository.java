@@ -1,6 +1,6 @@
-package or.hyu.ssd.domain.member.repository;
+package or.hyu.ssd.member.repository;
 
-import or.hyu.ssd.domain.member.entity.Member;
+import or.hyu.ssd.member.domain.entity.Member;
 
 import java.util.Optional;
 
