@@ -1,4 +1,4 @@
-package or.hyu.ssd.global.entity;
+package or.hyu.ssd.shared.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

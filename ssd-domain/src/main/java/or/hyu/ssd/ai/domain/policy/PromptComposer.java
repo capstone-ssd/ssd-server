@@ -1,4 +1,4 @@
-package or.hyu.ssd.domain.ai.util;
+package or.hyu.ssd.ai.domain.policy;
 
 public class PromptComposer {
 
