@@ -3,8 +3,8 @@
 ## Module Context
 - 이 모듈은 도메인 저장소 인터페이스를 실제 영속성 기술로 구현하는 어댑터 계층이다.
 - 주요 책임
-  - `ssd-domain` 저장소 인터페이스 구현(`*RepositoryImpl`)
-  - Spring Data JPA 리포지토리(`*JpaRepository`) 제공
+  - `infra.persistence.*`: 도메인 저장소 인터페이스 구현과 Spring Data JPA 리포지토리
+  - `infra.adapter.*`: 도메인 포트 구현 어댑터
   - 조회/정렬/필터링 쿼리 구현
 - 비즈니스 정책 판단은 `ssd-domain` 서비스에서 수행하고, infra는 데이터 접근에 집중한다.
 
@@ -24,8 +24,9 @@
 
 ### Repository Adapter Pattern
 - 패키지 구조
-  - `infra/.../repository/*RepositoryImpl`: 도메인 저장소 구현체
-  - `infra/.../repository/jpa/*JpaRepository`: Spring Data 인터페이스
+  - `infra/persistence/<context>/repository/*RepositoryImpl`: 도메인 저장소 구현체
+  - `infra/persistence/<context>/repository/jpa/*JpaRepository`: Spring Data 인터페이스
+- 외부 연동 포트 구현체는 `infra/adapter/<context>`에 둔다.
 - 구현체는 JPA 리포지토리에 위임하고, 도메인 인터페이스 시그니처를 그대로 맞춘다.
 - 낙관적 락/강제 flush가 필요한 케이스는 도메인 서비스 계약에 맞춰 메서드를 제공한다.
 

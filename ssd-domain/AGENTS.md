@@ -41,6 +41,7 @@
 - 도메인 유스케이스 입력/출력 모델이 필요하면 `application/command`, `application/result`, 필요 시 `application/query`를 사용한다.
 - 도메인 규칙과 검증은 `domain/policy`에 둔다.
 - 외부 연동 payload는 `port/dto` 또는 `ssd-external`의 provider DTO에 둔다.
+- 컨텍스트 표준 패키지는 비어 있어도 `.gitkeep`으로 유지해 구조를 고정한다.
 - Querydsl 생성 파일은 생성 산출물로 간주하고 수동 수정하지 않는다.
 
 ## Testing Strategy

@@ -3,9 +3,10 @@
 ## Module Context
 - 이 모듈은 AI, 스토리지, 알림 등 외부 시스템 연동 클라이언트를 담당한다.
 - 주요 책임
-  - 외부 HTTP client
-  - S3/알림 연동 보조 컴포넌트
-  - 외부 통신 DTO와 설정
+  - `external.ai.client`: 외부 AI HTTP client
+  - `external.ai.config`: Feign 등 연동 설정
+  - `external.storage.s3.*`: S3 설정과 보조 컴포넌트
+  - `external.alert.discord`: Discord 알림 연동
 - 도메인 포트 구현체는 필요 시 `ssd-infra` 어댑터에서 조합한다.
 
 ## Constraints
