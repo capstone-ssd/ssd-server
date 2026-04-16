@@ -41,8 +41,8 @@
 - 모듈 테스트 실행: `./gradlew :ssd-common:test`
 - 권장 테스트 범위
   - ErrorCode와 HTTP 상태 매핑 검증
-  - JWT 유틸 만료/서명/파싱 검증
   - ConfigurationProperties 바인딩 검증
+  - 공통 유틸과 공통 persistence 지원 클래스 검증
 - 변경 시 최소 검증 항목
   - 공통 응답 스키마 역호환성
   - 예외 핸들링 누락 여부

@@ -3,15 +3,14 @@
 ## Module Context
 - 이 모듈은 핵심 비즈니스 로직과 도메인 모델을 담당한다.
 - 주요 책임
-  - 유스케이스 서비스(`*Service`)
-  - 도메인 엔티티/값 규칙
-  - 도메인 리포지토리 인터페이스 정의
-  - AI 프롬프트 조합 및 외부 호출 추상화
+  - 애플리케이션 서비스(`application/service`)
+  - 도메인 엔티티와 정책(`domain/entity`, `domain/policy`)
+  - 도메인 리포지토리 인터페이스와 외부 포트
+  - AI/문서/회원 컨텍스트 유스케이스
 - `ssd-api`는 이 모듈의 서비스/DTO를 호출하고, `ssd-infra`는 저장소 인터페이스를 구현한다.
 
 ## Tech Stack & Constraints
-- Spring Boot Starter, Spring Data JPA, Validation, Security, OAuth2 Client
-- OpenFeign, Spring AI(OpenAI), Querydsl APT
+- Spring Boot Starter, Spring Data JPA, Validation, Querydsl APT
 - 제약
   - 도메인 서비스는 인프라 구현체를 직접 참조하지 않는다.
   - 저장소는 인터페이스로만 선언하고 구현은 `ssd-infra`에 둔다.
@@ -39,9 +38,9 @@
 ### Entity and DTO Pattern
 - 엔티티는 생성 팩토리(`of`)와 의미 있는 업데이트 메서드를 유지한다.
 - 새 웹 요청/응답 DTO는 이 모듈에 추가하지 않는다.
-- 도메인 유스케이스 입력/출력 모델이 필요하면 `usecase/command`, `usecase/result`, `usecase/query` 패키지를 우선 검토한다.
-- 외부 연동 payload는 해당 `client/dto` 패키지에 둔다.
-- 기존 `domain/.../controller/dto`는 레거시 위치로 간주하고 후속 이슈에서 단계적으로 정리한다.
+- 도메인 유스케이스 입력/출력 모델이 필요하면 `application/command`, `application/result`, 필요 시 `application/query`를 사용한다.
+- 도메인 규칙과 검증은 `domain/policy`에 둔다.
+- 외부 연동 payload는 `port/dto` 또는 `ssd-external`의 provider DTO에 둔다.
 - Querydsl 생성 파일은 생성 산출물로 간주하고 수동 수정하지 않는다.
 
 ## Testing Strategy

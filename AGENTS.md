@@ -61,7 +61,7 @@
   - `ssd-infra` -> `ssd-domain`/`ssd-common`/`ssd-auth`
   - `ssd-common`은 다른 프로젝트 모듈에 의존하지 않는다.
 - 웹 계층은 `ssd-api`만 담당한다. 컨트롤러/보안 필터를 다른 모듈에 추가하지 않는다.
-- HTTP 요청/응답 DTO도 기본적으로 `ssd-api`에 둔다. `ssd-domain/.../controller/dto`는 레거시 위치로만 취급한다.
+- HTTP 요청/응답 DTO는 `ssd-api`의 `request`/`response` 패키지에 둔다.
 - 도메인 서비스는 도메인 리포지토리 인터페이스(`ssd-domain`)에만 의존하고, 구현체(`ssd-infra`)를 직접 참조하지 않는다.
 - API 응답은 `ApiResponse` 포맷을 유지한다. 예외는 `ErrorCode` + `CustomException` 계열로 통일한다.
 - 인증/인가 기본 정책은 `authenticated`이며, 화이트리스트는 명시적으로만 열어야 한다.
@@ -114,10 +114,9 @@
   - 기능 작업: `feature/#이슈번호/요약`
   - 버그 수정: `fix/#이슈번호/요약`
   - 잡무/설정 작업: `chore/#이슈번호/요약`
-- 커밋/이슈 prefix는 현재 템플릿 관례를 따른다.
-  - `[FEATURE]`, `[FIX]`, `[CHORE]`, `[INIT]`
 - 커밋 메세지는 아래와 같이 작성한다
-  - git commit -m "`feat`:#`이슈번호` `커밋메세지`"
+  - git commit -m "`타입`:#`이슈번호` `커밋메세지`"
+  - 예시: `chore:#155 문서 도메인 패키지 재구성`
   - 커밋은 하나의 기능구현 단위로 나눈다
 - PR에는 최소한 다음을 포함한다.
   - 관련 이슈

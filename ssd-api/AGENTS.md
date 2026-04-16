@@ -40,7 +40,7 @@
   - 인증 정보 주입
   - 도메인 서비스 호출
   - `ApiResponse.ok(...)`로 래핑
-- API 요청/응답 DTO는 이 모듈의 `controller/dto`에 둔다.
+- API 요청/응답 DTO는 이 모듈의 `request`, `response` 패키지에 둔다.
 - 컨트롤러는 API DTO를 그대로 도메인에 누수시키지 말고, 필요하면 도메인 command/result로 경계에서 변환한다.
 - 금지
   - 트랜잭션/비즈니스 분기 직접 구현
