@@ -2,17 +2,17 @@ package or.hyu.ssd.infra.document.repository;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.DocumentBlockType;
-import or.hyu.ssd.domain.document.entity.Document;
-import or.hyu.ssd.domain.document.entity.DocumentParagraph;
-import or.hyu.ssd.domain.document.repository.DocumentParagraphRepository;
+import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.DocumentParagraph;
+import or.hyu.ssd.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.infra.document.repository.jpa.DocumentParagraphJpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-import static or.hyu.ssd.domain.document.entity.QDocumentParagraph.documentParagraph;
+import static or.hyu.ssd.document.domain.entity.QDocumentParagraph.documentParagraph;
 
 @Repository
 @RequiredArgsConstructor

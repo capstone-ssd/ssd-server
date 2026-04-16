@@ -1,9 +1,9 @@
 package or.hyu.ssd.infra.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.CheckList;
-import or.hyu.ssd.domain.document.entity.Document;
-import or.hyu.ssd.domain.document.repository.CheckListRepository;
+import or.hyu.ssd.document.domain.entity.CheckList;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.repository.CheckListRepository;
 import or.hyu.ssd.infra.document.repository.jpa.CheckListJpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,9 +1,9 @@
 package or.hyu.ssd.infra.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.Document;
-import or.hyu.ssd.domain.document.entity.DocumentLog;
-import or.hyu.ssd.domain.document.repository.DocumentLogRepository;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.document.repository.DocumentLogRepository;
 import or.hyu.ssd.infra.document.repository.jpa.DocumentLogJpaRepository;
 import org.springframework.stereotype.Repository;
 

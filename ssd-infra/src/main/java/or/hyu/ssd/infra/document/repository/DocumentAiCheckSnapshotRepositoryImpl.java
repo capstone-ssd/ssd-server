@@ -1,9 +1,9 @@
 package or.hyu.ssd.infra.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.Document;
-import or.hyu.ssd.domain.document.entity.DocumentAiCheckSnapshot;
-import or.hyu.ssd.domain.document.repository.DocumentAiCheckSnapshotRepository;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.DocumentAiCheckSnapshot;
+import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.infra.document.repository.jpa.DocumentAiCheckSnapshotJpaRepository;
 import org.springframework.stereotype.Repository;
 

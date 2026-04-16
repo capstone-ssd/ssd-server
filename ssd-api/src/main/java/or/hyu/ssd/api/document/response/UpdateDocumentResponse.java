@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.UpdateDocumentResult;
+import or.hyu.ssd.document.application.result.UpdateDocumentResult;
 
 public record UpdateDocumentResponse(Long id) {
     public static UpdateDocumentResponse from(UpdateDocumentResult result) {

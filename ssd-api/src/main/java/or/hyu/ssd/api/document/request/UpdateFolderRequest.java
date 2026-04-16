@@ -1,7 +1,7 @@
 package or.hyu.ssd.api.document.request;
 
 import jakarta.validation.constraints.PositiveOrZero;
-import or.hyu.ssd.domain.document.usecase.command.UpdateFolderCommand;
+import or.hyu.ssd.document.application.command.UpdateFolderCommand;
 
 public record UpdateFolderRequest(
         String name,

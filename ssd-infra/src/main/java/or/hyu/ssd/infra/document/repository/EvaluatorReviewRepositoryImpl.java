@@ -1,9 +1,9 @@
 package or.hyu.ssd.infra.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.Document;
-import or.hyu.ssd.domain.document.entity.EvaluatorReview;
-import or.hyu.ssd.domain.document.repository.EvaluatorReviewRepository;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.EvaluatorReview;
+import or.hyu.ssd.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.infra.document.repository.jpa.EvaluatorReviewJpaRepository;
 import org.springframework.stereotype.Repository;

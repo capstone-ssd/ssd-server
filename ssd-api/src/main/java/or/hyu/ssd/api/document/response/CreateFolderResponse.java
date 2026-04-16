@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.CreateFolderResult;
+import or.hyu.ssd.document.application.result.CreateFolderResult;
 
 public record CreateFolderResponse(Long id) {
     public static CreateFolderResponse from(CreateFolderResult result) {

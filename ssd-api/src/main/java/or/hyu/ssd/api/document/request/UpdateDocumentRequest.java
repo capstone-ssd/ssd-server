@@ -2,7 +2,7 @@ package or.hyu.ssd.api.document.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommand;
+import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 
 import java.util.List;
 

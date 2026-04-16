@@ -3,7 +3,7 @@ package or.hyu.ssd.api.document.request;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommentCommand;
+import or.hyu.ssd.document.application.command.CreateDocumentCommentCommand;
 
 public record DocumentCommentRequest(
         @NotNull @Min(1) Integer blockId,

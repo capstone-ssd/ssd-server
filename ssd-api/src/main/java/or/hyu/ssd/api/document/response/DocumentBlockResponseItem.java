@@ -1,7 +1,7 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.entity.DocumentBlockType;
-import or.hyu.ssd.domain.document.usecase.result.DocumentBlockResult;
+import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.application.result.DocumentBlockResult;
 
 public record DocumentBlockResponseItem(
         DocumentBlockType type,

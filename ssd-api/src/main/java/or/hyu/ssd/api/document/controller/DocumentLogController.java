@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.api.document.response.DocumentLogResponse;
-import or.hyu.ssd.domain.document.service.DocumentLogService;
+import or.hyu.ssd.document.application.service.DocumentLogService;
 import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;

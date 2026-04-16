@@ -11,7 +11,7 @@ import or.hyu.ssd.api.document.response.CreateFolderResponse;
 import or.hyu.ssd.api.document.response.FolderContentResponse;
 import or.hyu.ssd.api.document.request.UpdateFolderRequest;
 import or.hyu.ssd.api.document.response.UpdateFolderResponse;
-import or.hyu.ssd.domain.document.service.FolderService;
+import or.hyu.ssd.document.application.service.FolderService;
 import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;

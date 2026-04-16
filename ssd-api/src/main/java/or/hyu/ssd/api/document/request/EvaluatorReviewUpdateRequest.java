@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import or.hyu.ssd.domain.document.usecase.command.UpdateEvaluatorReviewCommand;
+import or.hyu.ssd.document.application.command.UpdateEvaluatorReviewCommand;
 
 public record EvaluatorReviewUpdateRequest(
         @NotNull(message = "사업타당성 점수는 필수입니다")

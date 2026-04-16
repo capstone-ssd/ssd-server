@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
 
 public record ExternalAiEvaluationMetricResponse(
         String label,

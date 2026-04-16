@@ -1,9 +1,9 @@
 package or.hyu.ssd.infra.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.entity.Document;
-import or.hyu.ssd.domain.document.entity.DocumentComment;
-import or.hyu.ssd.domain.document.repository.DocumentCommentRepository;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.DocumentComment;
+import or.hyu.ssd.document.repository.DocumentCommentRepository;
 import or.hyu.ssd.infra.document.repository.jpa.DocumentCommentJpaRepository;
 import org.springframework.stereotype.Repository;
 

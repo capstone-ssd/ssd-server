@@ -1,7 +1,7 @@
 package or.hyu.ssd.infra.storage;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.domain.document.port.DocumentImageStoragePort;
+import or.hyu.ssd.document.port.DocumentImageStoragePort;
 import org.springframework.stereotype.Component;
 
 @Component

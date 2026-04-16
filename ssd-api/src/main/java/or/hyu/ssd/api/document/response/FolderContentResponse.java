@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.FolderContentResult;
+import or.hyu.ssd.document.application.result.FolderContentResult;
 
 import java.util.List;
 

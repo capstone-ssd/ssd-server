@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.ExternalAiKeywordResult;
+import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 
 public record ExternalAiKeywordResponse(
         Long documentId,

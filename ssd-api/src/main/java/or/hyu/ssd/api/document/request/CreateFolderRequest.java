@@ -2,7 +2,7 @@ package or.hyu.ssd.api.document.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
-import or.hyu.ssd.domain.document.usecase.command.CreateFolderCommand;
+import or.hyu.ssd.document.application.command.CreateFolderCommand;
 
 public record CreateFolderRequest(
         @NotBlank(message = "폴더명은 필수입니다")

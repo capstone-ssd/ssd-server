@@ -1,8 +1,8 @@
 package or.hyu.ssd.api.document.request;
 
 import jakarta.validation.constraints.AssertTrue;
-import or.hyu.ssd.domain.document.entity.DocumentBlockType;
-import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
+import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.application.command.DocumentBlockCommand;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;

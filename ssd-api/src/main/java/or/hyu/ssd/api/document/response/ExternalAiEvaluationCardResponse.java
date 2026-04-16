@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
+import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 

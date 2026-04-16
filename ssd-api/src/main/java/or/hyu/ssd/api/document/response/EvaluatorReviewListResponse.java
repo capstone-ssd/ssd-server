@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewListResult;
+import or.hyu.ssd.document.application.result.EvaluatorReviewListResult;
 
 import java.util.List;
 

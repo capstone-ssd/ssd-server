@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.EvaluatorReviewDetailResult;
+import or.hyu.ssd.document.application.result.EvaluatorReviewDetailResult;
 
 import java.time.LocalDateTime;
 

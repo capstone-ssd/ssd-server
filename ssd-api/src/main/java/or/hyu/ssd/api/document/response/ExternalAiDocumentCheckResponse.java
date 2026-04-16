@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.ExternalAiDocumentCheckResult;
+import or.hyu.ssd.document.application.result.ExternalAiDocumentCheckResult;
 
 import java.util.LinkedHashMap;
 import java.util.List;

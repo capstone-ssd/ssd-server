@@ -3,7 +3,7 @@ package or.hyu.ssd.api.document.request;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import or.hyu.ssd.domain.document.usecase.command.ExternalDocumentIdCommand;
+import or.hyu.ssd.document.application.command.ExternalDocumentIdCommand;
 
 public record ExternalDocumentIdRequest(
         @NotBlank(message = "docId는 필수입니다")

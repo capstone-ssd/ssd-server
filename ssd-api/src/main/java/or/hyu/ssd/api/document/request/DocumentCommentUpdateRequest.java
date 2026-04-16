@@ -1,7 +1,7 @@
 package or.hyu.ssd.api.document.request;
 
 import jakarta.validation.constraints.NotBlank;
-import or.hyu.ssd.domain.document.usecase.command.UpdateDocumentCommentCommand;
+import or.hyu.ssd.document.application.command.UpdateDocumentCommentCommand;
 
 public record DocumentCommentUpdateRequest(
         @NotBlank String comment

@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-import or.hyu.ssd.domain.document.usecase.command.CreateDocumentCommand;
+import or.hyu.ssd.document.application.command.CreateDocumentCommand;
 
 import java.util.List;
 

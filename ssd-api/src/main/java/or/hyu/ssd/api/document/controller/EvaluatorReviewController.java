@@ -10,7 +10,7 @@ import or.hyu.ssd.api.document.response.EvaluatorReviewDetailResponse;
 import or.hyu.ssd.api.document.response.EvaluatorReviewIdResponse;
 import or.hyu.ssd.api.document.response.EvaluatorReviewListResponse;
 import or.hyu.ssd.api.document.request.EvaluatorReviewUpdateRequest;
-import or.hyu.ssd.domain.document.service.EvaluatorReviewService;
+import or.hyu.ssd.document.application.service.EvaluatorReviewService;
 import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;

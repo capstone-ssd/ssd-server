@@ -1,6 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
-import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
+import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 
 public record ExternalAiSummaryResponse(
         Long documentId,

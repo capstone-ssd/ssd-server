@@ -8,7 +8,7 @@ import or.hyu.ssd.api.document.response.DocumentCommentItemResponse;
 import or.hyu.ssd.api.document.request.DocumentCommentRequest;
 import or.hyu.ssd.api.document.response.DocumentCommentResponse;
 import or.hyu.ssd.api.document.request.DocumentCommentUpdateRequest;
-import or.hyu.ssd.domain.document.service.DocumentCommentService;
+import or.hyu.ssd.document.application.service.DocumentCommentService;
 import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,6 @@
 package or.hyu.ssd.infra.document.repository.jpa;
 
-import or.hyu.ssd.domain.document.entity.Document;
+import or.hyu.ssd.document.domain.entity.Document;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
