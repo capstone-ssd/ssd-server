@@ -13,8 +13,8 @@ import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicRequest;
 import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.domain.document.client.dto.ExternalSummarizationKeywordResponse;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.UserExceptionHandler;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Supplier;

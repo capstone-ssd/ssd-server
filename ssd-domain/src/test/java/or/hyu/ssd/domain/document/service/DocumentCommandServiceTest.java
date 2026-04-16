@@ -22,7 +22,7 @@ import or.hyu.ssd.domain.document.usecase.result.CreateDocumentResult;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
-import or.hyu.ssd.global.util.OptimisticRetryExecutor;
+import or.hyu.ssd.common.util.OptimisticRetryExecutor;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -126,7 +126,7 @@ class DocumentCommandServiceTest {
 
         // then
         assertThatThrownBy(action)
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("제목은 공백일 수 없습니다");
     }
 
@@ -147,7 +147,7 @@ class DocumentCommandServiceTest {
 
         // then
         assertThatThrownBy(action)
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("내용은 공백일 수 없습니다");
     }
 
@@ -227,7 +227,7 @@ class DocumentCommandServiceTest {
 
         // then
         assertThatThrownBy(action)
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("수정 요청의 모든 블록에는 blockId가 필요합니다");
     }
 
@@ -256,7 +256,7 @@ class DocumentCommandServiceTest {
 
         // then
         assertThatThrownBy(action)
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("수정 요청에 중복된 blockId가 있습니다");
     }
 

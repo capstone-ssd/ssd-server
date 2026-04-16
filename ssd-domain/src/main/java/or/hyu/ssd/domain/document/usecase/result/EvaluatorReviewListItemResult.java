@@ -1,8 +1,8 @@
 package or.hyu.ssd.domain.document.usecase.result;
 
 import or.hyu.ssd.domain.document.entity.EvaluatorReview;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DocumentException;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.DocumentException;
 
 import java.time.LocalDateTime;
 

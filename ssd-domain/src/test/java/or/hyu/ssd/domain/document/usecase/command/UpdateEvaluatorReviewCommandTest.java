@@ -21,7 +21,7 @@ class UpdateEvaluatorReviewCommandTest {
 
         // then
         assertThatThrownBy(() -> new UpdateEvaluatorReviewCommand(feasibility, differentiation, financial, "의견"))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("리뷰 점수는 모두 필수입니다");
     }
 

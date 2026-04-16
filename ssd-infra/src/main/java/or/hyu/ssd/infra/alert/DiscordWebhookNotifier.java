@@ -2,9 +2,9 @@ package or.hyu.ssd.infra.alert;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import or.hyu.ssd.global.alert.ErrorAlertContext;
-import or.hyu.ssd.global.alert.ErrorAlertNotifier;
-import or.hyu.ssd.global.config.properties.DiscordProperties;
+import or.hyu.ssd.common.alert.ErrorAlertContext;
+import or.hyu.ssd.common.alert.ErrorAlertNotifier;
+import or.hyu.ssd.common.property.DiscordProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 

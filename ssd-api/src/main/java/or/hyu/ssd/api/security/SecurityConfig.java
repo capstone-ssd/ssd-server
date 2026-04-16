@@ -2,7 +2,7 @@ package or.hyu.ssd.api.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.global.config.properties.WhiteListConfig;
+import or.hyu.ssd.common.property.WhiteListConfig;
 import or.hyu.ssd.auth.jwt.filter.JWTFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

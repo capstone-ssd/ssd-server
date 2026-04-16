@@ -1,7 +1,7 @@
 package or.hyu.ssd.domain.document.usecase.command;
 
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DocumentException;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.DocumentException;
 
 public record UpdateEvaluatorReviewCommand(
         Integer feasibility,

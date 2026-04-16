@@ -2,7 +2,7 @@ package or.hyu.ssd.api.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import or.hyu.ssd.global.api.ErrorCode;
+import or.hyu.ssd.common.exception.ErrorCode;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;

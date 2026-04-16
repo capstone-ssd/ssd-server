@@ -3,8 +3,8 @@ package or.hyu.ssd.domain.document.service.support;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.document.port.DocumentImageStoragePort;
 import or.hyu.ssd.domain.document.usecase.command.DocumentBlockCommand;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DocumentException;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

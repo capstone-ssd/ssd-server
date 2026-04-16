@@ -54,7 +54,7 @@ class EvaluatorReviewServiceTest {
                 new CustomUserDetails(member),
                 new CreateEvaluatorReviewCommand(80, 90, 70, "좋은 사업입니다")
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("이미 작성한 리뷰가 존재합니다");
     }
 
@@ -67,7 +67,7 @@ class EvaluatorReviewServiceTest {
         // when
         // then
         assertThatThrownBy(() -> evaluatorReviewService.create(10L, new CustomUserDetails(member), null))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("리뷰 요청 본문이 비어 있습니다");
     }
 
@@ -112,7 +112,7 @@ class EvaluatorReviewServiceTest {
         // when
         // then
         assertThatThrownBy(() -> evaluatorReviewService.update(10L, new CustomUserDetails(reviewer), null))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("리뷰 요청 본문이 비어 있습니다");
     }
 
@@ -154,7 +154,7 @@ class EvaluatorReviewServiceTest {
 
         // then
         assertThatThrownBy(() -> evaluatorReviewService.list(10L, new CustomUserDetails(other)))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
 

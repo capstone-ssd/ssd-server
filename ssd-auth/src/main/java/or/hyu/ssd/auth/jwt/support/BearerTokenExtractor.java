@@ -2,8 +2,8 @@ package or.hyu.ssd.auth.jwt.support;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.TokenHandler;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.TokenHandler;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BearerTokenExtractor {

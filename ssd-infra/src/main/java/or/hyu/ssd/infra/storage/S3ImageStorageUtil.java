@@ -2,9 +2,9 @@ package or.hyu.ssd.infra.storage;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.StorageException;
-import or.hyu.ssd.global.config.properties.S3Properties;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.StorageException;
+import or.hyu.ssd.common.property.S3Properties;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;

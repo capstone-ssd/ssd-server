@@ -6,8 +6,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.auth.jwt.repository.RefreshTokenRepository;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.TokenHandler;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.TokenHandler;
 import or.hyu.ssd.auth.jwt.support.JWTUtil;
 import org.springframework.stereotype.Component;
 

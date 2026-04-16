@@ -144,7 +144,7 @@ class FolderServiceTest {
                 user,
                 new UpdateFolderCommand(null, null, null)
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("수정할 값을 하나 이상 입력해 주세요");
     }
 
@@ -164,7 +164,7 @@ class FolderServiceTest {
                 user,
                 new UpdateFolderCommand("   ", null, null)
         ))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("폴더명은 공백일 수 없습니다");
     }
 
@@ -178,7 +178,7 @@ class FolderServiceTest {
         // when
         // then
         assertThatThrownBy(() -> folderService.create(user, new CreateFolderCommand("   ", null, 0L)))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("폴더명은 공백일 수 없습니다");
     }
 

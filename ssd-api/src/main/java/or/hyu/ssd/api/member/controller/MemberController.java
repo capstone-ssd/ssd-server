@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.api.member.response.GetMyMemberResponse;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
 import or.hyu.ssd.domain.member.service.MemberService;
-import or.hyu.ssd.global.api.ApiResponse;
+import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -97,7 +97,7 @@ class DocumentLogServiceTest {
         // when
         // then
         assertThatThrownBy(() -> documentLogService.list(10L, new CustomUserDetails(other)))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.DocumentException.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
 

@@ -2,8 +2,8 @@ package or.hyu.ssd.auth.jwt.support;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.TokenHandler;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.TokenHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

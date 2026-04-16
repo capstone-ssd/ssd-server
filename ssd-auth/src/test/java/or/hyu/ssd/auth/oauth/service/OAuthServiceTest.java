@@ -10,7 +10,7 @@ import or.hyu.ssd.auth.oauth.kakao.dto.KaKaoUserInfoResponse;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.entity.Role;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.common.exception.UserExceptionHandler;
 import or.hyu.ssd.auth.oauth.property.KaKaoConfig;
 import or.hyu.ssd.auth.jwt.property.CookieConfig;
 import or.hyu.ssd.auth.jwt.property.JWTConfig;

@@ -1,8 +1,8 @@
 package or.hyu.ssd.api.document.response;
 
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationCardResult;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DocumentException;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.DocumentException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

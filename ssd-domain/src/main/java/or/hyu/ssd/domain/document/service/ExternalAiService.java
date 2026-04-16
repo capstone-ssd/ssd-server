@@ -26,8 +26,8 @@ import or.hyu.ssd.domain.document.usecase.result.ExternalAiEvaluationMetricResul
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiKeywordResult;
 import or.hyu.ssd.domain.document.usecase.result.ExternalAiSummaryResult;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.DocumentException;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

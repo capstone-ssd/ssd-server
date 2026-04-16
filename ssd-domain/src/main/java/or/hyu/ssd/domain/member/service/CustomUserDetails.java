@@ -4,8 +4,8 @@ package or.hyu.ssd.domain.member.service;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.member.entity.Member;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.UserExceptionHandler;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

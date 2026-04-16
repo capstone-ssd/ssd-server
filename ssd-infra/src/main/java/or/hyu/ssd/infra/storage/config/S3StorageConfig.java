@@ -1,6 +1,6 @@
 package or.hyu.ssd.infra.storage.config;
 
-import or.hyu.ssd.global.config.properties.S3Properties;
+import or.hyu.ssd.common.property.S3Properties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;

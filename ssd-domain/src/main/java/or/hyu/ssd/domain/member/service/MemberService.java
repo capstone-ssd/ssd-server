@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.domain.member.controller.dto.GetMyMemberResponse;
 import or.hyu.ssd.domain.member.entity.Member;
 import or.hyu.ssd.domain.member.repository.MemberRepository;
-import or.hyu.ssd.global.api.ErrorCode;
-import or.hyu.ssd.global.api.handler.UserExceptionHandler;
+import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.exception.UserExceptionHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

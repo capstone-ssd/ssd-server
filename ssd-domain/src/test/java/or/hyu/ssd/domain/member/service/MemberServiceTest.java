@@ -56,7 +56,7 @@ class MemberServiceTest {
         // when
         // then
         assertThatThrownBy(() -> memberService.getMyInfo(user))
-                .isInstanceOf(or.hyu.ssd.global.api.handler.UserExceptionHandler.class)
+                .isInstanceOf(or.hyu.ssd.common.exception.UserExceptionHandler.class)
                 .hasMessage("회원을 찾지 못했습니다");
     }
 

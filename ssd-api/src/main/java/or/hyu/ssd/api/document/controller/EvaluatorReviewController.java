@@ -12,7 +12,7 @@ import or.hyu.ssd.api.document.response.EvaluatorReviewListResponse;
 import or.hyu.ssd.api.document.request.EvaluatorReviewUpdateRequest;
 import or.hyu.ssd.domain.document.service.EvaluatorReviewService;
 import or.hyu.ssd.domain.member.service.CustomUserDetails;
-import or.hyu.ssd.global.api.ApiResponse;
+import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
