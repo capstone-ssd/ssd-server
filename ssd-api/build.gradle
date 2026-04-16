@@ -6,8 +6,10 @@ plugins {
 
 dependencies {
     implementation project(':ssd-domain')
-    implementation project(':ssd-core')
+    implementation project(':ssd-common')
     implementation project(':ssd-infra')
+    implementation project(':ssd-auth')
+    implementation project(':ssd-external')
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'

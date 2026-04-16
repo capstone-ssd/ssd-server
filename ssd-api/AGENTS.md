@@ -18,7 +18,7 @@
 - 제약
   - 컨트롤러는 `ResponseEntity<ApiResponse<...>>`를 반환한다.
   - 컨트롤러에서 엔티티를 직접 노출하지 않는다.
-  - 보안 예외/일반 예외 처리는 전역 핸들러(`ssd-core`) 규약을 따른다.
+- 보안 예외/일반 예외 처리는 전역 핸들러(`ssd-common`) 규약을 따른다.
 
 ## Naming Reference
 - 공통 네이밍 기준은 `docs/naming/README.md`를 따른다.
@@ -68,7 +68,7 @@
 - Do
   - 도메인 DTO/서비스를 이용해 응답을 구성한다.
   - 실패 응답은 `ErrorCode` 기반으로 일관되게 처리되도록 예외를 던진다.
-  - application 설정 키를 추가할 때 `ssd-core`의 프로퍼티 클래스와 정합성을 확인한다.
+- application 설정 키를 추가할 때 `ssd-common`, `ssd-auth`, `ssd-external`의 프로퍼티 클래스와 정합성을 확인한다.
 - Don't
   - `application*.yml`에 실제 시크릿 값을 커밋하지 않는다.
   - 인증이 필요한 기능을 임시로 `permitAll` 처리한 상태로 머지하지 않는다.

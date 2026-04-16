@@ -3,14 +3,10 @@ plugins {
 }
 
 dependencies {
-    implementation project(':ssd-domain')
     implementation project(':ssd-common')
-    implementation project(':ssd-auth')
 
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
     implementation platform('software.amazon.awssdk:bom:2.32.20')
     implementation 'software.amazon.awssdk:s3'
 

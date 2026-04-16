@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation project(':ssd-core')
+    implementation project(':ssd-common')
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

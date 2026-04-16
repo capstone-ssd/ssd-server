@@ -7,8 +7,10 @@
 - 멀티모듈 Gradle 구조이며 책임 분리는 다음과 같다.
   - `ssd-api`: Spring Boot 애플리케이션 엔트리포인트, REST API, 인증/인가 필터.
   - `ssd-domain`: 도메인 서비스, 엔티티, 도메인 리포지토리 인터페이스, AI/회원/문서 유스케이스.
+  - `ssd-common`: 공통 응답/예외 규약, 공통 설정/프로퍼티, 범용 유틸.
+  - `ssd-auth`: JWT/OAuth, principal, 인증 상태 저장소 인터페이스.
+  - `ssd-external`: 외부 AI, 스토리지, 알림 등 외부 시스템 연동 클라이언트.
   - `ssd-infra`: 도메인 리포지토리 인터페이스 구현체와 Spring Data JPA 어댑터.
-  - `ssd-core`: 공통 설정, 예외/응답 규약, JWT 유틸, 전역 프로퍼티/유틸리티.
 
 ### Tech Stack
 - Java 21, Gradle 8.x, Spring Boot 4.0.0
@@ -26,12 +28,16 @@
 - 모듈 단위 테스트
   - `./gradlew :ssd-api:test`
   - `./gradlew :ssd-domain:test`
-  - `./gradlew :ssd-core:test`
+  - `./gradlew :ssd-common:test`
+  - `./gradlew :ssd-auth:test`
+  - `./gradlew :ssd-external:test`
   - `./gradlew :ssd-infra:test`
 - 모듈 단위 통합 테스트
   - `./gradlew :ssd-api:integrationTest`
   - `./gradlew :ssd-domain:integrationTest`
-  - `./gradlew :ssd-core:integrationTest`
+  - `./gradlew :ssd-common:integrationTest`
+  - `./gradlew :ssd-auth:integrationTest`
+  - `./gradlew :ssd-external:integrationTest`
   - `./gradlew :ssd-infra:integrationTest`
 - 커버리지 리포트(API 모듈): `./gradlew :ssd-api:jacocoTestReport`
 - CI 유사 검증: `./gradlew clean build jacocoTestReport -Dspring.profiles.active=test --no-daemon`
@@ -48,10 +54,12 @@
 
 ### Immutable
 - 의존성 방향을 지킨다.
-  - `ssd-api` -> `ssd-domain`/`ssd-core`/`ssd-infra`
-  - `ssd-domain` -> `ssd-core`
-  - `ssd-infra` -> `ssd-domain`/`ssd-core`
-  - `ssd-core`는 다른 프로젝트 모듈에 의존하지 않는다.
+  - `ssd-api` -> `ssd-domain`/`ssd-common`/`ssd-auth`/`ssd-external`/`ssd-infra`
+  - `ssd-domain` -> `ssd-common`
+  - `ssd-auth` -> `ssd-common`/`ssd-domain`
+  - `ssd-external` -> `ssd-common`
+  - `ssd-infra` -> `ssd-domain`/`ssd-common`/`ssd-auth`
+  - `ssd-common`은 다른 프로젝트 모듈에 의존하지 않는다.
 - 웹 계층은 `ssd-api`만 담당한다. 컨트롤러/보안 필터를 다른 모듈에 추가하지 않는다.
 - HTTP 요청/응답 DTO도 기본적으로 `ssd-api`에 둔다. `ssd-domain/.../controller/dto`는 레거시 위치로만 취급한다.
 - 도메인 서비스는 도메인 리포지토리 인터페이스(`ssd-domain`)에만 의존하고, 구현체(`ssd-infra`)를 직접 참조하지 않는다.
@@ -124,5 +132,7 @@
 ## Context Map (Action-Based Routing)
 - **[API 엔드포인트/보안/실행 프로필 수정](./ssd-api/AGENTS.md)** — 컨트롤러, SecurityConfig, application 설정, API 계약 수정 시.
 - **[도메인 서비스/엔티티/유스케이스 수정](./ssd-domain/AGENTS.md)** — 문서/회원/AI 비즈니스 로직, 트랜잭션, 도메인 규칙 수정 시.
-- **[공통 설정/예외/프로퍼티 수정](./ssd-core/AGENTS.md)** — ErrorCode, ApiResponse, 공통 Config/JWT/유틸 수정 시.
+- **[공통 설정/예외/프로퍼티 수정](./ssd-common/AGENTS.md)** — ErrorCode, ApiResponse, 공통 Config/프로퍼티/유틸 수정 시.
+- **[인증/JWT/OAuth 수정](./ssd-auth/AGENTS.md)** — 토큰, principal, OAuth 흐름 수정 시.
+- **[외부 연동/스토리지/알림 수정](./ssd-external/AGENTS.md)** — 외부 AI, S3, 알림 연동 수정 시.
 - **[영속성 어댑터/JPA 구현 수정](./ssd-infra/AGENTS.md)** — RepositoryImpl, JpaRepository, 쿼리 성능/조회 로직 수정 시.
