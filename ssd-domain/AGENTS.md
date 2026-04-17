@@ -10,12 +10,13 @@
 - `ssd-api`는 이 모듈의 서비스/DTO를 호출하고, `ssd-infra`는 저장소 인터페이스를 구현한다.
 
 ## Tech Stack & Constraints
-- Spring Boot Starter, Spring Data JPA, Validation, Querydsl APT
+- Spring Context, Spring TX, Spring Data Commons, Validation API
 - 제약
   - 도메인 서비스는 인프라 구현체를 직접 참조하지 않는다.
   - 저장소는 인터페이스로만 선언하고 구현은 `ssd-infra`에 둔다.
   - 트랜잭션 경계는 서비스 계층에 둔다.
   - 엔티티의 상태 변경은 의도된 메서드(`update*`, `of`)를 통해 수행한다.
+  - 도메인 모듈에는 JPA 엔티티나 `JpaRepository`를 두지 않는다.
 
 ## Naming Reference
 - 도메인 용어의 정본은 `/Users/jeonjaeyeon/Desktop/capstone/ssd/docs/naming/glossary.md`다.
@@ -42,13 +43,11 @@
 - 도메인 규칙과 검증은 `domain/policy`에 둔다.
 - 외부 연동 payload는 `port/dto` 또는 `ssd-external`의 provider DTO에 둔다.
 - 컨텍스트 표준 패키지는 비어 있어도 `.gitkeep`으로 유지해 구조를 고정한다.
-- Querydsl 생성 파일은 생성 산출물로 간주하고 수동 수정하지 않는다.
 
 ## Testing Strategy
 - 모듈 테스트 실행: `./gradlew :ssd-domain:test`
 - 권장 테스트 범위
   - 서비스 단위 테스트: 권한 체크, 예외 매핑, 분기 처리
-  - 영속성 연계 테스트: 엔티티 관계/삭제 전파/정렬 조회 검증
   - AI 응답 파싱 테스트: JSON/Markdown 포맷 강건성 검증
 - 변경 시 최소 검증 항목
   - `DOCUMENT_FORBIDDEN` 등 권한 오류가 정확히 발생하는지

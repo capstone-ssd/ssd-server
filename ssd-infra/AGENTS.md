@@ -10,7 +10,7 @@
 
 ## Tech Stack & Constraints
 - Spring Data JPA 기반 `java-library` 모듈
-- `ssd-domain` 엔티티를 직접 사용하며 별도 ORM 엔티티를 분리하지 않는다.
+- `infra.persistence.*.entity`에 JPA 엔티티를 두고, 도메인 모델과는 매퍼로 변환한다.
 - 제약
   - 구현 클래스는 반드시 도메인 저장소 인터페이스를 구현한다.
   - 인프라 계층에서 `ResponseEntity`, 컨트롤러, 보안 필터를 추가하지 않는다.
@@ -26,13 +26,15 @@
 - 패키지 구조
   - `infra/persistence/<context>/repository/*RepositoryImpl`: 도메인 저장소 구현체
   - `infra/persistence/<context>/repository/jpa/*JpaRepository`: Spring Data 인터페이스
+  - `infra/persistence/<context>/entity/*JpaEntity`: 영속성 전용 엔티티
+  - `infra/persistence/<context>/mapper/*PersistenceMapper`: 도메인 <-> JPA 변환
 - 외부 연동 포트 구현체는 `infra/adapter/<context>`에 둔다.
 - 구현체는 JPA 리포지토리에 위임하고, 도메인 인터페이스 시그니처를 그대로 맞춘다.
 - 낙관적 락/강제 flush가 필요한 케이스는 도메인 서비스 계약에 맞춰 메서드를 제공한다.
 
 ### Query Pattern
 - 단순 조회는 메서드 네이밍 쿼리를 우선한다.
-- 복잡 조회/동적 조건이 필요하면 Querydsl 또는 명시적 쿼리로 확장한다.
+- 복잡 조회/동적 조건이 필요하면 명시적 쿼리 또는 별도 전용 구현으로 확장한다.
 - 정렬/페이징 요구사항이 있는 경우 도메인 계약에 `Sort`/`Pageable`을 노출하고 구현체에서 정확히 반영한다.
 - 쿼리 메서드를 구현할때는 반드시 N+1을 유의하여 구현해야한다
 

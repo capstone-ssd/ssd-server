@@ -3,8 +3,8 @@
 ## Module Context
 - 이 모듈은 전역 공통 규약과 재사용 컴포넌트를 제공한다.
 - 주요 책임
-  - 공통 응답/예외 모델(`ApiResponse`, `ErrorCode`, `GlobalExceptionHandler`)
-  - 공통 설정/프로퍼티
+  - 공통 응답/예외 모델(`ApiResponse`, `ErrorCode`, `CustomException`)
+  - 에러 알림 계약(`ErrorAlertContext`, `ErrorAlertNotifier`)
   - 범용 유틸리티
 - 다른 모듈에서 재사용되므로 변경 시 파급 범위가 크다.
 
@@ -28,32 +28,24 @@
 - 전역 예외 핸들러에서 HTTP 상태와 `ErrorCode` 매핑을 유지한다.
 - 성공 응답은 `ApiResponse.ok(...)`, 실패 응답은 `ApiResponse.fail(...)` 규약을 따른다.
 
-### Configuration Pattern
-- 환경 설정 키는 공통 property 패키지 아래 클래스로 바인딩한다.
-- 보안/외부연동 설정은 Config 클래스에서 명시적으로 주입한다.
-- 설정 추가 시 필수값 검증과 기본값 전략을 함께 정의한다.
-
 ### Utility Pattern
 - 유틸 클래스는 상태를 가지지 않도록 설계한다.
-- JWT/쿠키/AI 응답 파싱 유틸 변경 시 호출처 시그니처 호환성을 유지한다.
+- 공통 유틸은 특정 모듈 소유 설정이나 기술 구현을 직접 참조하지 않는다.
 
 ## Testing Strategy
 - 모듈 테스트 실행: `./gradlew :ssd-common:test`
 - 권장 테스트 범위
   - ErrorCode와 HTTP 상태 매핑 검증
-  - ConfigurationProperties 바인딩 검증
-  - 공통 유틸과 공통 persistence 지원 클래스 검증
+  - 공통 유틸과 알림 컨텍스트 검증
 - 변경 시 최소 검증 항목
   - 공통 응답 스키마 역호환성
-  - 예외 핸들링 누락 여부
-  - Redis/Feign 설정 로딩 실패 여부
+  - 공통 예외 타입 누락 여부
 
 ## Local Golden Rules
 - Do
   - 공통 계약 변경 시 영향을 받는 모듈(`ssd-api`, `ssd-domain`, `ssd-auth`, `ssd-external`, `ssd-infra`)을 같이 점검한다.
   - 에러 코드 추가 시 코드/메시지/HTTP 상태를 한 세트로 관리한다.
-  - 프로퍼티 키 변경 시 application 설정과 동기화한다.
 - Don't
   - 도메인 특화 로직을 공통 모듈에 넣지 않는다.
+  - 설정/프로퍼티/웹 어드바이스를 공통 모듈에 다시 끌어오지 않는다.
   - 공통 유틸에 부작용(전역 상태 변경)을 추가하지 않는다.
-  - 임시 하드코딩 값으로 설정 주입 문제를 우회하지 않는다.
