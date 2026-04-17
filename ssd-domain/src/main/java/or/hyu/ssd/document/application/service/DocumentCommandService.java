@@ -23,10 +23,11 @@ import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 import or.hyu.ssd.document.application.result.CreateDocumentResult;
 import or.hyu.ssd.document.application.result.DocumentBookmarkResult;
 import or.hyu.ssd.document.application.result.UpdateDocumentResult;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
-import or.hyu.ssd.common.util.OptimisticRetryExecutor;
+import or.hyu.ssd.document.application.support.OptimisticRetryExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,55 +53,58 @@ public class DocumentCommandService {
     private final DocumentLogRepository documentLogRepository;
     private final EvaluatorReviewRepository evaluatorReviewRepository;
     private final FolderRepository folderRepository;
+    private final MemberRepository memberRepository;
     private final OptimisticRetryExecutor optimisticRetryExecutor;
     private final DocumentImageResolver documentImageResolver;
 
-    public CreateDocumentResult createDocument(CustomUserDetails user, CreateDocumentCommand command) {
-        return createDocument(user, command, List.of());
+    public CreateDocumentResult createDocument(Long memberId, CreateDocumentCommand command) {
+        return createDocument(memberId, command, List.of());
     }
 
     public CreateDocumentResult createDocument(
-            CustomUserDetails user,
+            Long memberId,
             CreateDocumentCommand command,
             List<DocumentImageUploadPart> imageUploadParts
     ) {
-        assertAuthenticatedMember(user);
+        assertAuthenticatedMember(memberId);
         validateFolderId(command.folderId());
+        Member member = getMember(memberId);
 
         List<ResolvedDocumentBlock> resolvedBlocks = resolveCreateBlocks(
                 command.blocks(),
                 imageUploadParts,
-                user.getMember().getId()
+                memberId
         );
         String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
         String title = resolveTitle(command.title(), resolvedText, resolvedBlocks);
-        Folder folder = resolveFolderOrNull(user, command.folderId());
-        Document document = Document.of(title, resolvedText, folder, false, user.getMember());
+        Folder folder = resolveFolderOrNull(memberId, command.folderId());
+        Document document = Document.of(title, resolvedText, folder, false, member);
 
         Document saved = documentRepository.save(document);
         saveCreateParagraphsIfPresent(saved, resolvedBlocks);
-        saveDocumentLog(saved, user);
+        saveDocumentLog(saved, member);
         return CreateDocumentResult.of(saved.getId());
     }
 
-    public UpdateDocumentResult updateDocument(Long documentId, CustomUserDetails user, UpdateDocumentCommand command) {
-        return updateDocument(documentId, user, command, List.of());
+    public UpdateDocumentResult updateDocument(Long documentId, Long memberId, UpdateDocumentCommand command) {
+        return updateDocument(documentId, memberId, command, List.of());
     }
 
     public UpdateDocumentResult updateDocument(
             Long documentId,
-            CustomUserDetails user,
+            Long memberId,
             UpdateDocumentCommand command,
             List<DocumentImageUploadPart> imageUploadParts
     ) {
         Document document = loadDocument(documentId);
-        assertDocumentOwner(document, user);
+        assertDocumentOwner(document, memberId);
         validateUpdateRequest(command);
+        Member member = getMember(memberId);
 
         List<ResolvedDocumentBlock> resolvedBlocks = resolveUpdateBlocks(
                 command.blocks(),
                 imageUploadParts,
-                user.getMember().getId()
+                memberId
         );
         String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
         String updatedTitle = resolveUpdatedTitle(document.getTitle(), command.title());
@@ -113,14 +117,14 @@ public class DocumentCommandService {
             deletedBlockCount = blockChangeSummary.deletedBlockCount();
             createdBlockCount = blockChangeSummary.createdBlockCount();
         }
-        saveDocumentLog(document, user, deletedBlockCount, createdBlockCount);
+        saveDocumentLog(document, member, deletedBlockCount, createdBlockCount);
 
         return UpdateDocumentResult.of(document.getId());
     }
 
-    public void deleteDocument(Long documentId, CustomUserDetails user) {
+    public void deleteDocument(Long documentId, Long memberId) {
         Document document = loadDocument(documentId);
-        assertDocumentOwner(document, user);
+        assertDocumentOwner(document, memberId);
 
         checkListRepository.deleteAllByDocument(document);
         evaluatorCheckListRepository.deleteAllByDocument(document);
@@ -132,10 +136,10 @@ public class DocumentCommandService {
         documentRepository.delete(document);
     }
 
-    public DocumentBookmarkResult toggleBookmark(Long documentId, CustomUserDetails user) {
+    public DocumentBookmarkResult toggleBookmark(Long documentId, Long memberId) {
         return optimisticRetryExecutor.execute(3, () -> {
             Document document = loadDocument(documentId);
-            assertDocumentOwner(document, user);
+            assertDocumentOwner(document, memberId);
 
             boolean newValue = !document.isBookmark();
             document.updateIfPresent(null, null, null, null, newValue);
@@ -149,32 +153,32 @@ public class DocumentCommandService {
                 .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
-    private void assertAuthenticatedMember(CustomUserDetails user) {
-        if (user == null || user.getMember() == null) {
+    private void assertAuthenticatedMember(Long memberId) {
+        if (memberId == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
     }
 
-    private void assertDocumentOwner(Document document, CustomUserDetails user) {
-        if (document.getMember() == null || user == null || user.getMember() == null) {
+    private void assertDocumentOwner(Document document, Long memberId) {
+        if (document.getMember() == null || memberId == null) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
-        if (!document.getMember().getId().equals(user.getMember().getId())) {
+        if (!document.getMember().getId().equals(memberId)) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
     }
 
-    private Folder resolveFolderOrNull(CustomUserDetails user, Long folderId) {
+    private Folder resolveFolderOrNull(Long memberId, Long folderId) {
         if (folderId == null || folderId == 0L) {
             return null;
         }
 
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.FOLDER_NOT_FOUND));
-        if (folder.getMember() == null || user == null || user.getMember() == null) {
+        if (folder.getMember() == null || memberId == null) {
             throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
-        if (!folder.getMember().getId().equals(user.getMember().getId())) {
+        if (!folder.getMember().getId().equals(memberId)) {
             throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
         return folder;
@@ -424,38 +428,44 @@ public class DocumentCommandService {
                 ));
     }
 
-    private void saveDocumentLog(Document document, CustomUserDetails user) {
-        saveDocumentLog(document, user, 0, 0);
+    private void saveDocumentLog(Document document, Member member) {
+        saveDocumentLog(document, member, 0, 0);
     }
 
-    private void saveDocumentLog(Document document, CustomUserDetails user, int deletedBlockCount, int createdBlockCount) {
-        String editorName = resolveEditorName(user);
+    private void saveDocumentLog(Document document, Member member, int deletedBlockCount, int createdBlockCount) {
+        String editorName = resolveEditorName(member);
         documentLogRepository.save(
-                DocumentLog.of(editorName, resolveEditorEmail(user), deletedBlockCount, createdBlockCount, document)
+                DocumentLog.of(editorName, resolveEditorEmail(member), deletedBlockCount, createdBlockCount, document)
         );
     }
 
-    private String resolveEditorName(CustomUserDetails user) {
-        if (user == null || user.getMember() == null) {
+    private String resolveEditorName(Member member) {
+        if (member == null) {
             return "Unknown";
         }
-        String name = user.getMember().getName();
+        String name = member.getName();
         if (name != null && !name.isBlank()) {
             return name.trim();
         }
-        String email = user.getMember().getEmail();
+        String email = member.getEmail();
         if (email != null && !email.isBlank()) {
             return email.trim();
         }
         return "Unknown";
     }
 
-    private String resolveEditorEmail(CustomUserDetails user) {
-        if (user == null || user.getMember() == null) {
+    private String resolveEditorEmail(Member member) {
+        if (member == null) {
             return null;
         }
-        String email = user.getMember().getEmail();
+        String email = member.getEmail();
         return email == null || email.isBlank() ? null : email.trim();
+    }
+
+    private Member getMember(Long memberId) {
+        assertAuthenticatedMember(memberId);
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new DocumentException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     private record BlockChangeSummary(int deletedBlockCount, int createdBlockCount) {

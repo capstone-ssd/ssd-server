@@ -8,7 +8,7 @@ import or.hyu.ssd.external.ai.dto.ExternalSummarizationBasicRequest;
 import or.hyu.ssd.external.ai.dto.ExternalSummarizationBasicResponse;
 import or.hyu.ssd.external.ai.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.external.ai.dto.ExternalSummarizationKeywordResponse;
-import or.hyu.ssd.external.ai.config.ExternalAiFeignConfig;
+import or.hyu.ssd.external.config.ExternalAiFeignConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

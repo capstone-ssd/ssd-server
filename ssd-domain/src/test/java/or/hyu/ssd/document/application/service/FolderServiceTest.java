@@ -9,7 +9,7 @@ import or.hyu.ssd.document.application.command.UpdateFolderCommand;
 import or.hyu.ssd.document.application.result.FolderContentResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +35,8 @@ class FolderServiceTest {
     private DocumentRepository documentRepository;
     @Mock
     private DocumentCommandService documentCommandService;
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private FolderService folderService;
@@ -44,7 +46,7 @@ class FolderServiceTest {
     void listContent_includeCurrentFolderId() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
 
         // when
         Folder rootA = folder(1L, "작성하기", null, member);
@@ -73,7 +75,7 @@ class FolderServiceTest {
     void listContent_distinguishParentIdAndCurrentFolderId() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Folder parent = folder(10L, "상위", null, member);
         Folder current = folder(20L, "현재", parent, member);
         Folder child = folder(21L, "하위", current, member);
@@ -100,7 +102,7 @@ class FolderServiceTest {
     void listAllContent_returnsAllFoldersAndDocuments() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
 
         // when
         Folder root = folder(1L, "작성하기", null, member);
@@ -133,7 +135,7 @@ class FolderServiceTest {
     void update_throwsWhenNoChangesProvided() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Folder folder = folder(1L, "작성하기", null, member);
         when(folderRepository.findById(1L)).thenReturn(Optional.of(folder));
 
@@ -153,7 +155,7 @@ class FolderServiceTest {
     void update_rejectsBlankName() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Folder folder = folder(1L, "작성하기", null, member);
         when(folderRepository.findById(1L)).thenReturn(Optional.of(folder));
 
@@ -173,7 +175,7 @@ class FolderServiceTest {
     void create_rejectsBlankName() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
 
         // when
         // then

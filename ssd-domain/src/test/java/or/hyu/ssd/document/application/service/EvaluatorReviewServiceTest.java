@@ -16,7 +16,7 @@ import or.hyu.ssd.document.application.result.EvaluatorReviewDetailResult;
 import or.hyu.ssd.document.application.result.EvaluatorReviewListResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.member.repository.MemberRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +34,8 @@ class EvaluatorReviewServiceTest {
     private EvaluatorReviewRepository evaluatorReviewRepository;
     @Mock
     private DocumentRepository documentRepository;
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private EvaluatorReviewService evaluatorReviewService;
@@ -45,13 +47,14 @@ class EvaluatorReviewServiceTest {
         Member member = member(1L, "reviewer@example.com");
         Document document = document(10L, member(2L, "owner@example.com"));
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
+        when(memberRepository.findById(member.getId())).thenReturn(Optional.of(member));
         when(evaluatorReviewRepository.existsByDocumentAndReviewer(document, member)).thenReturn(true);
 
         // when
         // then
         assertThatThrownBy(() -> evaluatorReviewService.create(
                 10L,
-                new CustomUserDetails(member),
+                member.getId(),
                 new CreateEvaluatorReviewCommand(80, 90, 70, "좋은 사업입니다")
         ))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
@@ -66,7 +69,7 @@ class EvaluatorReviewServiceTest {
 
         // when
         // then
-        assertThatThrownBy(() -> evaluatorReviewService.create(10L, new CustomUserDetails(member), null))
+        assertThatThrownBy(() -> evaluatorReviewService.create(10L, member.getId(), null))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("리뷰 요청 본문이 비어 있습니다");
     }
@@ -83,6 +86,7 @@ class EvaluatorReviewServiceTest {
 
         // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
+        when(memberRepository.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
         when(evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)).thenReturn(Optional.of(review));
         when(evaluatorReviewRepository.findAllByDocument(document)).thenReturn(List.of(review, other));
         when(evaluatorReviewRepository.save(any(EvaluatorReview.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -90,7 +94,7 @@ class EvaluatorReviewServiceTest {
         // then
         EvaluatorReviewDetailResult response = evaluatorReviewService.update(
                 10L,
-                new CustomUserDetails(reviewer),
+                reviewer.getId(),
                 new UpdateEvaluatorReviewCommand(100, 80, 60, "수정 의견")
         );
 
@@ -111,7 +115,7 @@ class EvaluatorReviewServiceTest {
 
         // when
         // then
-        assertThatThrownBy(() -> evaluatorReviewService.update(10L, new CustomUserDetails(reviewer), null))
+        assertThatThrownBy(() -> evaluatorReviewService.update(10L, reviewer.getId(), null))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("리뷰 요청 본문이 비어 있습니다");
     }
@@ -127,11 +131,12 @@ class EvaluatorReviewServiceTest {
 
         // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
+        when(memberRepository.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
         when(evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)).thenReturn(Optional.of(review));
         when(evaluatorReviewRepository.findAllByDocument(document)).thenReturn(List.of());
 
         // then
-        evaluatorReviewService.delete(10L, new CustomUserDetails(reviewer));
+        evaluatorReviewService.delete(10L, reviewer.getId());
 
         verify(evaluatorReviewRepository).delete(review);
         assertThat(document.getReviewFeasibilityAvg()).isEqualTo(0.0);
@@ -151,9 +156,10 @@ class EvaluatorReviewServiceTest {
 
         // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
+        when(memberRepository.findById(other.getId())).thenReturn(Optional.of(other));
 
         // then
-        assertThatThrownBy(() -> evaluatorReviewService.list(10L, new CustomUserDetails(other)))
+        assertThatThrownBy(() -> evaluatorReviewService.list(10L, other.getId()))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }
@@ -170,10 +176,11 @@ class EvaluatorReviewServiceTest {
 
         // when
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
+        when(memberRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
         when(evaluatorReviewRepository.findAllByDocumentOrderByUpdatedAtDesc(document)).thenReturn(List.of(first, second));
 
         // then
-        EvaluatorReviewListResult response = evaluatorReviewService.list(10L, new CustomUserDetails(owner));
+        EvaluatorReviewListResult response = evaluatorReviewService.list(10L, owner.getId());
 
         assertThat(response.documentId()).isEqualTo(10L);
         assertThat(response.averageTotalScore()).isEqualTo(75.0);

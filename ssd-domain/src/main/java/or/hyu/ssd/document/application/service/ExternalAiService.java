@@ -25,7 +25,6 @@ import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
 import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
@@ -48,8 +47,8 @@ public class ExternalAiService {
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
 
-    public ExternalAiEvaluationCardResult evaluate(ExternalDocumentIdCommand command, CustomUserDetails user) {
-        Document doc = getOwnedDocument(command.docId(), user);
+    public ExternalAiEvaluationCardResult evaluate(ExternalDocumentIdCommand command, Long memberId) {
+        Document doc = getOwnedDocument(command.docId(), memberId);
         List<DocumentParagraph> currentParagraphs = documentParagraphRepository.findParagraphBlocks(doc);
 
         ExternalEvaluationResponse response = externalAiPort.evaluate(new ExternalEvaluationRequest(
@@ -89,8 +88,8 @@ public class ExternalAiService {
         );
     }
 
-    public ExternalAiSummaryResult summarizeBasic(ExternalDocumentIdCommand command, CustomUserDetails user) {
-        Document doc = getOwnedDocument(command.docId(), user);
+    public ExternalAiSummaryResult summarizeBasic(ExternalDocumentIdCommand command, Long memberId) {
+        Document doc = getOwnedDocument(command.docId(), memberId);
         ExternalSummarizationBasicResponse response = externalAiPort.summarizeBasic(new ExternalSummarizationBasicRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
@@ -101,8 +100,8 @@ public class ExternalAiService {
         return externalAiPersistenceService.saveSummary(doc.getId(), summary, shortSummary);
     }
 
-    public ExternalAiKeywordResult summarizeKeyword(ExternalDocumentIdCommand command, CustomUserDetails user) {
-        Document doc = getOwnedDocument(command.docId(), user);
+    public ExternalAiKeywordResult summarizeKeyword(ExternalDocumentIdCommand command, Long memberId) {
+        Document doc = getOwnedDocument(command.docId(), memberId);
         ExternalSummarizationKeywordResponse response = externalAiPort.summarizeKeyword(new ExternalSummarizationKeywordRequest(
                 String.valueOf(doc.getId()),
                 doc.getContent()
@@ -111,8 +110,8 @@ public class ExternalAiService {
         return externalAiPersistenceService.saveKeyword(doc.getId(), normalize(response.keyword()));
     }
 
-    public ExternalAiDocumentCheckResult checkNewText(ExternalDocumentIdCommand command, CustomUserDetails user) {
-        Document doc = getOwnedDocument(command.docId(), user);
+    public ExternalAiDocumentCheckResult checkNewText(ExternalDocumentIdCommand command, Long memberId) {
+        Document doc = getOwnedDocument(command.docId(), memberId);
         List<DocumentParagraph> currentParagraphs = documentParagraphRepository.findParagraphBlocks(doc);
         if (currentParagraphs.isEmpty()) {
             throw new DocumentException(ErrorCode.DOCUMENT_PARAGRAPH_NOT_FOUND);
@@ -142,8 +141,8 @@ public class ExternalAiService {
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiEvaluationCardResult getEvaluation(Long documentId, CustomUserDetails user) {
-        Document doc = getOwnedDocument(documentId, getMemberId(user));
+    public ExternalAiEvaluationCardResult getEvaluation(Long documentId, Long memberId) {
+        Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiEvaluationCardResult.of(
                 doc.getId(),
                 doc.getExternalAiTotalScore(),
@@ -157,28 +156,29 @@ public class ExternalAiService {
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiSummaryResult getSummary(Long documentId, CustomUserDetails user) {
-        Document doc = getOwnedDocument(documentId, getMemberId(user));
+    public ExternalAiSummaryResult getSummary(Long documentId, Long memberId) {
+        Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiSummaryResult.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiKeywordResult getKeyword(Long documentId, CustomUserDetails user) {
-        Document doc = getOwnedDocument(documentId, getMemberId(user));
+    public ExternalAiKeywordResult getKeyword(Long documentId, Long memberId) {
+        Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiKeywordResult.of(doc.getId(), doc.getKeywords());
     }
 
     @Transactional(readOnly = true)
-    public ExternalAiChecklistResult getChecklist(Long documentId, CustomUserDetails user) {
-        Document doc = getOwnedDocument(documentId, getMemberId(user));
+    public ExternalAiChecklistResult getChecklist(Long documentId, Long memberId) {
+        Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiChecklistResult.of(doc.getId(), doc.getExternalChecklistSnapshot());
     }
 
-    private Document getOwnedDocument(String rawDocId, CustomUserDetails user) {
-        return getOwnedDocument(parseDocumentId(rawDocId), getMemberId(user));
+    private Document getOwnedDocument(String rawDocId, Long memberId) {
+        return getOwnedDocument(parseDocumentId(rawDocId), memberId);
     }
 
     private Document getOwnedDocument(Long docId, Long memberId) {
+        assertMemberId(memberId);
         Document doc = documentRepository.findById(docId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
         if (doc.getMember() == null || doc.getMember().getId() == null) {
@@ -190,11 +190,10 @@ public class ExternalAiService {
         return doc;
     }
 
-    private Long getMemberId(CustomUserDetails user) {
-        if (user == null || user.getMember() == null || user.getMember().getId() == null) {
+    private void assertMemberId(Long memberId) {
+        if (memberId == null) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
-        return user.getMember().getId();
     }
 
     private Long parseDocumentId(String rawDocId) {

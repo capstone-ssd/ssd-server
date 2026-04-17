@@ -18,7 +18,7 @@ import or.hyu.ssd.document.application.service.DocumentQueryService;
 import or.hyu.ssd.document.application.support.DocumentImageUploadPart;
 import or.hyu.ssd.document.application.support.DocumentSort;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
@@ -83,7 +83,7 @@ public class DocumentController {
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CreateDocumentResponse dto = CreateDocumentResponse.from(documentCommandService.createDocument(user, request.toCommand()));
+        CreateDocumentResponse dto = CreateDocumentResponse.from(documentCommandService.createDocument(user.getMember().getId(), request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
@@ -107,7 +107,7 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         CreateDocumentResponse dto = CreateDocumentResponse.from(
-                documentCommandService.createDocument(user, request.toCommand(), toImageUploadParts(imageMetas, files))
+                documentCommandService.createDocument(user.getMember().getId(), request.toCommand(), toImageUploadParts(imageMetas, files))
         );
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
@@ -154,7 +154,7 @@ public class DocumentController {
             @Valid @RequestBody UpdateDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UpdateDocumentResponse dto = UpdateDocumentResponse.from(documentCommandService.updateDocument(id, user, request.toCommand()));
+        UpdateDocumentResponse dto = UpdateDocumentResponse.from(documentCommandService.updateDocument(id, user.getMember().getId(), request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
@@ -176,7 +176,7 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateDocumentResponse dto = UpdateDocumentResponse.from(
-                documentCommandService.updateDocument(id, user, request.toCommand(), toImageUploadParts(imageMetas, files))
+                documentCommandService.updateDocument(id, user.getMember().getId(), request.toCommand(), toImageUploadParts(imageMetas, files))
         );
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
@@ -210,7 +210,7 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        documentCommandService.deleteDocument(id, user);
+        documentCommandService.deleteDocument(id, user.getMember().getId());
         return ResponseEntity.ok(ApiResponse.ok("문서가 삭제되었습니다"));
     }
 
@@ -245,7 +245,7 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentDetailResult result = documentQueryService.getDocument(id, user);
+        DocumentDetailResult result = documentQueryService.getDocument(id, user.getMember().getId());
         GetDocumentResponse dto = GetDocumentResponse.from(result);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 조회되었습니다"));
     }
@@ -291,7 +291,7 @@ public class DocumentController {
             @Parameter(description = "폴더 ID (없으면 전체, 0이면 루트)")
             @RequestParam(name = "folderId", required = false) @PositiveOrZero(message = "folderId는 0 이상이어야 합니다") Long folderId
     ) {
-        List<DocumentListItemResponse> list = documentQueryService.listDocuments(user, sort, folderId).stream()
+        List<DocumentListItemResponse> list = documentQueryService.listDocuments(user.getMember().getId(), sort, folderId).stream()
                 .map(DocumentListItemResponse::from)
                 .toList();
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
@@ -328,7 +328,7 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentBookmarkResponse dto = DocumentBookmarkResponse.from(documentCommandService.toggleBookmark(id, user));
+        DocumentBookmarkResponse dto = DocumentBookmarkResponse.from(documentCommandService.toggleBookmark(id, user.getMember().getId()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "즐겨찾기 상태가 토글되었습니다"));
     }
 

@@ -27,7 +27,6 @@ import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
 
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,7 @@ class ExternalAiServiceTest {
     void summarizeBasic_delegatesPersistence() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document document = document(7L, member);
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
         when(externalAiPort.summarizeBasic(any())).thenReturn(
@@ -84,7 +83,7 @@ class ExternalAiServiceTest {
     void evaluate_delegatesPersistence() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document document = document(7L, member);
         List<DocumentParagraph> currentParagraphs = List.of(
                 DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "문단1", "", 1, 1, document)
@@ -131,7 +130,7 @@ class ExternalAiServiceTest {
     void checkNewText_returnsStoredChecklistWhenNoChangedBlock() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document document = document(7L, member);
         document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
@@ -154,7 +153,7 @@ class ExternalAiServiceTest {
     void getSummary_returnsStoredValues() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document document = document(7L, member);
         document.updateSummary("저장된 요약", "짧은 요약");
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
@@ -172,7 +171,7 @@ class ExternalAiServiceTest {
     void getChecklist_returnsStoredChecklist() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document document = document(7L, member);
         document.overwriteExternalChecklist(Map.of("problem_is_clear", true));
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
@@ -190,7 +189,7 @@ class ExternalAiServiceTest {
     void evaluate_rejectsInvalidDocId() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
 
         // when
         // then

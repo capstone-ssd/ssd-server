@@ -12,7 +12,6 @@ import or.hyu.ssd.document.application.result.DocumentDetailResult;
 import or.hyu.ssd.document.application.result.DocumentListItemResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +44,7 @@ class DocumentQueryServiceTest {
     void getDocument_returnsOwnedDocumentWithBlocks() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document document = document(42L, "문서 제목", null, member);
 
         // when
@@ -56,7 +55,7 @@ class DocumentQueryServiceTest {
         ));
 
         // then
-        DocumentDetailResult result = documentQueryService.getDocument(42L, user);
+        DocumentDetailResult result = documentQueryService.getDocument(42L, member.getId());
 
         assertThat(result.id()).isEqualTo(42L);
         assertThat(result.authorId()).isEqualTo(1L);
@@ -70,7 +69,7 @@ class DocumentQueryServiceTest {
     void listDocuments_returnsRootDocuments() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         Document rootDocument = document(100L, "루트 문서", null, member);
 
         // when
@@ -78,7 +77,7 @@ class DocumentQueryServiceTest {
                 .thenReturn(List.of(rootDocument));
 
         // then
-        List<DocumentListItemResult> results = documentQueryService.listDocuments(user, DocumentSort.LATEST, 0L);
+        List<DocumentListItemResult> results = documentQueryService.listDocuments(member.getId(), DocumentSort.LATEST, 0L);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).id()).isEqualTo(100L);

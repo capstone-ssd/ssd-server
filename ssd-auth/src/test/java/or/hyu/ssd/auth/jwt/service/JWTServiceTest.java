@@ -2,8 +2,8 @@ package or.hyu.ssd.auth.jwt.service;
 
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.auth.jwt.support.RefreshTokenValidator;
-import or.hyu.ssd.auth.jwt.property.CookieConfig;
-import or.hyu.ssd.auth.jwt.property.JWTConfig;
+import or.hyu.ssd.auth.config.CookieConfig;
+import or.hyu.ssd.auth.config.JWTConfig;
 import or.hyu.ssd.auth.jwt.support.JWTUtil;
 import or.hyu.ssd.auth.jwt.repository.AccessTokenBlacklistRepository;
 import or.hyu.ssd.auth.jwt.repository.RefreshTokenRepository;

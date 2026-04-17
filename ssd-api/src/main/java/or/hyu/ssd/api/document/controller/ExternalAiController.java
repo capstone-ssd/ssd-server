@@ -14,7 +14,7 @@ import or.hyu.ssd.api.document.response.ExternalAiSummaryResponse;
 import or.hyu.ssd.api.document.request.ExternalDocumentIdRequest;
 import or.hyu.ssd.document.application.service.ExternalAiBatchService;
 import or.hyu.ssd.document.application.service.ExternalAiService;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -63,7 +63,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiEvaluationCardResponse response = ExternalAiEvaluationCardResponse.from(
-                externalAiService.evaluate(request.toCommand(), user)
+                externalAiService.evaluate(request.toCommand(), user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 종합평가를 성공적으로 반영했습니다"));
     }
@@ -83,7 +83,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiEvaluationCardResponse response = ExternalAiEvaluationCardResponse.from(
-                externalAiService.getEvaluation(documentId, user)
+                externalAiService.getEvaluation(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 종합평가가 조회되었습니다"));
     }
@@ -114,7 +114,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiSummaryResponse response = ExternalAiSummaryResponse.from(
-                externalAiService.summarizeBasic(request.toCommand(), user)
+                externalAiService.summarizeBasic(request.toCommand(), user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 요약 API를 성공적으로 반영했습니다"));
     }
@@ -134,7 +134,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiSummaryResponse response = ExternalAiSummaryResponse.from(
-                externalAiService.getSummary(documentId, user)
+                externalAiService.getSummary(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 요약이 조회되었습니다"));
     }
@@ -152,7 +152,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiKeywordResponse response = ExternalAiKeywordResponse.from(
-                externalAiService.summarizeKeyword(request.toCommand(), user)
+                externalAiService.summarizeKeyword(request.toCommand(), user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 키워드 API를 성공적으로 반영했습니다"));
     }
@@ -172,7 +172,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiKeywordResponse response = ExternalAiKeywordResponse.from(
-                externalAiService.getKeyword(documentId, user)
+                externalAiService.getKeyword(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 키워드가 조회되었습니다"));
     }
@@ -208,7 +208,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiBatchResponse response = ExternalAiBatchResponse.from(
-                externalAiBatchService.generateAll(request.toCommand(), user)
+                externalAiBatchService.generateAll(request.toCommand(), user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 AI 결과가 일괄 반영되었습니다"));
     }
@@ -232,7 +232,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiDocumentCheckResponse response = ExternalAiDocumentCheckResponse.from(
-                externalAiService.checkNewText(request.toCommand(), user)
+                externalAiService.checkNewText(request.toCommand(), user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "외부 체크리스트 평가 API를 성공적으로 반영했습니다"));
     }
@@ -252,7 +252,7 @@ public class ExternalAiController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ExternalAiChecklistResponse response = ExternalAiChecklistResponse.from(
-                externalAiService.getChecklist(documentId, user)
+                externalAiService.getChecklist(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "저장된 외부 체크리스트가 조회되었습니다"));
     }

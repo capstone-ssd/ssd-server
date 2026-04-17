@@ -1,28 +1,31 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
-import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
 import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.DocumentBlockType;
 import or.hyu.ssd.document.domain.entity.DocumentParagraph;
 import or.hyu.ssd.document.repository.DocumentParagraphRepository;
+import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.DocumentParagraphJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static or.hyu.ssd.document.domain.entity.QDocumentParagraph.documentParagraph;
+import java.util.stream.StreamSupport;
 
 @Repository
 @RequiredArgsConstructor
 public class DocumentParagraphRepositoryImpl implements DocumentParagraphRepository {
     private final DocumentParagraphJpaRepository documentParagraphJpaRepository;
-    private final JPAQueryFactory queryFactory;
 
     @Override
     public List<DocumentParagraph> saveAll(Iterable<DocumentParagraph> entities) {
-        return documentParagraphJpaRepository.saveAll(entities);
+        return documentParagraphJpaRepository.saveAll(StreamSupport.stream(entities.spliterator(), false)
+                        .map(DocumentPersistenceMapper::toJpa)
+                        .toList()).stream()
+                .map(DocumentPersistenceMapper::toDomain)
+                .toList();
     }
 
     @Override
@@ -32,27 +35,41 @@ public class DocumentParagraphRepositoryImpl implements DocumentParagraphReposit
 
     @Override
     public List<DocumentParagraph> findBlocks(Document document) {
-        return queryFactory.selectFrom(documentParagraph)
-                .where(documentParagraph.document.eq(document))
-                .orderBy(documentParagraph.pageNumber.asc(), documentParagraph.blockId.asc(), documentParagraph.id.asc())
-                .fetch();
+        return documentParagraphJpaRepository.findAllByDocumentOrderByPageNumberAscBlockIdAscIdAsc(
+                        DocumentPersistenceMapper.toDocumentRef(document)
+                ).stream()
+                .map(DocumentPersistenceMapper::toDomain)
+                .toList();
     }
 
     @Override
     public List<DocumentParagraph> findParagraphBlocks(Document document) {
-        return queryFactory.selectFrom(documentParagraph)
-                .where(
-                        documentParagraph.document.eq(document),
-                        documentParagraph.type.eq(DocumentBlockType.PARAGRAPH)
-                                .or(documentParagraph.type.isNull())
-                )
-                .orderBy(documentParagraph.pageNumber.asc(), documentParagraph.blockId.asc(), documentParagraph.id.asc())
-                .fetch();
+        List<DocumentParagraph> paragraphs = new ArrayList<>();
+        paragraphs.addAll(documentParagraphJpaRepository.findAllByDocumentAndTypeOrderByPageNumberAscBlockIdAscIdAsc(
+                DocumentPersistenceMapper.toDocumentRef(document),
+                DocumentBlockType.PARAGRAPH
+        ).stream().map(DocumentPersistenceMapper::toDomain).toList());
+        paragraphs.addAll(documentParagraphJpaRepository.findAllByDocumentAndTypeIsNullOrderByPageNumberAscBlockIdAscIdAsc(
+                DocumentPersistenceMapper.toDocumentRef(document)
+        ).stream().map(DocumentPersistenceMapper::toDomain).toList());
+        paragraphs.sort((left, right) -> {
+            int pageOrder = Integer.compare(left.getPageNumber(), right.getPageNumber());
+            if (pageOrder != 0) {
+                return pageOrder;
+            }
+            int blockOrder = Integer.compare(left.getBlockId(), right.getBlockId());
+            if (blockOrder != 0) {
+                return blockOrder;
+            }
+            return Long.compare(left.getId(), right.getId());
+        });
+        return paragraphs;
     }
 
     @Override
     public Optional<DocumentParagraph> findByDocumentAndBlockId(Document document, int blockId) {
-        return documentParagraphJpaRepository.findByDocumentAndBlockId(document, blockId);
+        return documentParagraphJpaRepository.findByDocumentAndBlockId(DocumentPersistenceMapper.toDocumentRef(document), blockId)
+                .map(DocumentPersistenceMapper::toDomain);
     }
 
     @Override
@@ -62,6 +79,6 @@ public class DocumentParagraphRepositoryImpl implements DocumentParagraphReposit
 
     @Override
     public void deleteAllByDocument(Document document) {
-        documentParagraphJpaRepository.deleteAllByDocument(document);
+        documentParagraphJpaRepository.deleteAllByDocument(DocumentPersistenceMapper.toDocumentRef(document));
     }
 }

@@ -1,13 +1,13 @@
 package or.hyu.ssd.infra.persistence.document.repository.jpa;
 
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentLogJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface DocumentLogJpaRepository extends JpaRepository<DocumentLog, Long> {
-    List<DocumentLog> findAllByDocumentOrderByCreatedAtDesc(Document document);
+public interface DocumentLogJpaRepository extends JpaRepository<DocumentLogJpaEntity, Long> {
+    List<DocumentLogJpaEntity> findAllByDocumentOrderByCreatedAtDesc(DocumentJpaEntity document);
 
-    void deleteAllByDocument(Document document);
+    void deleteAllByDocument(DocumentJpaEntity document);
 }

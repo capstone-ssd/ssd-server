@@ -13,7 +13,7 @@ import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.command.CreateDocumentCommentCommand;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.member.repository.MemberRepository;
 
 import java.util.Optional;
 
@@ -29,6 +29,8 @@ class DocumentCommentServiceTest {
     private DocumentParagraphRepository documentParagraphRepository;
     @Mock
     private DocumentCommentRepository documentCommentRepository;
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private DocumentCommentService documentCommentService;
@@ -41,12 +43,13 @@ class DocumentCommentServiceTest {
         Member other = member(2L, "other@example.com");
         Document document = document(10L, owner);
         when(documentRepository.findById(10L)).thenReturn(Optional.of(document));
+        when(memberRepository.findById(other.getId())).thenReturn(Optional.of(other));
 
         // when
         // then
         assertThatThrownBy(() -> documentCommentService.create(
                 10L,
-                new CustomUserDetails(other),
+                other.getId(),
                 new CreateDocumentCommentCommand(1, "주석")
         ))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
@@ -66,7 +69,7 @@ class DocumentCommentServiceTest {
         // then
         assertThatThrownBy(() -> documentCommentService.list(
                 10L,
-                new CustomUserDetails(other)
+                other.getId()
         ))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");

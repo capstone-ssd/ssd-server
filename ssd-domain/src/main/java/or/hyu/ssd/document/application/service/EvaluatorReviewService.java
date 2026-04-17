@@ -12,7 +12,7 @@ import or.hyu.ssd.document.application.result.EvaluatorReviewIdResult;
 import or.hyu.ssd.document.application.result.EvaluatorReviewListItemResult;
 import or.hyu.ssd.document.application.result.EvaluatorReviewListResult;
 import or.hyu.ssd.member.domain.entity.Member;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
@@ -27,11 +27,12 @@ public class EvaluatorReviewService {
 
     private final EvaluatorReviewRepository evaluatorReviewRepository;
     private final DocumentRepository documentRepository;
+    private final MemberRepository memberRepository;
 
-    public EvaluatorReviewIdResult create(Long documentId, CustomUserDetails user, CreateEvaluatorReviewCommand command) {
+    public EvaluatorReviewIdResult create(Long documentId, Long memberId, CreateEvaluatorReviewCommand command) {
         validateCommand(command);
         Document document = getDocument(documentId);
-        Member reviewer = getReviewer(user);
+        Member reviewer = getReviewer(memberId);
 
         if (evaluatorReviewRepository.existsByDocumentAndReviewer(document, reviewer)) {
             throw new DocumentException(ErrorCode.REVIEW_ALREADY_EXISTS);
@@ -50,10 +51,10 @@ public class EvaluatorReviewService {
         return EvaluatorReviewIdResult.of(saved.getId());
     }
 
-    public EvaluatorReviewDetailResult update(Long documentId, CustomUserDetails user, UpdateEvaluatorReviewCommand command) {
+    public EvaluatorReviewDetailResult update(Long documentId, Long memberId, UpdateEvaluatorReviewCommand command) {
         validateCommand(command);
         Document document = getDocument(documentId);
-        Member reviewer = getReviewer(user);
+        Member reviewer = getReviewer(memberId);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
                 .orElseThrow(() -> new DocumentException(ErrorCode.REVIEW_NOT_FOUND));
 
@@ -69,17 +70,17 @@ public class EvaluatorReviewService {
     }
 
     @Transactional(readOnly = true)
-    public EvaluatorReviewDetailResult getMyReview(Long documentId, CustomUserDetails user) {
+    public EvaluatorReviewDetailResult getMyReview(Long documentId, Long memberId) {
         Document document = getDocument(documentId);
-        Member reviewer = getReviewer(user);
+        Member reviewer = getReviewer(memberId);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
                 .orElseThrow(() -> new DocumentException(ErrorCode.REVIEW_NOT_FOUND));
         return EvaluatorReviewDetailResult.of(review);
     }
 
     @Transactional(readOnly = true)
-    public EvaluatorReviewListResult list(Long documentId, CustomUserDetails user) {
-        Document document = getOwnedDocument(documentId, user);
+    public EvaluatorReviewListResult list(Long documentId, Long memberId) {
+        Document document = getOwnedDocument(documentId, memberId);
         List<EvaluatorReview> reviews = evaluatorReviewRepository.findAllByDocumentOrderByUpdatedAtDesc(document);
         List<EvaluatorReviewListItemResult> items = reviews.stream()
                 .map(EvaluatorReviewListItemResult::of)
@@ -94,9 +95,9 @@ public class EvaluatorReviewService {
         return EvaluatorReviewListResult.of(document.getId(), averageTotalScore, reviewCount, items);
     }
 
-    public void delete(Long documentId, CustomUserDetails user) {
+    public void delete(Long documentId, Long memberId) {
         Document document = getDocument(documentId);
-        Member reviewer = getReviewer(user);
+        Member reviewer = getReviewer(memberId);
         EvaluatorReview review = evaluatorReviewRepository.findByDocumentAndReviewer(document, reviewer)
                 .orElseThrow(() -> new DocumentException(ErrorCode.REVIEW_NOT_FOUND));
 
@@ -124,20 +125,21 @@ public class EvaluatorReviewService {
                 .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
     }
 
-    private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
+    private Document getOwnedDocument(Long documentId, Long memberId) {
         Document document = getDocument(documentId);
-        Member member = getReviewer(user);
+        Member member = getReviewer(memberId);
         if (document.getMember() == null || !document.getMember().getId().equals(member.getId())) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return document;
     }
 
-    private Member getReviewer(CustomUserDetails user) {
-        if (user == null || user.getMember() == null) {
+    private Member getReviewer(Long memberId) {
+        if (memberId == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
-        return user.getMember();
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new DocumentException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     private void validateCommand(CreateEvaluatorReviewCommand command) {

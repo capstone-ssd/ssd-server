@@ -12,7 +12,8 @@ import or.hyu.ssd.document.application.result.DocumentListItemResult;
 import or.hyu.ssd.document.application.result.FolderContentResult;
 import or.hyu.ssd.document.application.result.FolderListItemResult;
 import or.hyu.ssd.document.application.result.UpdateFolderResult;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.data.domain.Sort;
@@ -30,21 +31,22 @@ public class FolderService {
     private final FolderRepository folderRepository;
     private final DocumentRepository documentRepository;
     private final DocumentCommandService documentCommandService;
+    private final MemberRepository memberRepository;
 
-    public CreateFolderResult create(CustomUserDetails user, CreateFolderCommand command) {
+    public CreateFolderResult create(Long memberId, CreateFolderCommand command) {
         validateCreateRequest(command);
-        ensureAuthenticated(user);
+        ensureAuthenticated(memberId);
 
         String name = command.name().trim();
         String color = trimOrNull(command.color());
-        Folder parent = resolveParent(user, command.parentId());
+        Folder parent = resolveParent(memberId, command.parentId());
 
-        Folder saved = folderRepository.save(Folder.of(name, color, parent, user.getMember()));
+        Folder saved = folderRepository.save(Folder.of(name, color, parent, getMember(memberId)));
         return CreateFolderResult.of(saved.getId());
     }
 
-    public UpdateFolderResult update(Long folderId, CustomUserDetails user, UpdateFolderCommand command) {
-        Folder folder = getFolderOwned(folderId, user);
+    public UpdateFolderResult update(Long folderId, Long memberId, UpdateFolderCommand command) {
+        Folder folder = getFolderOwned(folderId, memberId);
         validateUpdateRequest(command);
 
         String name = trimOrNull(command.name());
@@ -57,7 +59,7 @@ public class FolderService {
             if (command.parentId() == 0L) {
                 folder.updateParent(null);
             } else {
-                Folder newParent = getFolderOwned(command.parentId(), user);
+                Folder newParent = getFolderOwned(command.parentId(), memberId);
                 ensureMovable(folder, newParent);
                 folder.updateParent(newParent);
             }
@@ -66,15 +68,14 @@ public class FolderService {
         return UpdateFolderResult.of(folder.getId());
     }
 
-    public void delete(Long folderId, CustomUserDetails user) {
-        Folder folder = getFolderOwned(folderId, user);
-        deleteRecursively(folder, user);
+    public void delete(Long folderId, Long memberId) {
+        Folder folder = getFolderOwned(folderId, memberId);
+        deleteRecursively(folder, memberId);
     }
 
     @Transactional(readOnly = true)
-    public FolderContentResult listContent(CustomUserDetails user, Long parentId) {
-        ensureAuthenticated(user);
-        Long memberId = user.getMember().getId();
+    public FolderContentResult listContent(Long memberId, Long parentId) {
+        ensureAuthenticated(memberId);
         Long requestedFolderId = (parentId == null) ? 0L : parentId;
         Long currentFolderId = 0L;
         Long parentFolderId = 0L;
@@ -87,7 +88,7 @@ public class FolderService {
             folders = folderRepository.findAllByMember_IdAndParentIsNull(memberId);
             documents = documentRepository.findAllByMember_IdAndFolderIsNull(memberId, sort);
         } else {
-            Folder currentFolder = getFolderOwned(requestedFolderId, user);
+            Folder currentFolder = getFolderOwned(requestedFolderId, memberId);
             currentFolderId = currentFolder.getId();
             parentFolderId = currentFolder.getParent() == null ? 0L : currentFolder.getParent().getId();
             folders = folderRepository.findAllByMember_IdAndParent_Id(memberId, requestedFolderId);
@@ -103,9 +104,8 @@ public class FolderService {
     }
 
     @Transactional(readOnly = true)
-    public FolderContentResult listAllContent(CustomUserDetails user) {
-        ensureAuthenticated(user);
-        Long memberId = user.getMember().getId();
+    public FolderContentResult listAllContent(Long memberId) {
+        ensureAuthenticated(memberId);
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
 
         List<Folder> folders = folderRepository.findAllByMember_Id(memberId, sort);
@@ -119,10 +119,10 @@ public class FolderService {
         );
     }
 
-    private void deleteRecursively(Folder folder, CustomUserDetails user) {
+    private void deleteRecursively(Folder folder, Long memberId) {
         List<Document> documents = documentRepository.findAllByFolder_Id(folder.getId());
         for (Document document : documents) {
-            documentCommandService.deleteDocument(document.getId(), user);
+            documentCommandService.deleteDocument(document.getId(), memberId);
         }
 
         List<Folder> children = folderRepository.findAllByMember_IdAndParent_Id(
@@ -130,39 +130,45 @@ public class FolderService {
                 folder.getId()
         );
         for (Folder child : children) {
-            deleteRecursively(child, user);
+            deleteRecursively(child, memberId);
         }
 
         folderRepository.delete(folder);
     }
 
-    private Folder resolveParent(CustomUserDetails user, Long parentId) {
+    private Folder resolveParent(Long memberId, Long parentId) {
         if (parentId == null || parentId == 0L) {
             return null;
         }
-        return getFolderOwned(parentId, user);
+        return getFolderOwned(parentId, memberId);
     }
 
-    private Folder getFolderOwned(Long folderId, CustomUserDetails user) {
+    private Folder getFolderOwned(Long folderId, Long memberId) {
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.FOLDER_NOT_FOUND));
-        ensureOwner(folder, user);
+        ensureOwner(folder, memberId);
         return folder;
     }
 
-    private void ensureOwner(Folder folder, CustomUserDetails user) {
-        if (folder.getMember() == null || user == null || user.getMember() == null) {
+    private void ensureOwner(Folder folder, Long memberId) {
+        if (folder.getMember() == null || memberId == null) {
             throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
-        if (!folder.getMember().getId().equals(user.getMember().getId())) {
+        if (!folder.getMember().getId().equals(memberId)) {
             throw new DocumentException(ErrorCode.FOLDER_FORBIDDEN);
         }
     }
 
-    private void ensureAuthenticated(CustomUserDetails user) {
-        if (user == null || user.getMember() == null) {
+    private void ensureAuthenticated(Long memberId) {
+        if (memberId == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
         }
+    }
+
+    private Member getMember(Long memberId) {
+        ensureAuthenticated(memberId);
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new DocumentException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     private void ensureMovable(Folder folder, Folder newParent) {

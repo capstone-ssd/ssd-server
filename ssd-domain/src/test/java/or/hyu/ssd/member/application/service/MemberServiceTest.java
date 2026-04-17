@@ -32,11 +32,11 @@ class MemberServiceTest {
         // given
         Member principalMember = member(1L, "principal@example.com", "기존 이름");
         Member persistedMember = member(1L, "principal@example.com", "최신 이름");
-        CustomUserDetails user = new CustomUserDetails(principalMember);
+        Long user = principalMember.getId();
         when(memberRepository.findById(1L)).thenReturn(Optional.of(persistedMember));
 
         // when
-        GetMyMemberResult response = memberService.getMyInfo(user);
+        GetMyMemberResult response = memberService.getMyInfo(1L);
 
         // then
         assertThat(response.memberId()).isEqualTo(1L);
@@ -50,12 +50,12 @@ class MemberServiceTest {
     @DisplayName("getMyInfo()는 회원이 없으면 MEMBER_NOT_FOUND를 던진다")
     void getMyInfo_throwsWhenMemberMissing() {
         // given
-        CustomUserDetails user = new CustomUserDetails(member(1L, "principal@example.com", "이름"));
+        Long user = member(1L, "principal@example.com", "이름").getId();
         when(memberRepository.findById(1L)).thenReturn(Optional.empty());
 
         // when
         // then
-        assertThatThrownBy(() -> memberService.getMyInfo(user))
+        assertThatThrownBy(() -> memberService.getMyInfo(1L))
                 .isInstanceOf(or.hyu.ssd.common.exception.UserExceptionHandler.class)
                 .hasMessage("회원을 찾지 못했습니다");
     }

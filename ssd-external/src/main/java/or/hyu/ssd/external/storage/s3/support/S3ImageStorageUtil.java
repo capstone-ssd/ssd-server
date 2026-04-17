@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.StorageException;
-import or.hyu.ssd.common.property.S3Properties;
+import or.hyu.ssd.external.config.S3Properties;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;

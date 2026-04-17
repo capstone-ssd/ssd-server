@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.document.domain.entity.Document;
 import or.hyu.ssd.document.domain.entity.DocumentComment;
 import or.hyu.ssd.document.repository.DocumentCommentRepository;
+import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.DocumentCommentJpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,31 +19,37 @@ public class DocumentCommentRepositoryImpl implements DocumentCommentRepository 
 
     @Override
     public Optional<DocumentComment> findById(Long id) {
-        return documentCommentJpaRepository.findById(id);
+        return documentCommentJpaRepository.findById(id).map(DocumentPersistenceMapper::toDomain);
     }
 
     @Override
     public DocumentComment save(DocumentComment comment) {
-        return documentCommentJpaRepository.save(comment);
+        return DocumentPersistenceMapper.toDomain(documentCommentJpaRepository.save(DocumentPersistenceMapper.toJpa(comment)));
     }
 
     @Override
     public List<DocumentComment> findAllByDocumentOrderByCreatedAtAsc(Document document) {
-        return documentCommentJpaRepository.findAllByDocumentOrderByCreatedAtAsc(document);
+        return documentCommentJpaRepository.findAllByDocumentOrderByCreatedAtAsc(DocumentPersistenceMapper.toDocumentRef(document)).stream()
+                .map(DocumentPersistenceMapper::toDomain)
+                .toList();
     }
 
     @Override
     public void deleteAllByDocument(Document document) {
-        documentCommentJpaRepository.deleteAllByDocument(document);
+        documentCommentJpaRepository.deleteAllByDocument(DocumentPersistenceMapper.toDocumentRef(document));
     }
 
     @Override
     public void deleteAllByDocumentAndBlockIdIn(Document document, Collection<Integer> blockIds) {
-        documentCommentJpaRepository.deleteAllByDocumentAndBlockIdIn(document, blockIds);
+        documentCommentJpaRepository.deleteAllByDocumentAndBlockIdIn(DocumentPersistenceMapper.toDocumentRef(document), blockIds);
     }
 
     @Override
     public void delete(DocumentComment comment) {
-        documentCommentJpaRepository.delete(comment);
+        if (comment.getId() != null) {
+            documentCommentJpaRepository.deleteById(comment.getId());
+            return;
+        }
+        documentCommentJpaRepository.delete(DocumentPersistenceMapper.toJpa(comment));
     }
 }

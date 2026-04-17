@@ -1,21 +1,21 @@
 package or.hyu.ssd.infra.persistence.document.repository.jpa;
 
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.EvaluatorReview;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.EvaluatorReviewJpaEntity;
+import or.hyu.ssd.infra.persistence.member.entity.MemberJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface EvaluatorReviewJpaRepository extends JpaRepository<EvaluatorReview, Long> {
-    Optional<EvaluatorReview> findByDocumentAndReviewer(Document document, Member reviewer);
+public interface EvaluatorReviewJpaRepository extends JpaRepository<EvaluatorReviewJpaEntity, Long> {
+    Optional<EvaluatorReviewJpaEntity> findByDocumentAndReviewer(DocumentJpaEntity document, MemberJpaEntity reviewer);
 
-    List<EvaluatorReview> findAllByDocument(Document document);
+    List<EvaluatorReviewJpaEntity> findAllByDocument(DocumentJpaEntity document);
 
-    List<EvaluatorReview> findAllByDocumentOrderByUpdatedAtDesc(Document document);
+    List<EvaluatorReviewJpaEntity> findAllByDocumentOrderByUpdatedAtDesc(DocumentJpaEntity document);
 
-    boolean existsByDocumentAndReviewer(Document document, Member reviewer);
+    boolean existsByDocumentAndReviewer(DocumentJpaEntity document, MemberJpaEntity reviewer);
 
-    void deleteAllByDocument(Document document);
+    void deleteAllByDocument(DocumentJpaEntity document);
 }

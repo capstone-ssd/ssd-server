@@ -8,7 +8,6 @@ import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.DocumentLogDateGroupResult;
 import or.hyu.ssd.document.application.result.DocumentLogItemResult;
 import or.hyu.ssd.document.application.result.DocumentLogResult;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
@@ -29,8 +28,8 @@ public class DocumentLogService {
     private final DocumentRepository documentRepository;
     private final DocumentLogRepository documentLogRepository;
 
-    public DocumentLogResult list(Long documentId, CustomUserDetails user) {
-        Document document = getOwnedDocument(documentId, user);
+    public DocumentLogResult list(Long documentId, Long memberId) {
+        Document document = getOwnedDocument(documentId, memberId);
         List<DocumentLog> logs = documentLogRepository.findAllByDocumentOrderByCreatedAtDesc(document);
 
         List<DocumentLogDateGroupResult> records = new ArrayList<>();
@@ -56,13 +55,13 @@ public class DocumentLogService {
         return DocumentLogResult.of(document.getId(), records);
     }
 
-    private Document getOwnedDocument(Long documentId, CustomUserDetails user) {
+    private Document getOwnedDocument(Long documentId, Long memberId) {
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
-        if (user == null || user.getMember() == null || document.getMember() == null) {
+        if (memberId == null || document.getMember() == null) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
-        if (!document.getMember().getId().equals(user.getMember().getId())) {
+        if (!document.getMember().getId().equals(memberId)) {
             throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
         return document;

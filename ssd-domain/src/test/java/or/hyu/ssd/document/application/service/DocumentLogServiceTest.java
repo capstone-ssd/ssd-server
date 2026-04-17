@@ -13,7 +13,6 @@ import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.DocumentLogResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,7 +39,7 @@ class DocumentLogServiceTest {
         // given
         Member member = member(1L, "owner@example.com");
         Document document = document(10L, member);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         DocumentLog first = DocumentLog.builder()
                 .editorName("작성자")
                 .editorEmail("owner@example.com")
@@ -72,7 +71,7 @@ class DocumentLogServiceTest {
         when(documentLogRepository.findAllByDocumentOrderByCreatedAtDesc(document)).thenReturn(List.of(first, second, third));
 
         // when
-        DocumentLogResult response = documentLogService.list(10L, user);
+        DocumentLogResult response = documentLogService.list(10L, member.getId());
 
         // then
         assertThat(response.documentId()).isEqualTo(10L);
@@ -96,7 +95,7 @@ class DocumentLogServiceTest {
 
         // when
         // then
-        assertThatThrownBy(() -> documentLogService.list(10L, new CustomUserDetails(other)))
+        assertThatThrownBy(() -> documentLogService.list(10L, other.getId()))
                 .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
                 .hasMessage("해당 문서를 수정할 권한이 없습니다");
     }

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.api.member.response.GetMyMemberResponse;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.member.application.service.MemberService;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +43,7 @@ public class MemberController {
     public ResponseEntity<ApiResponse<GetMyMemberResponse>> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        GetMyMemberResponse response = GetMyMemberResponse.from(memberService.getMyInfo(user));
+        GetMyMemberResponse response = GetMyMemberResponse.from(memberService.getMyInfo(user.getMember().getId()));
         return ResponseEntity.ok(ApiResponse.ok(response, "회원 정보가 조회되었습니다"));
     }
 }

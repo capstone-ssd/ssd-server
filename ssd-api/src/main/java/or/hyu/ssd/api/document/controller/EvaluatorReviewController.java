@@ -11,7 +11,7 @@ import or.hyu.ssd.api.document.response.EvaluatorReviewIdResponse;
 import or.hyu.ssd.api.document.response.EvaluatorReviewListResponse;
 import or.hyu.ssd.api.document.request.EvaluatorReviewUpdateRequest;
 import or.hyu.ssd.document.application.service.EvaluatorReviewService;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
+import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -63,7 +63,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewIdResponse response = EvaluatorReviewIdResponse.from(
-                evaluatorReviewService.create(documentId, user, request.toCommand())
+                evaluatorReviewService.create(documentId, user.getMember().getId(), request.toCommand())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 저장되었습니다"));
     }
@@ -85,7 +85,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewDetailResponse response = EvaluatorReviewDetailResponse.from(
-                evaluatorReviewService.update(documentId, user, request.toCommand())
+                evaluatorReviewService.update(documentId, user.getMember().getId(), request.toCommand())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 수정되었습니다"));
     }
@@ -103,7 +103,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewDetailResponse response = EvaluatorReviewDetailResponse.from(
-                evaluatorReviewService.getMyReview(documentId, user)
+                evaluatorReviewService.getMyReview(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 조회되었습니다"));
     }
@@ -122,7 +122,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewListResponse response = EvaluatorReviewListResponse.from(
-                evaluatorReviewService.list(documentId, user)
+                evaluatorReviewService.list(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰 목록이 조회되었습니다"));
     }
@@ -140,7 +140,7 @@ public class EvaluatorReviewController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        evaluatorReviewService.delete(documentId, user);
+        evaluatorReviewService.delete(documentId, user.getMember().getId());
         return ResponseEntity.ok(ApiResponse.ok("리뷰가 삭제되었습니다"));
     }
 }

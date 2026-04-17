@@ -21,8 +21,8 @@ import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 import or.hyu.ssd.document.application.result.CreateDocumentResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
-import or.hyu.ssd.common.util.OptimisticRetryExecutor;
+import or.hyu.ssd.member.repository.MemberRepository;
+import or.hyu.ssd.document.application.support.OptimisticRetryExecutor;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,6 +70,8 @@ class DocumentCommandServiceTest {
     private OptimisticRetryExecutor optimisticRetryExecutor;
     @Mock
     private DocumentImageResolver documentImageResolver;
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private DocumentCommandService documentCommandService;
@@ -78,7 +80,8 @@ class DocumentCommandServiceTest {
     @DisplayName("createDocument()는 생성 요청 블록의 pageNumber를 1로 저장하고 blockId와 첫 문단 제목을 유지한다")
     void createDocument_defaultsPageNumberAndResolvesTitleFromParagraph() {
         // given
-        CustomUserDetails user = user(1L);
+        Long user = user(1L);
+        givenMemberExists(member(1L));
         CreateDocumentCommand command = new CreateDocumentCommand(
                 null,
                 "   ",
@@ -114,7 +117,7 @@ class DocumentCommandServiceTest {
     void updateDocument_rejectsBlankTitle() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document(42L, member)));
 
         // when
@@ -135,7 +138,7 @@ class DocumentCommandServiceTest {
     void updateDocument_rejectsBlankContent() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document(42L, member)));
 
         // when
@@ -156,7 +159,8 @@ class DocumentCommandServiceTest {
     void updateDocument_preservesBlockIdsAndDeletesRemovedComments() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
+        givenMemberExists(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
         when(documentParagraphRepository.findBlocks(document)).thenReturn(List.of(
@@ -210,7 +214,8 @@ class DocumentCommandServiceTest {
     void updateDocument_rejectsMissingBlockId() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
+        givenMemberExists(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
 
@@ -236,7 +241,8 @@ class DocumentCommandServiceTest {
     void updateDocument_rejectsDuplicateBlockIds() {
         // given
         Member member = member(1L);
-        CustomUserDetails user = new CustomUserDetails(member);
+        Long user = member.getId();
+        givenMemberExists(member);
         Document document = document(42L, member);
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
 
@@ -264,7 +270,8 @@ class DocumentCommandServiceTest {
     @DisplayName("createDocument()는 이미지 블록의 blobKey를 S3 URL로 치환해 저장한다")
     void createDocument_uploadsImageBlocksAndPersistsImageType() {
         // given
-        CustomUserDetails user = user(1L);
+        Long user = user(1L);
+        givenMemberExists(member(1L));
         CreateDocumentCommand command = new CreateDocumentCommand(
                 "이미지 문서",
                 "본문",
@@ -297,7 +304,8 @@ class DocumentCommandServiceTest {
     @DisplayName("createDocument()는 본문 text 안의 blobKey를 업로드된 S3 URL로 치환한다")
     void createDocument_replacesBlobKeyInsideText() {
         // given
-        CustomUserDetails user = user(1L);
+        Long user = user(1L);
+        givenMemberExists(member(1L));
         CreateDocumentCommand command = new CreateDocumentCommand(
                 "이미지 본문",
                 "<img src=\"img-1\" />",
@@ -358,8 +366,12 @@ class DocumentCommandServiceTest {
         return savedParagraphs;
     }
 
-    private CustomUserDetails user(Long memberId) {
-        return new CustomUserDetails(member(memberId));
+    private Long user(Long memberId) {
+        return memberId;
+    }
+
+    private void givenMemberExists(Member member) {
+        when(memberRepository.findById(member.getId())).thenReturn(Optional.of(member));
     }
 
     private DocumentParagraph paragraph(Document document, String content, String role, int pageNumber, int blockId) {

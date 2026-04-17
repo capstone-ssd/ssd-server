@@ -1,44 +1,23 @@
 package or.hyu.ssd.document.domain.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
-import or.hyu.ssd.shared.persistence.BaseEntity;
-import org.hibernate.annotations.Comment;
+import or.hyu.ssd.shared.domain.AuditableDomainEntity;
 
-@Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Builder
-@Table(
-        name = "evaluator_check_lists",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_evaluator_checklist_doc_content", columnNames = {"document_id", "content"})
-        },
-        indexes = {
-                @Index(name = "idx_evaluator_checklist_document_id", columnList = "document_id")
-        }
-)
-@Comment("평가자 체크리스트")
-public class EvaluatorCheckList extends BaseEntity {
+public class EvaluatorCheckList extends AuditableDomainEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Comment("평가자 체크리스트 본문")
-    @Column(name = "content", nullable = false)
     private String content;
 
-    @Comment("AI가 판단한 충족 여부")
-    @Column(name = "checked", nullable = false)
     private boolean checked;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "document_id")
     private Document document;
 
-    @Version
     private Long version;
 
     public static EvaluatorCheckList of(String content, boolean checked, Document document) {

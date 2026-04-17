@@ -16,9 +16,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
 
-    public GetMyMemberResult getMyInfo(CustomUserDetails user) {
-        Long memberId = user.getMember().getId();
-
+    public GetMyMemberResult getMyInfo(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserExceptionHandler(ErrorCode.MEMBER_NOT_FOUND));
 

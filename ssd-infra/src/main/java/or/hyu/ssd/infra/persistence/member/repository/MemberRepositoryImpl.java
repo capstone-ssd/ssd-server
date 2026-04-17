@@ -1,6 +1,7 @@
 package or.hyu.ssd.infra.persistence.member.repository;
 
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.infra.persistence.member.mapper.MemberPersistenceMapper;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.infra.persistence.member.repository.jpa.MemberJpaRepository;
@@ -15,12 +16,12 @@ public class MemberRepositoryImpl implements MemberRepository {
 
     @Override
     public Optional<Member> findById(Long id) {
-        return memberJpaRepository.findById(id);
+        return memberJpaRepository.findById(id).map(MemberPersistenceMapper::toDomain);
     }
 
     @Override
     public Optional<Member> findByEmail(String username) {
-        return memberJpaRepository.findByEmail(username);
+        return memberJpaRepository.findByEmail(username).map(MemberPersistenceMapper::toDomain);
     }
 
     @Override
@@ -30,6 +31,6 @@ public class MemberRepositoryImpl implements MemberRepository {
 
     @Override
     public Member save(Member member) {
-        return memberJpaRepository.save(member);
+        return MemberPersistenceMapper.toDomain(memberJpaRepository.save(MemberPersistenceMapper.toJpa(member)));
     }
 }

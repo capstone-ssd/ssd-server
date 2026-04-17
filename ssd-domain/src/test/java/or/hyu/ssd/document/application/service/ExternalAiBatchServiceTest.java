@@ -15,7 +15,6 @@ import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.member.domain.entity.Role;
-import or.hyu.ssd.member.application.service.CustomUserDetails;
 
 import java.util.Map;
 
@@ -39,7 +38,7 @@ class ExternalAiBatchServiceTest {
     @DisplayName("generateAll()은 평가, 요약, 키워드 순서로 호출한다")
     void generateAll_callsAiApisInOrder() {
         // given
-        CustomUserDetails user = new CustomUserDetails(member(1L));
+        Long user = member(1L).getId();
         ExternalDocumentIdCommand command = new ExternalDocumentIdCommand("7");
 
         // when
@@ -78,7 +77,7 @@ class ExternalAiBatchServiceTest {
     @DisplayName("generateAll()은 요약 단계에서 실패하면 키워드는 호출하지 않는다")
     void generateAll_stopsWhenSummaryFails() {
         // given
-        CustomUserDetails user = new CustomUserDetails(member(1L));
+        Long user = member(1L).getId();
         ExternalDocumentIdCommand command = new ExternalDocumentIdCommand("7");
 
         // when
