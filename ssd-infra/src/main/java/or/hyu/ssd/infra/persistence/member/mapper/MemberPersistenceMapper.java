@@ -15,15 +15,15 @@ public final class MemberPersistenceMapper {
             return null;
         }
 
-        Member member = new Member();
-        copyAudit(entity, member);
-        member.setId(entity.getId());
-        member.setName(entity.getName());
-        member.setEmail(entity.getEmail());
-        member.setProfileImageUrl(entity.getProfileImageUrl());
-        member.setProfileImageKey(entity.getProfileImageKey());
-        member.setRole(entity.getRole());
-        return member;
+        Member.MemberBuilder<?, ?> builder = Member.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .email(entity.getEmail())
+                .profileImageUrl(entity.getProfileImageUrl())
+                .profileImageKey(entity.getProfileImageKey())
+                .role(entity.getRole());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static MemberJpaEntity toJpa(Member member) {
@@ -31,33 +31,40 @@ public final class MemberPersistenceMapper {
             return null;
         }
 
-        MemberJpaEntity entity = new MemberJpaEntity();
-        copyAudit(member, entity);
-        entity.setId(member.getId());
-        entity.setName(member.getName());
-        entity.setEmail(member.getEmail());
-        entity.setProfileImageUrl(member.getProfileImageUrl());
-        entity.setProfileImageKey(member.getProfileImageKey());
-        entity.setRole(member.getRole());
-        return entity;
+        MemberJpaEntity.MemberJpaEntityBuilder<?, ?> builder = MemberJpaEntity.builder()
+                .id(member.getId())
+                .name(member.getName())
+                .email(member.getEmail())
+                .profileImageUrl(member.getProfileImageUrl())
+                .profileImageKey(member.getProfileImageKey())
+                .role(member.getRole());
+        applyAudit(member, builder);
+        return builder.build();
     }
 
     public static MemberJpaEntity toRef(Member member) {
         if (member == null || member.getId() == null) {
             return null;
         }
-        MemberJpaEntity entity = new MemberJpaEntity();
-        entity.setId(member.getId());
-        return entity;
+
+        return MemberJpaEntity.builder()
+                .id(member.getId())
+                .build();
     }
 
-    private static void copyAudit(BaseJpaEntity source, AuditableDomainEntity target) {
-        target.setCreatedAt(source.getCreatedAt());
-        target.setUpdatedAt(source.getUpdatedAt());
+    private static void applyAudit(
+            BaseJpaEntity source,
+            AuditableDomainEntity.AuditableDomainEntityBuilder<?, ?> builder
+    ) {
+        builder.createdAt(source.getCreatedAt());
+        builder.updatedAt(source.getUpdatedAt());
     }
 
-    private static void copyAudit(AuditableDomainEntity source, BaseJpaEntity target) {
-        target.setCreatedAt(source.getCreatedAt());
-        target.setUpdatedAt(source.getUpdatedAt());
+    private static void applyAudit(
+            AuditableDomainEntity source,
+            BaseJpaEntity.BaseJpaEntityBuilder<?, ?> builder
+    ) {
+        builder.createdAt(source.getCreatedAt());
+        builder.updatedAt(source.getUpdatedAt());
     }
 }

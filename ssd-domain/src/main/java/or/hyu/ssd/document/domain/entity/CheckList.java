@@ -1,23 +1,22 @@
 package or.hyu.ssd.document.domain.entity;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import or.hyu.ssd.shared.domain.AuditableDomainEntity;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
-@Setter
-@Builder
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class CheckList extends AuditableDomainEntity {
 
     private Long id;
-
     private String content;
-
     private boolean checked;
-
     private Document document;
-
     private Long version;
 
     public static CheckList of(String content, Document document) {

@@ -1,32 +1,35 @@
 package or.hyu.ssd.document.domain.entity;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import or.hyu.ssd.shared.domain.AuditableDomainEntity;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
-@Setter
-@Builder
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class DocumentParagraph extends AuditableDomainEntity {
 
     private Long id;
-
     private String content;
-
     private DocumentBlockType type;
-
     private String role;
-
     private int pageNumber;
-
     private int blockId;
-
     private Document document;
-
     private Long version;
 
-    public static DocumentParagraph of(DocumentBlockType type, String content, String role, int pageNumber, int blockId, Document document) {
+    public static DocumentParagraph of(
+            DocumentBlockType type,
+            String content,
+            String role,
+            int pageNumber,
+            int blockId,
+            Document document
+    ) {
         return DocumentParagraph.builder()
                 .content(content)
                 .type(type)

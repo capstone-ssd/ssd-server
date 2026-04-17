@@ -1,14 +1,26 @@
 package or.hyu.ssd.infra.persistence.document.mapper;
 
-import or.hyu.ssd.document.domain.entity.*;
+import or.hyu.ssd.document.domain.entity.CheckList;
+import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.entity.DocumentAiCheckSnapshot;
+import or.hyu.ssd.document.domain.entity.DocumentComment;
+import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.document.domain.entity.DocumentParagraph;
+import or.hyu.ssd.document.domain.entity.EvaluatorCheckList;
+import or.hyu.ssd.document.domain.entity.EvaluatorReview;
+import or.hyu.ssd.document.domain.entity.Folder;
 import or.hyu.ssd.infra.persistence.base.BaseJpaEntity;
-import or.hyu.ssd.infra.persistence.document.entity.*;
+import or.hyu.ssd.infra.persistence.document.entity.CheckListJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentAiCheckSnapshotJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentCommentJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentLogJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.DocumentParagraphJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.EvaluatorCheckListJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.EvaluatorReviewJpaEntity;
+import or.hyu.ssd.infra.persistence.document.entity.FolderJpaEntity;
 import or.hyu.ssd.infra.persistence.member.mapper.MemberPersistenceMapper;
-import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.shared.domain.AuditableDomainEntity;
-
-import java.util.IdentityHashMap;
-import java.util.Map;
 
 public final class DocumentPersistenceMapper {
 
@@ -20,53 +32,53 @@ public final class DocumentPersistenceMapper {
             return null;
         }
 
-        Document document = new Document();
-        copyAudit(entity, document);
-        document.setId(entity.getId());
-        document.setTitle(entity.getTitle());
-        document.setContent(entity.getContent());
-        document.setFolder(toDomain(entity.getFolder()));
-        document.setBookmark(entity.isBookmark());
-        document.setSummary(entity.getSummary());
-        document.setShortSummary(entity.getShortSummary());
-        document.setDetails(entity.getDetails());
-        document.setEvaluation(entity.getEvaluation());
-        document.setKeywords(entity.getKeywords());
-        document.setExternalAiTotalScore(entity.getExternalAiTotalScore());
-        document.setExternalAiProblemRecognitionScore(entity.getExternalAiProblemRecognitionScore());
-        document.setExternalAiProblemRecognitionReview(entity.getExternalAiProblemRecognitionReview());
-        document.setExternalAiFeasibilityScore(entity.getExternalAiFeasibilityScore());
-        document.setExternalAiFeasibilityReview(entity.getExternalAiFeasibilityReview());
-        document.setExternalAiGrowthStrategyScore(entity.getExternalAiGrowthStrategyScore());
-        document.setExternalAiGrowthStrategyReview(entity.getExternalAiGrowthStrategyReview());
-        document.setExternalAiBusinessModelScore(entity.getExternalAiBusinessModelScore());
-        document.setExternalAiBusinessModelReview(entity.getExternalAiBusinessModelReview());
-        document.setExternalAiTeamCompositionScore(entity.getExternalAiTeamCompositionScore());
-        document.setExternalAiTeamCompositionReview(entity.getExternalAiTeamCompositionReview());
-        document.setChecklistDifferentiationIsClear(entity.isChecklistDifferentiationIsClear());
-        document.setChecklistDifferentiationIsRealistic(entity.isChecklistDifferentiationIsRealistic());
-        document.setChecklistTargetSpecificAdvantage(entity.isChecklistTargetSpecificAdvantage());
-        document.setChecklistEntryBarrierExists(entity.isChecklistEntryBarrierExists());
-        document.setChecklistProblemIsClear(entity.isChecklistProblemIsClear());
-        document.setChecklistProblemIsReal(entity.isChecklistProblemIsReal());
-        document.setChecklistTargetAndContextAreSpecific(entity.isChecklistTargetAndContextAreSpecific());
-        document.setChecklistExistingSolutionHasLimits(entity.isChecklistExistingSolutionHasLimits());
-        document.setChecklistMarketDefinitionIsCorrect(entity.isChecklistMarketDefinitionIsCorrect());
-        document.setChecklistMarketSizeIsRealistic(entity.isChecklistMarketSizeIsRealistic());
-        document.setChecklistWillingnessToPayIsClear(entity.isChecklistWillingnessToPayIsClear());
-        document.setChecklistRevenueModelIsClear(entity.isChecklistRevenueModelIsClear());
-        document.setChecklistProblemFounderFit(entity.isChecklistProblemFounderFit());
-        document.setChecklistExperienceAlignment(entity.isChecklistExperienceAlignment());
-        document.setChecklistTeamStructureIsClear(entity.isChecklistTeamStructureIsClear());
-        document.setChecklistCapabilityGapPlanExists(entity.isChecklistCapabilityGapPlanExists());
-        document.setMember(MemberPersistenceMapper.toDomain(entity.getMember()));
-        document.setReviewFeasibilityAvg(entity.getReviewFeasibilityAvg());
-        document.setReviewDifferentiationAvg(entity.getReviewDifferentiationAvg());
-        document.setReviewFinancialAvg(entity.getReviewFinancialAvg());
-        document.setReviewTotalAvg(entity.getReviewTotalAvg());
-        document.setReviewCount(entity.getReviewCount());
-        document.setVersion(entity.getVersion());
-        return document;
+        Document.DocumentBuilder<?, ?> builder = Document.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .content(entity.getContent())
+                .folder(toDomain(entity.getFolder()))
+                .bookmark(entity.isBookmark())
+                .summary(entity.getSummary())
+                .shortSummary(entity.getShortSummary())
+                .details(entity.getDetails())
+                .evaluation(entity.getEvaluation())
+                .keywords(entity.getKeywords())
+                .externalAiTotalScore(entity.getExternalAiTotalScore())
+                .externalAiProblemRecognitionScore(entity.getExternalAiProblemRecognitionScore())
+                .externalAiProblemRecognitionReview(entity.getExternalAiProblemRecognitionReview())
+                .externalAiFeasibilityScore(entity.getExternalAiFeasibilityScore())
+                .externalAiFeasibilityReview(entity.getExternalAiFeasibilityReview())
+                .externalAiGrowthStrategyScore(entity.getExternalAiGrowthStrategyScore())
+                .externalAiGrowthStrategyReview(entity.getExternalAiGrowthStrategyReview())
+                .externalAiBusinessModelScore(entity.getExternalAiBusinessModelScore())
+                .externalAiBusinessModelReview(entity.getExternalAiBusinessModelReview())
+                .externalAiTeamCompositionScore(entity.getExternalAiTeamCompositionScore())
+                .externalAiTeamCompositionReview(entity.getExternalAiTeamCompositionReview())
+                .checklistDifferentiationIsClear(entity.isChecklistDifferentiationIsClear())
+                .checklistDifferentiationIsRealistic(entity.isChecklistDifferentiationIsRealistic())
+                .checklistTargetSpecificAdvantage(entity.isChecklistTargetSpecificAdvantage())
+                .checklistEntryBarrierExists(entity.isChecklistEntryBarrierExists())
+                .checklistProblemIsClear(entity.isChecklistProblemIsClear())
+                .checklistProblemIsReal(entity.isChecklistProblemIsReal())
+                .checklistTargetAndContextAreSpecific(entity.isChecklistTargetAndContextAreSpecific())
+                .checklistExistingSolutionHasLimits(entity.isChecklistExistingSolutionHasLimits())
+                .checklistMarketDefinitionIsCorrect(entity.isChecklistMarketDefinitionIsCorrect())
+                .checklistMarketSizeIsRealistic(entity.isChecklistMarketSizeIsRealistic())
+                .checklistWillingnessToPayIsClear(entity.isChecklistWillingnessToPayIsClear())
+                .checklistRevenueModelIsClear(entity.isChecklistRevenueModelIsClear())
+                .checklistProblemFounderFit(entity.isChecklistProblemFounderFit())
+                .checklistExperienceAlignment(entity.isChecklistExperienceAlignment())
+                .checklistTeamStructureIsClear(entity.isChecklistTeamStructureIsClear())
+                .checklistCapabilityGapPlanExists(entity.isChecklistCapabilityGapPlanExists())
+                .member(MemberPersistenceMapper.toDomain(entity.getMember()))
+                .reviewFeasibilityAvg(entity.getReviewFeasibilityAvg())
+                .reviewDifferentiationAvg(entity.getReviewDifferentiationAvg())
+                .reviewFinancialAvg(entity.getReviewFinancialAvg())
+                .reviewTotalAvg(entity.getReviewTotalAvg())
+                .reviewCount(entity.getReviewCount())
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static DocumentJpaEntity toJpa(Document document) {
@@ -74,341 +86,356 @@ public final class DocumentPersistenceMapper {
             return null;
         }
 
-        DocumentJpaEntity entity = new DocumentJpaEntity();
-        copyAudit(document, entity);
-        entity.setId(document.getId());
-        entity.setTitle(document.getTitle());
-        entity.setContent(document.getContent());
-        entity.setFolder(toFolderRef(document.getFolder()));
-        entity.setBookmark(document.isBookmark());
-        entity.setSummary(document.getSummary());
-        entity.setShortSummary(document.getShortSummary());
-        entity.setDetails(document.getDetails());
-        entity.setEvaluation(document.getEvaluation());
-        entity.setKeywords(document.getKeywords());
-        entity.setExternalAiTotalScore(document.getExternalAiTotalScore());
-        entity.setExternalAiProblemRecognitionScore(document.getExternalAiProblemRecognitionScore());
-        entity.setExternalAiProblemRecognitionReview(document.getExternalAiProblemRecognitionReview());
-        entity.setExternalAiFeasibilityScore(document.getExternalAiFeasibilityScore());
-        entity.setExternalAiFeasibilityReview(document.getExternalAiFeasibilityReview());
-        entity.setExternalAiGrowthStrategyScore(document.getExternalAiGrowthStrategyScore());
-        entity.setExternalAiGrowthStrategyReview(document.getExternalAiGrowthStrategyReview());
-        entity.setExternalAiBusinessModelScore(document.getExternalAiBusinessModelScore());
-        entity.setExternalAiBusinessModelReview(document.getExternalAiBusinessModelReview());
-        entity.setExternalAiTeamCompositionScore(document.getExternalAiTeamCompositionScore());
-        entity.setExternalAiTeamCompositionReview(document.getExternalAiTeamCompositionReview());
-        entity.setChecklistDifferentiationIsClear(document.isChecklistDifferentiationIsClear());
-        entity.setChecklistDifferentiationIsRealistic(document.isChecklistDifferentiationIsRealistic());
-        entity.setChecklistTargetSpecificAdvantage(document.isChecklistTargetSpecificAdvantage());
-        entity.setChecklistEntryBarrierExists(document.isChecklistEntryBarrierExists());
-        entity.setChecklistProblemIsClear(document.isChecklistProblemIsClear());
-        entity.setChecklistProblemIsReal(document.isChecklistProblemIsReal());
-        entity.setChecklistTargetAndContextAreSpecific(document.isChecklistTargetAndContextAreSpecific());
-        entity.setChecklistExistingSolutionHasLimits(document.isChecklistExistingSolutionHasLimits());
-        entity.setChecklistMarketDefinitionIsCorrect(document.isChecklistMarketDefinitionIsCorrect());
-        entity.setChecklistMarketSizeIsRealistic(document.isChecklistMarketSizeIsRealistic());
-        entity.setChecklistWillingnessToPayIsClear(document.isChecklistWillingnessToPayIsClear());
-        entity.setChecklistRevenueModelIsClear(document.isChecklistRevenueModelIsClear());
-        entity.setChecklistProblemFounderFit(document.isChecklistProblemFounderFit());
-        entity.setChecklistExperienceAlignment(document.isChecklistExperienceAlignment());
-        entity.setChecklistTeamStructureIsClear(document.isChecklistTeamStructureIsClear());
-        entity.setChecklistCapabilityGapPlanExists(document.isChecklistCapabilityGapPlanExists());
-        entity.setMember(MemberPersistenceMapper.toRef(document.getMember()));
-        entity.setReviewFeasibilityAvg(document.getReviewFeasibilityAvg());
-        entity.setReviewDifferentiationAvg(document.getReviewDifferentiationAvg());
-        entity.setReviewFinancialAvg(document.getReviewFinancialAvg());
-        entity.setReviewTotalAvg(document.getReviewTotalAvg());
-        entity.setReviewCount(document.getReviewCount());
-        entity.setVersion(document.getVersion());
-        return entity;
+        DocumentJpaEntity.DocumentJpaEntityBuilder<?, ?> builder = DocumentJpaEntity.builder()
+                .id(document.getId())
+                .title(document.getTitle())
+                .content(document.getContent())
+                .folder(toFolderRef(document.getFolder()))
+                .bookmark(document.isBookmark())
+                .summary(document.getSummary())
+                .shortSummary(document.getShortSummary())
+                .details(document.getDetails())
+                .evaluation(document.getEvaluation())
+                .keywords(document.getKeywords())
+                .externalAiTotalScore(document.getExternalAiTotalScore())
+                .externalAiProblemRecognitionScore(document.getExternalAiProblemRecognitionScore())
+                .externalAiProblemRecognitionReview(document.getExternalAiProblemRecognitionReview())
+                .externalAiFeasibilityScore(document.getExternalAiFeasibilityScore())
+                .externalAiFeasibilityReview(document.getExternalAiFeasibilityReview())
+                .externalAiGrowthStrategyScore(document.getExternalAiGrowthStrategyScore())
+                .externalAiGrowthStrategyReview(document.getExternalAiGrowthStrategyReview())
+                .externalAiBusinessModelScore(document.getExternalAiBusinessModelScore())
+                .externalAiBusinessModelReview(document.getExternalAiBusinessModelReview())
+                .externalAiTeamCompositionScore(document.getExternalAiTeamCompositionScore())
+                .externalAiTeamCompositionReview(document.getExternalAiTeamCompositionReview())
+                .checklistDifferentiationIsClear(document.isChecklistDifferentiationIsClear())
+                .checklistDifferentiationIsRealistic(document.isChecklistDifferentiationIsRealistic())
+                .checklistTargetSpecificAdvantage(document.isChecklistTargetSpecificAdvantage())
+                .checklistEntryBarrierExists(document.isChecklistEntryBarrierExists())
+                .checklistProblemIsClear(document.isChecklistProblemIsClear())
+                .checklistProblemIsReal(document.isChecklistProblemIsReal())
+                .checklistTargetAndContextAreSpecific(document.isChecklistTargetAndContextAreSpecific())
+                .checklistExistingSolutionHasLimits(document.isChecklistExistingSolutionHasLimits())
+                .checklistMarketDefinitionIsCorrect(document.isChecklistMarketDefinitionIsCorrect())
+                .checklistMarketSizeIsRealistic(document.isChecklistMarketSizeIsRealistic())
+                .checklistWillingnessToPayIsClear(document.isChecklistWillingnessToPayIsClear())
+                .checklistRevenueModelIsClear(document.isChecklistRevenueModelIsClear())
+                .checklistProblemFounderFit(document.isChecklistProblemFounderFit())
+                .checklistExperienceAlignment(document.isChecklistExperienceAlignment())
+                .checklistTeamStructureIsClear(document.isChecklistTeamStructureIsClear())
+                .checklistCapabilityGapPlanExists(document.isChecklistCapabilityGapPlanExists())
+                .member(MemberPersistenceMapper.toRef(document.getMember()))
+                .reviewFeasibilityAvg(document.getReviewFeasibilityAvg())
+                .reviewDifferentiationAvg(document.getReviewDifferentiationAvg())
+                .reviewFinancialAvg(document.getReviewFinancialAvg())
+                .reviewTotalAvg(document.getReviewTotalAvg())
+                .reviewCount(document.getReviewCount())
+                .version(document.getVersion());
+        applyAudit(document, builder);
+        return builder.build();
     }
 
     public static Folder toDomain(FolderJpaEntity entity) {
-        return toDomain(entity, new IdentityHashMap<>());
+        if (entity == null) {
+            return null;
+        }
+
+        Folder.FolderBuilder<?, ?> builder = Folder.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .color(entity.getColor())
+                .parent(toDomain(entity.getParent()))
+                .member(MemberPersistenceMapper.toDomain(entity.getMember()))
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static FolderJpaEntity toJpa(Folder folder) {
         if (folder == null) {
             return null;
         }
-        FolderJpaEntity entity = new FolderJpaEntity();
-        copyAudit(folder, entity);
-        entity.setId(folder.getId());
-        entity.setName(folder.getName());
-        entity.setColor(folder.getColor());
-        entity.setParent(toFolderRef(folder.getParent()));
-        entity.setMember(MemberPersistenceMapper.toRef(folder.getMember()));
-        entity.setVersion(folder.getVersion());
-        return entity;
+
+        FolderJpaEntity.FolderJpaEntityBuilder<?, ?> builder = FolderJpaEntity.builder()
+                .id(folder.getId())
+                .name(folder.getName())
+                .color(folder.getColor())
+                .parent(toFolderRef(folder.getParent()))
+                .member(MemberPersistenceMapper.toRef(folder.getMember()))
+                .version(folder.getVersion());
+        applyAudit(folder, builder);
+        return builder.build();
     }
 
     public static FolderJpaEntity toFolderRef(Folder folder) {
         if (folder == null || folder.getId() == null) {
             return null;
         }
-        FolderJpaEntity entity = new FolderJpaEntity();
-        entity.setId(folder.getId());
-        return entity;
+
+        return FolderJpaEntity.builder()
+                .id(folder.getId())
+                .build();
     }
 
     public static DocumentParagraph toDomain(DocumentParagraphJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        DocumentParagraph paragraph = new DocumentParagraph();
-        copyAudit(entity, paragraph);
-        paragraph.setId(entity.getId());
-        paragraph.setContent(entity.getContent());
-        paragraph.setType(entity.getType());
-        paragraph.setRole(entity.getRole());
-        paragraph.setPageNumber(entity.getPageNumber());
-        paragraph.setBlockId(entity.getBlockId());
-        paragraph.setDocument(toDocumentRef(entity.getDocument()));
-        paragraph.setVersion(entity.getVersion());
-        return paragraph;
+
+        DocumentParagraph.DocumentParagraphBuilder<?, ?> builder = DocumentParagraph.builder()
+                .id(entity.getId())
+                .content(entity.getContent())
+                .type(entity.getType())
+                .role(entity.getRole())
+                .pageNumber(entity.getPageNumber())
+                .blockId(entity.getBlockId())
+                .document(toDocumentRef(entity.getDocument()))
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static DocumentParagraphJpaEntity toJpa(DocumentParagraph paragraph) {
         if (paragraph == null) {
             return null;
         }
-        DocumentParagraphJpaEntity entity = new DocumentParagraphJpaEntity();
-        copyAudit(paragraph, entity);
-        entity.setId(paragraph.getId());
-        entity.setContent(paragraph.getContent());
-        entity.setType(paragraph.getType());
-        entity.setRole(paragraph.getRole());
-        entity.setPageNumber(paragraph.getPageNumber());
-        entity.setBlockId(paragraph.getBlockId());
-        entity.setDocument(toDocumentRef(paragraph.getDocument()));
-        entity.setVersion(paragraph.getVersion());
-        return entity;
+
+        DocumentParagraphJpaEntity.DocumentParagraphJpaEntityBuilder<?, ?> builder = DocumentParagraphJpaEntity.builder()
+                .id(paragraph.getId())
+                .content(paragraph.getContent())
+                .type(paragraph.getType())
+                .role(paragraph.getRole())
+                .pageNumber(paragraph.getPageNumber())
+                .blockId(paragraph.getBlockId())
+                .document(toDocumentRef(paragraph.getDocument()))
+                .version(paragraph.getVersion());
+        applyAudit(paragraph, builder);
+        return builder.build();
     }
 
     public static CheckList toDomain(CheckListJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        CheckList checkList = new CheckList();
-        copyAudit(entity, checkList);
-        checkList.setId(entity.getId());
-        checkList.setContent(entity.getContent());
-        checkList.setChecked(entity.isChecked());
-        checkList.setDocument(toDocumentRef(entity.getDocument()));
-        checkList.setVersion(entity.getVersion());
-        return checkList;
+
+        CheckList.CheckListBuilder<?, ?> builder = CheckList.builder()
+                .id(entity.getId())
+                .content(entity.getContent())
+                .checked(entity.isChecked())
+                .document(toDocumentRef(entity.getDocument()))
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static CheckListJpaEntity toJpa(CheckList checkList) {
         if (checkList == null) {
             return null;
         }
-        CheckListJpaEntity entity = new CheckListJpaEntity();
-        copyAudit(checkList, entity);
-        entity.setId(checkList.getId());
-        entity.setContent(checkList.getContent());
-        entity.setChecked(checkList.isChecked());
-        entity.setDocument(toDocumentRef(checkList.getDocument()));
-        entity.setVersion(checkList.getVersion());
-        return entity;
+
+        CheckListJpaEntity.CheckListJpaEntityBuilder<?, ?> builder = CheckListJpaEntity.builder()
+                .id(checkList.getId())
+                .content(checkList.getContent())
+                .checked(checkList.isChecked())
+                .document(toDocumentRef(checkList.getDocument()))
+                .version(checkList.getVersion());
+        applyAudit(checkList, builder);
+        return builder.build();
     }
 
     public static EvaluatorCheckList toDomain(EvaluatorCheckListJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        EvaluatorCheckList checkList = new EvaluatorCheckList();
-        copyAudit(entity, checkList);
-        checkList.setId(entity.getId());
-        checkList.setContent(entity.getContent());
-        checkList.setChecked(entity.isChecked());
-        checkList.setDocument(toDocumentRef(entity.getDocument()));
-        checkList.setVersion(entity.getVersion());
-        return checkList;
+
+        EvaluatorCheckList.EvaluatorCheckListBuilder<?, ?> builder = EvaluatorCheckList.builder()
+                .id(entity.getId())
+                .content(entity.getContent())
+                .checked(entity.isChecked())
+                .document(toDocumentRef(entity.getDocument()))
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static EvaluatorCheckListJpaEntity toJpa(EvaluatorCheckList checkList) {
         if (checkList == null) {
             return null;
         }
-        EvaluatorCheckListJpaEntity entity = new EvaluatorCheckListJpaEntity();
-        copyAudit(checkList, entity);
-        entity.setId(checkList.getId());
-        entity.setContent(checkList.getContent());
-        entity.setChecked(checkList.isChecked());
-        entity.setDocument(toDocumentRef(checkList.getDocument()));
-        entity.setVersion(checkList.getVersion());
-        return entity;
+
+        EvaluatorCheckListJpaEntity.EvaluatorCheckListJpaEntityBuilder<?, ?> builder = EvaluatorCheckListJpaEntity.builder()
+                .id(checkList.getId())
+                .content(checkList.getContent())
+                .checked(checkList.isChecked())
+                .document(toDocumentRef(checkList.getDocument()))
+                .version(checkList.getVersion());
+        applyAudit(checkList, builder);
+        return builder.build();
     }
 
     public static DocumentAiCheckSnapshot toDomain(DocumentAiCheckSnapshotJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        DocumentAiCheckSnapshot snapshot = new DocumentAiCheckSnapshot();
-        copyAudit(entity, snapshot);
-        snapshot.setId(entity.getId());
-        snapshot.setDocument(toDocumentRef(entity.getDocument()));
-        snapshot.setBlockId(entity.getBlockId());
-        snapshot.setContent(entity.getContent());
-        return snapshot;
+
+        DocumentAiCheckSnapshot.DocumentAiCheckSnapshotBuilder<?, ?> builder = DocumentAiCheckSnapshot.builder()
+                .id(entity.getId())
+                .document(toDocumentRef(entity.getDocument()))
+                .blockId(entity.getBlockId())
+                .content(entity.getContent());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static DocumentAiCheckSnapshotJpaEntity toJpa(DocumentAiCheckSnapshot snapshot) {
         if (snapshot == null) {
             return null;
         }
-        DocumentAiCheckSnapshotJpaEntity entity = new DocumentAiCheckSnapshotJpaEntity();
-        copyAudit(snapshot, entity);
-        entity.setId(snapshot.getId());
-        entity.setDocument(toDocumentRef(snapshot.getDocument()));
-        entity.setBlockId(snapshot.getBlockId());
-        entity.setContent(snapshot.getContent());
-        return entity;
+
+        DocumentAiCheckSnapshotJpaEntity.DocumentAiCheckSnapshotJpaEntityBuilder<?, ?> builder = DocumentAiCheckSnapshotJpaEntity.builder()
+                .id(snapshot.getId())
+                .document(toDocumentRef(snapshot.getDocument()))
+                .blockId(snapshot.getBlockId())
+                .content(snapshot.getContent());
+        applyAudit(snapshot, builder);
+        return builder.build();
     }
 
     public static DocumentComment toDomain(DocumentCommentJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        DocumentComment comment = new DocumentComment();
-        copyAudit(entity, comment);
-        comment.setId(entity.getId());
-        comment.setBlockId(entity.getBlockId());
-        comment.setComment(entity.getComment());
-        comment.setDocument(toDocumentRef(entity.getDocument()));
-        comment.setMember(MemberPersistenceMapper.toDomain(entity.getMember()));
-        return comment;
+
+        DocumentComment.DocumentCommentBuilder<?, ?> builder = DocumentComment.builder()
+                .id(entity.getId())
+                .blockId(entity.getBlockId())
+                .comment(entity.getComment())
+                .document(toDocumentRef(entity.getDocument()))
+                .member(MemberPersistenceMapper.toDomain(entity.getMember()));
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static DocumentCommentJpaEntity toJpa(DocumentComment comment) {
         if (comment == null) {
             return null;
         }
-        DocumentCommentJpaEntity entity = new DocumentCommentJpaEntity();
-        copyAudit(comment, entity);
-        entity.setId(comment.getId());
-        entity.setBlockId(comment.getBlockId());
-        entity.setComment(comment.getComment());
-        entity.setDocument(toDocumentRef(comment.getDocument()));
-        entity.setMember(MemberPersistenceMapper.toRef(comment.getMember()));
-        return entity;
+
+        DocumentCommentJpaEntity.DocumentCommentJpaEntityBuilder<?, ?> builder = DocumentCommentJpaEntity.builder()
+                .id(comment.getId())
+                .blockId(comment.getBlockId())
+                .comment(comment.getComment())
+                .document(toDocumentRef(comment.getDocument()))
+                .member(MemberPersistenceMapper.toRef(comment.getMember()));
+        applyAudit(comment, builder);
+        return builder.build();
     }
 
     public static DocumentLog toDomain(DocumentLogJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        DocumentLog log = new DocumentLog();
-        copyAudit(entity, log);
-        log.setId(entity.getId());
-        log.setEditorName(entity.getEditorName());
-        log.setEditorEmail(entity.getEditorEmail());
-        log.setDeletedBlockCount(entity.getDeletedBlockCount());
-        log.setCreatedBlockCount(entity.getCreatedBlockCount());
-        log.setDocument(toDocumentRef(entity.getDocument()));
-        log.setVersion(entity.getVersion());
-        return log;
+
+        DocumentLog.DocumentLogBuilder<?, ?> builder = DocumentLog.builder()
+                .id(entity.getId())
+                .editorName(entity.getEditorName())
+                .editorEmail(entity.getEditorEmail())
+                .deletedBlockCount(entity.getDeletedBlockCount())
+                .createdBlockCount(entity.getCreatedBlockCount())
+                .document(toDocumentRef(entity.getDocument()))
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static DocumentLogJpaEntity toJpa(DocumentLog log) {
         if (log == null) {
             return null;
         }
-        DocumentLogJpaEntity entity = new DocumentLogJpaEntity();
-        copyAudit(log, entity);
-        entity.setId(log.getId());
-        entity.setEditorName(log.getEditorName());
-        entity.setEditorEmail(log.getEditorEmail());
-        entity.setDeletedBlockCount(log.getDeletedBlockCount());
-        entity.setCreatedBlockCount(log.getCreatedBlockCount());
-        entity.setDocument(toDocumentRef(log.getDocument()));
-        entity.setVersion(log.getVersion());
-        return entity;
+
+        DocumentLogJpaEntity.DocumentLogJpaEntityBuilder<?, ?> builder = DocumentLogJpaEntity.builder()
+                .id(log.getId())
+                .editorName(log.getEditorName())
+                .editorEmail(log.getEditorEmail())
+                .deletedBlockCount(log.getDeletedBlockCount())
+                .createdBlockCount(log.getCreatedBlockCount())
+                .document(toDocumentRef(log.getDocument()))
+                .version(log.getVersion());
+        applyAudit(log, builder);
+        return builder.build();
     }
 
     public static EvaluatorReview toDomain(EvaluatorReviewJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        EvaluatorReview review = new EvaluatorReview();
-        copyAudit(entity, review);
-        review.setId(entity.getId());
-        review.setScoreFeasibility(entity.getScoreFeasibility());
-        review.setScoreDifferentiation(entity.getScoreDifferentiation());
-        review.setScoreFinancial(entity.getScoreFinancial());
-        review.setComment(entity.getComment());
-        review.setScoreTotal(entity.getScoreTotal());
-        review.setDocument(toDocumentRef(entity.getDocument()));
-        review.setReviewer(MemberPersistenceMapper.toDomain(entity.getReviewer()));
-        review.setVersion(entity.getVersion());
-        return review;
+
+        EvaluatorReview.EvaluatorReviewBuilder<?, ?> builder = EvaluatorReview.builder()
+                .id(entity.getId())
+                .scoreFeasibility(entity.getScoreFeasibility())
+                .scoreDifferentiation(entity.getScoreDifferentiation())
+                .scoreFinancial(entity.getScoreFinancial())
+                .comment(entity.getComment())
+                .scoreTotal(entity.getScoreTotal())
+                .document(toDocumentRef(entity.getDocument()))
+                .reviewer(MemberPersistenceMapper.toDomain(entity.getReviewer()))
+                .version(entity.getVersion());
+        applyAudit(entity, builder);
+        return builder.build();
     }
 
     public static EvaluatorReviewJpaEntity toJpa(EvaluatorReview review) {
         if (review == null) {
             return null;
         }
-        EvaluatorReviewJpaEntity entity = new EvaluatorReviewJpaEntity();
-        copyAudit(review, entity);
-        entity.setId(review.getId());
-        entity.setScoreFeasibility(review.getScoreFeasibility());
-        entity.setScoreDifferentiation(review.getScoreDifferentiation());
-        entity.setScoreFinancial(review.getScoreFinancial());
-        entity.setComment(review.getComment());
-        entity.setScoreTotal(review.getScoreTotal());
-        entity.setDocument(toDocumentRef(review.getDocument()));
-        entity.setReviewer(MemberPersistenceMapper.toRef(review.getReviewer()));
-        entity.setVersion(review.getVersion());
-        return entity;
+
+        EvaluatorReviewJpaEntity.EvaluatorReviewJpaEntityBuilder<?, ?> builder = EvaluatorReviewJpaEntity.builder()
+                .id(review.getId())
+                .scoreFeasibility(review.getScoreFeasibility())
+                .scoreDifferentiation(review.getScoreDifferentiation())
+                .scoreFinancial(review.getScoreFinancial())
+                .comment(review.getComment())
+                .scoreTotal(review.getScoreTotal())
+                .document(toDocumentRef(review.getDocument()))
+                .reviewer(MemberPersistenceMapper.toRef(review.getReviewer()))
+                .version(review.getVersion());
+        applyAudit(review, builder);
+        return builder.build();
     }
 
     public static DocumentJpaEntity toDocumentRef(Document document) {
         if (document == null || document.getId() == null) {
             return null;
         }
-        DocumentJpaEntity entity = new DocumentJpaEntity();
-        entity.setId(document.getId());
-        return entity;
+
+        return DocumentJpaEntity.builder()
+                .id(document.getId())
+                .build();
     }
 
     private static Document toDocumentRef(DocumentJpaEntity entity) {
         if (entity == null) {
             return null;
         }
-        Document document = new Document();
-        document.setId(entity.getId());
-        return document;
+
+        return Document.builder()
+                .id(entity.getId())
+                .build();
     }
 
-    private static Folder toDomain(FolderJpaEntity entity, Map<FolderJpaEntity, Folder> cache) {
-        if (entity == null) {
-            return null;
-        }
-        Folder cached = cache.get(entity);
-        if (cached != null) {
-            return cached;
-        }
-
-        Folder folder = new Folder();
-        cache.put(entity, folder);
-        copyAudit(entity, folder);
-        folder.setId(entity.getId());
-        folder.setName(entity.getName());
-        folder.setColor(entity.getColor());
-        folder.setParent(toDomain(entity.getParent(), cache));
-        folder.setMember(MemberPersistenceMapper.toDomain(entity.getMember()));
-        folder.setVersion(entity.getVersion());
-        return folder;
+    private static void applyAudit(
+            BaseJpaEntity source,
+            AuditableDomainEntity.AuditableDomainEntityBuilder<?, ?> builder
+    ) {
+        builder.createdAt(source.getCreatedAt());
+        builder.updatedAt(source.getUpdatedAt());
     }
 
-    private static void copyAudit(BaseJpaEntity source, AuditableDomainEntity target) {
-        target.setCreatedAt(source.getCreatedAt());
-        target.setUpdatedAt(source.getUpdatedAt());
-    }
-
-    private static void copyAudit(AuditableDomainEntity source, BaseJpaEntity target) {
-        target.setCreatedAt(source.getCreatedAt());
-        target.setUpdatedAt(source.getUpdatedAt());
+    private static void applyAudit(
+            AuditableDomainEntity source,
+            BaseJpaEntity.BaseJpaEntityBuilder<?, ?> builder
+    ) {
+        builder.createdAt(source.getCreatedAt());
+        builder.updatedAt(source.getUpdatedAt());
     }
 }

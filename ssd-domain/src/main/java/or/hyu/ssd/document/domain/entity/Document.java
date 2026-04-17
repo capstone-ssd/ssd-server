@@ -1,114 +1,66 @@
 package or.hyu.ssd.document.domain.entity;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import or.hyu.ssd.member.domain.entity.Member;
 import or.hyu.ssd.shared.domain.AuditableDomainEntity;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
-@Setter
-@Builder
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Document extends AuditableDomainEntity {
 
     private Long id;
-
     private String title;
-
     private String content;
-
     private Folder folder;
-
     private boolean bookmark;
-
     private String summary;
-
     private String shortSummary;
-
     private String details;
-
     private String evaluation;
-
     private String keywords;
-
     private Integer externalAiTotalScore;
-
     private Integer externalAiProblemRecognitionScore;
-
     private String externalAiProblemRecognitionReview;
-
     private Integer externalAiFeasibilityScore;
-
     private String externalAiFeasibilityReview;
-
     private Integer externalAiGrowthStrategyScore;
-
     private String externalAiGrowthStrategyReview;
-
     private Integer externalAiBusinessModelScore;
-
     private String externalAiBusinessModelReview;
-
     private Integer externalAiTeamCompositionScore;
-
     private String externalAiTeamCompositionReview;
-
     private boolean checklistDifferentiationIsClear;
-
     private boolean checklistDifferentiationIsRealistic;
-
     private boolean checklistTargetSpecificAdvantage;
-
     private boolean checklistEntryBarrierExists;
-
     private boolean checklistProblemIsClear;
-
     private boolean checklistProblemIsReal;
-
     private boolean checklistTargetAndContextAreSpecific;
-
     private boolean checklistExistingSolutionHasLimits;
-
     private boolean checklistMarketDefinitionIsCorrect;
-
     private boolean checklistMarketSizeIsRealistic;
-
     private boolean checklistWillingnessToPayIsClear;
-
     private boolean checklistRevenueModelIsClear;
-
     private boolean checklistProblemFounderFit;
-
     private boolean checklistExperienceAlignment;
-
     private boolean checklistTeamStructureIsClear;
-
     private boolean checklistCapabilityGapPlanExists;
-
     private Member member;
-
     private Double reviewFeasibilityAvg;
-
     private Double reviewDifferentiationAvg;
-
     private Double reviewFinancialAvg;
-
     private Double reviewTotalAvg;
-
     private Integer reviewCount;
-
     private Long version;
-
-
-
-    /**
-     * 수정기록과 주석 관련 기능 확인하고 ERD 반영해야함 (11/20)
-     * */
-
-
 
     public static Document of(String title, String content, Folder folder, boolean bookmark, Member member) {
         return Document.builder()
@@ -120,13 +72,22 @@ public class Document extends AuditableDomainEntity {
                 .build();
     }
 
-    // 부분/전체 수정 편의 메서드
     public void updateIfPresent(String title, String content, String summary, String details, Boolean bookmark) {
-        if (title != null) this.title = title;
-        if (content != null) this.content = content;
-        if (summary != null) this.summary = summary;
-        if (details != null) this.details = details;
-        if (bookmark != null) this.bookmark = bookmark;
+        if (title != null) {
+            this.title = title;
+        }
+        if (content != null) {
+            this.content = content;
+        }
+        if (summary != null) {
+            this.summary = summary;
+        }
+        if (details != null) {
+            this.details = details;
+        }
+        if (bookmark != null) {
+            this.bookmark = bookmark;
+        }
     }
 
     public void updateFolder(Folder folder) {
@@ -210,7 +171,13 @@ public class Document extends AuditableDomainEntity {
         return snapshot;
     }
 
-    public void updateReviewSummary(Double feasibilityAvg, Double differentiationAvg, Double financialAvg, Double totalAvg, Integer count) {
+    public void updateReviewSummary(
+            Double feasibilityAvg,
+            Double differentiationAvg,
+            Double financialAvg,
+            Double totalAvg,
+            Integer count
+    ) {
         this.reviewFeasibilityAvg = feasibilityAvg;
         this.reviewDifferentiationAvg = differentiationAvg;
         this.reviewFinancialAvg = financialAvg;
@@ -245,7 +212,7 @@ public class Document extends AuditableDomainEntity {
     }
 
     private void applyChecklistValue(String key, boolean value, boolean merge) {
-        boolean nextValue = merge ? value : value;
+        boolean nextValue = value;
         switch (key) {
             case "differentiation_is_clear" -> checklistDifferentiationIsClear = merge ? checklistDifferentiationIsClear || value : nextValue;
             case "differentiation_is_realistic" -> checklistDifferentiationIsRealistic = merge ? checklistDifferentiationIsRealistic || value : nextValue;
