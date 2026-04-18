@@ -8,8 +8,10 @@ import or.hyu.ssd.infra.persistence.document.repository.jpa.FolderJpaRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -56,6 +58,14 @@ public class FolderRepositoryImpl implements FolderRepository {
     @Override
     public boolean existsByMember_IdAndParent_Id(Long memberId, Long parentId) {
         return folderJpaRepository.existsByMember_IdAndParent_Id(memberId, parentId);
+    }
+
+    @Override
+    public Set<Long> findParentIdsHavingChildren(Long memberId, List<Long> parentIds) {
+        if (parentIds == null || parentIds.isEmpty()) {
+            return Set.of();
+        }
+        return new LinkedHashSet<>(folderJpaRepository.findDistinctParentIdsByMember_IdAndParent_IdIn(memberId, parentIds));
     }
 
     @Override

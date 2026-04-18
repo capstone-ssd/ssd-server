@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -222,10 +223,17 @@ public class FolderService {
     }
 
     private List<FolderListItemResult> toFolderItems(Long memberId, List<Folder> folders) {
+        Set<Long> folderIdsHavingChildren = folderRepository.findParentIdsHavingChildren(
+                memberId,
+                folders.stream()
+                        .map(Folder::getId)
+                        .toList()
+        );
+
         return folders.stream()
                 .map(folder -> FolderListItemResult.of(
                         folder,
-                        folderRepository.existsByMember_IdAndParent_Id(memberId, folder.getId())
+                        folderIdsHavingChildren.contains(folder.getId())
                 ))
                 .collect(Collectors.toList());
     }

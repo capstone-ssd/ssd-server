@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,8 +58,7 @@ class FolderServiceTest {
         when(folderRepository.findAllByMember_IdAndParentIsNull(1L)).thenReturn(List.of(rootA, rootB));
         when(documentRepository.findAllByMember_IdAndFolderIsNull(any(Long.class), any(Sort.class)))
                 .thenReturn(List.of(rootDoc));
-        when(folderRepository.existsByMember_IdAndParent_Id(1L, 1L)).thenReturn(true);
-        when(folderRepository.existsByMember_IdAndParent_Id(1L, 2L)).thenReturn(false);
+        when(folderRepository.findParentIdsHavingChildren(1L, List.of(1L, 2L))).thenReturn(Set.of(1L));
 
         FolderContentResult result = folderService.listContent(user, null);
 
@@ -86,7 +86,7 @@ class FolderServiceTest {
         when(folderRepository.findAllByMember_IdAndParent_Id(1L, 20L)).thenReturn(List.of(child));
         when(documentRepository.findAllByMember_IdAndFolder_Id(1L, 20L, Sort.by(Sort.Order.desc("updatedAt"))))
                 .thenReturn(List.of(doc));
-        when(folderRepository.existsByMember_IdAndParent_Id(1L, 21L)).thenReturn(false);
+        when(folderRepository.findParentIdsHavingChildren(1L, List.of(21L))).thenReturn(Set.of());
 
         // then
         FolderContentResult result = folderService.listContent(user, 20L);
@@ -115,8 +115,7 @@ class FolderServiceTest {
                 .thenReturn(List.of(root, child));
         when(documentRepository.findAllByMember_Id(any(Long.class), any(Sort.class)))
                 .thenReturn(List.of(docInRoot, docInChild));
-        when(folderRepository.existsByMember_IdAndParent_Id(1L, 1L)).thenReturn(true);
-        when(folderRepository.existsByMember_IdAndParent_Id(1L, 11L)).thenReturn(false);
+        when(folderRepository.findParentIdsHavingChildren(1L, List.of(1L, 11L))).thenReturn(Set.of(1L));
 
         FolderContentResult result = folderService.listAllContent(user);
 

@@ -5,6 +5,7 @@ import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FolderRepository {
 
@@ -21,6 +22,8 @@ public interface FolderRepository {
     List<Folder> findAllByMember_Id(Long memberId, Sort sort);
 
     boolean existsByMember_IdAndParent_Id(Long memberId, Long parentId);
+
+    Set<Long> findParentIdsHavingChildren(Long memberId, List<Long> parentIds);
 
     void delete(Folder folder);
 }
