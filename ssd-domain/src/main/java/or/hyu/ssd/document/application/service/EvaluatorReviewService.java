@@ -1,8 +1,8 @@
 package or.hyu.ssd.document.application.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.EvaluatorReview;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.EvaluatorReview;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.repository.EvaluatorReviewRepository;
 import or.hyu.ssd.document.application.command.CreateEvaluatorReviewCommand;
@@ -11,7 +11,7 @@ import or.hyu.ssd.document.application.result.EvaluatorReviewDetailResult;
 import or.hyu.ssd.document.application.result.EvaluatorReviewIdResult;
 import or.hyu.ssd.document.application.result.EvaluatorReviewListItemResult;
 import or.hyu.ssd.document.application.result.EvaluatorReviewListResult;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;

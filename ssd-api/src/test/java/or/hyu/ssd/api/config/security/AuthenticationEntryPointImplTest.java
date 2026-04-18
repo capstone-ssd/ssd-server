@@ -1,4 +1,4 @@
-package or.hyu.ssd.api.security;
+package or.hyu.ssd.api.config.security;
 
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.DisplayName;

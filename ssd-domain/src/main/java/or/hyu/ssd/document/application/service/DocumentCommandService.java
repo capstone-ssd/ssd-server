@@ -1,11 +1,11 @@
 package or.hyu.ssd.document.application.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
-import or.hyu.ssd.document.domain.entity.DocumentLog;
-import or.hyu.ssd.document.domain.entity.DocumentParagraph;
-import or.hyu.ssd.document.domain.entity.Folder;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentBlockType;
+import or.hyu.ssd.document.domain.model.DocumentLog;
+import or.hyu.ssd.document.domain.model.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.CheckListRepository;
 import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.document.repository.DocumentCommentRepository;
@@ -23,7 +23,7 @@ import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 import or.hyu.ssd.document.application.result.CreateDocumentResult;
 import or.hyu.ssd.document.application.result.DocumentBookmarkResult;
 import or.hyu.ssd.document.application.result.UpdateDocumentResult;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;

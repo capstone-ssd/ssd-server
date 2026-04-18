@@ -1,8 +1,8 @@
 package or.hyu.ssd.document.application.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentLog;
 import or.hyu.ssd.document.repository.DocumentLogRepository;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.DocumentLogDateGroupResult;

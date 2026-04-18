@@ -15,11 +15,10 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.infra.persistence.base.BaseJpaEntity;
 import org.hibernate.annotations.Comment;
 
@@ -27,7 +26,6 @@ import org.hibernate.annotations.Comment;
 @Getter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "document_paragraphs",
         uniqueConstraints = {

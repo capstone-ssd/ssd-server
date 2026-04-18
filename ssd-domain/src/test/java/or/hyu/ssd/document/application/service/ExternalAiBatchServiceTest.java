@@ -13,8 +13,8 @@ import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
 import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
-import or.hyu.ssd.member.domain.entity.Member;
-import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.domain.model.Member;
+import or.hyu.ssd.member.domain.model.Role;
 
 import java.util.Map;
 

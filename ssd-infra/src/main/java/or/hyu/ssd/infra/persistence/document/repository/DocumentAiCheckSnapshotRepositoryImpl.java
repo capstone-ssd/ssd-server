@@ -1,8 +1,8 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentAiCheckSnapshot;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentAiCheckSnapshot;
 import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.DocumentAiCheckSnapshotJpaRepository;

@@ -12,7 +12,7 @@ import or.hyu.ssd.auth.config.JWTConfig;
 import or.hyu.ssd.auth.jwt.repository.AccessTokenBlacklistRepository;
 import or.hyu.ssd.auth.jwt.support.BearerTokenExtractor;
 import or.hyu.ssd.auth.jwt.support.JWTUtil;
-import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.domain.model.Role;
 import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.auth.principal.CustomUserDetailsService;
 import or.hyu.ssd.common.exception.ErrorCode;

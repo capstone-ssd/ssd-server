@@ -1,9 +1,9 @@
 package or.hyu.ssd.document.application.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentAiCheckSnapshot;
-import or.hyu.ssd.document.domain.entity.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentAiCheckSnapshot;
+import or.hyu.ssd.document.domain.model.DocumentParagraph;
 import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.ExternalAiDocumentCheckResult;

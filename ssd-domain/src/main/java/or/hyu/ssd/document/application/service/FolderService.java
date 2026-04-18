@@ -1,8 +1,8 @@
 package or.hyu.ssd.document.application.service;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.Folder;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.document.application.command.CreateFolderCommand;
@@ -12,7 +12,7 @@ import or.hyu.ssd.document.application.result.DocumentListItemResult;
 import or.hyu.ssd.document.application.result.FolderContentResult;
 import or.hyu.ssd.document.application.result.FolderListItemResult;
 import or.hyu.ssd.document.application.result.UpdateFolderResult;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;

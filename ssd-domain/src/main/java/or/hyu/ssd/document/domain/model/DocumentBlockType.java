@@ -1,4 +1,4 @@
-package or.hyu.ssd.document.domain.entity;
+package or.hyu.ssd.document.domain.model;
 
 public enum DocumentBlockType {
     PARAGRAPH,

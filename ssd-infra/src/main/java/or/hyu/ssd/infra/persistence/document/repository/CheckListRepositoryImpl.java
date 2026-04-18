@@ -1,8 +1,8 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.CheckList;
-import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.model.CheckList;
+import or.hyu.ssd.document.domain.model.Document;
 import or.hyu.ssd.document.repository.CheckListRepository;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.CheckListJpaRepository;

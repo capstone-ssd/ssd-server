@@ -1,6 +1,6 @@
 package or.hyu.ssd.member.application.result;
 
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 
 public record GetMyMemberResult(
         Long memberId,

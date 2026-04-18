@@ -9,12 +9,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import or.hyu.ssd.infra.persistence.base.BaseJpaEntity;
-import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.domain.model.Role;
 import org.hibernate.annotations.Comment;
 import org.springframework.util.StringUtils;
 
@@ -22,7 +21,6 @@ import org.springframework.util.StringUtils;
 @Getter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "members")
 public class MemberJpaEntity extends BaseJpaEntity {
 

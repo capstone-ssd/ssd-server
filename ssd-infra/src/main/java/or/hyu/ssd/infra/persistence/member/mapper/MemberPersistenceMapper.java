@@ -2,7 +2,7 @@ package or.hyu.ssd.infra.persistence.member.mapper;
 
 import or.hyu.ssd.infra.persistence.base.BaseJpaEntity;
 import or.hyu.ssd.infra.persistence.member.entity.MemberJpaEntity;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.shared.domain.AuditableDomainEntity;
 
 public final class MemberPersistenceMapper {

@@ -1,6 +1,6 @@
 package or.hyu.ssd.document.repository;
 
-import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.model.Document;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;

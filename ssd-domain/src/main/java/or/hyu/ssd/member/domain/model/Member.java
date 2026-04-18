@@ -1,7 +1,6 @@
-package or.hyu.ssd.member.domain.entity;
+package or.hyu.ssd.member.domain.model;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -10,7 +9,6 @@ import or.hyu.ssd.shared.domain.AuditableDomainEntity;
 @Getter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends AuditableDomainEntity {
 
     private Long id;

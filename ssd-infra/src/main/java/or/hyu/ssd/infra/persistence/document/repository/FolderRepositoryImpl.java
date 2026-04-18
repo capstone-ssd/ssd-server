@@ -1,7 +1,7 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Folder;
+import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.FolderJpaRepository;

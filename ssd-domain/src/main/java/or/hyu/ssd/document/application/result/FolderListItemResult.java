@@ -1,6 +1,6 @@
 package or.hyu.ssd.document.application.result;
 
-import or.hyu.ssd.document.domain.entity.Folder;
+import or.hyu.ssd.document.domain.model.Folder;
 
 import java.time.LocalDateTime;
 

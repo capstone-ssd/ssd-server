@@ -1,7 +1,7 @@
 package or.hyu.ssd.document.repository;
 
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.EvaluatorCheckList;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.EvaluatorCheckList;
 
 import java.util.List;
 

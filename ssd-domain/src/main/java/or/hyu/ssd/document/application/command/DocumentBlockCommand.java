@@ -1,6 +1,6 @@
 package or.hyu.ssd.document.application.command;
 
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.domain.model.DocumentBlockType;
 
 public record DocumentBlockCommand(
         DocumentBlockType type,

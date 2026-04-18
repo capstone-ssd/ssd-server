@@ -1,8 +1,8 @@
 package or.hyu.ssd.member.application.service;
 
 import or.hyu.ssd.member.application.result.GetMyMemberResult;
-import or.hyu.ssd.member.domain.entity.Member;
-import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.domain.model.Member;
+import or.hyu.ssd.member.domain.model.Role;
 import or.hyu.ssd.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

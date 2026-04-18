@@ -1,7 +1,7 @@
 package or.hyu.ssd.document.repository;
 
-import or.hyu.ssd.document.domain.entity.CheckList;
-import or.hyu.ssd.document.domain.entity.Document;
+import or.hyu.ssd.document.domain.model.CheckList;
+import or.hyu.ssd.document.domain.model.Document;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,10 +1,10 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.EvaluatorReview;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.EvaluatorReview;
 import or.hyu.ssd.document.repository.EvaluatorReviewRepository;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.member.mapper.MemberPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.EvaluatorReviewJpaRepository;

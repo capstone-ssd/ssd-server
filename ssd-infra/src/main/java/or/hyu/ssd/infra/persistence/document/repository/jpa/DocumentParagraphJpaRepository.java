@@ -1,7 +1,7 @@
 package or.hyu.ssd.infra.persistence.document.repository.jpa;
 
 import or.hyu.ssd.infra.persistence.document.entity.DocumentParagraphJpaEntity;
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.infra.persistence.document.entity.DocumentJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 

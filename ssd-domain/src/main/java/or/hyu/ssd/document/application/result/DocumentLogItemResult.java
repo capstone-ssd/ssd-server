@@ -1,6 +1,6 @@
 package or.hyu.ssd.document.application.result;
 
-import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.document.domain.model.DocumentLog;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

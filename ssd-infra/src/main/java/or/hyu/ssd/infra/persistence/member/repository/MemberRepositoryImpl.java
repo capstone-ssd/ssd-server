@@ -2,7 +2,7 @@ package or.hyu.ssd.infra.persistence.member.repository;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.infra.persistence.member.mapper.MemberPersistenceMapper;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.infra.persistence.member.repository.jpa.MemberJpaRepository;
 import org.springframework.stereotype.Repository;

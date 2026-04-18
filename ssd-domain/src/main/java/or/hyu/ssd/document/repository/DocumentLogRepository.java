@@ -1,7 +1,7 @@
 package or.hyu.ssd.document.repository;
 
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentLog;
 
 import java.util.List;
 

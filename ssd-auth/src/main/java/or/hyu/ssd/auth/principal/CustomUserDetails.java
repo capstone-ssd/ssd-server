@@ -3,7 +3,7 @@ package or.hyu.ssd.auth.principal;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.UserExceptionHandler;
 import org.springframework.security.core.GrantedAuthority;

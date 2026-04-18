@@ -1,9 +1,9 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
-import or.hyu.ssd.document.domain.entity.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentBlockType;
+import or.hyu.ssd.document.domain.model.DocumentParagraph;
 import or.hyu.ssd.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.DocumentParagraphJpaRepository;

@@ -3,7 +3,7 @@ package or.hyu.ssd.auth.jwt.service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import or.hyu.ssd.member.domain.entity.Member;
+import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.auth.jwt.support.RefreshTokenValidator;
 import or.hyu.ssd.common.exception.ErrorCode;

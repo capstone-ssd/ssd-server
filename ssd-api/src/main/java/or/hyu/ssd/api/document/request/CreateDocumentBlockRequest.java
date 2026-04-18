@@ -1,7 +1,7 @@
 package or.hyu.ssd.api.document.request;
 
 import jakarta.validation.constraints.AssertTrue;
-import or.hyu.ssd.document.domain.entity.DocumentBlockType;
+import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.document.application.command.DocumentBlockCommand;
 import org.springframework.util.StringUtils;
 

@@ -1,14 +1,14 @@
 package or.hyu.ssd.document.application.service;
 
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.Folder;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.document.application.command.CreateFolderCommand;
 import or.hyu.ssd.document.application.command.UpdateFolderCommand;
 import or.hyu.ssd.document.application.result.FolderContentResult;
-import or.hyu.ssd.member.domain.entity.Member;
-import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.domain.model.Member;
+import or.hyu.ssd.member.domain.model.Role;
 import or.hyu.ssd.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

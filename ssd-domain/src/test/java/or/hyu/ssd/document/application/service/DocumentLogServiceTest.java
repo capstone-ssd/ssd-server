@@ -6,13 +6,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentLog;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentLog;
 import or.hyu.ssd.document.repository.DocumentLogRepository;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.DocumentLogResult;
-import or.hyu.ssd.member.domain.entity.Member;
-import or.hyu.ssd.member.domain.entity.Role;
+import or.hyu.ssd.member.domain.model.Member;
+import or.hyu.ssd.member.domain.model.Role;
 
 import java.time.LocalDateTime;
 import java.util.List;

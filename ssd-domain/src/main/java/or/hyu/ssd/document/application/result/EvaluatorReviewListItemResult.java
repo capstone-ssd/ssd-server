@@ -1,6 +1,6 @@
 package or.hyu.ssd.document.application.result;
 
-import or.hyu.ssd.document.domain.entity.EvaluatorReview;
+import or.hyu.ssd.document.domain.model.EvaluatorReview;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 

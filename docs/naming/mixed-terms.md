@@ -21,7 +21,7 @@
   - `ssd-auth/src/main/java/or/hyu/ssd/auth/jwt/service/JWTService.java`
 - `Paragraph` / `Block` 혼용
   - `ssd-domain/src/main/java/or/hyu/ssd/document/application/service/DocumentCommandService.java`
-  - `ssd-domain/src/main/java/or/hyu/ssd/document/domain/entity/DocumentParagraph.java`
+  - `ssd-domain/src/main/java/or/hyu/ssd/document/domain/model/DocumentParagraph.java`
 - `Author` / `Member` 혼용
   - `ssd-api/src/main/java/or/hyu/ssd/api/document/response/GetDocumentResponse.java`
 - `Evaluator` / `reviewer` 혼용

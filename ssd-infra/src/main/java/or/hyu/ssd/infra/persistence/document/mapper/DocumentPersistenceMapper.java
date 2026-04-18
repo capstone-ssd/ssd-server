@@ -1,14 +1,14 @@
 package or.hyu.ssd.infra.persistence.document.mapper;
 
-import or.hyu.ssd.document.domain.entity.CheckList;
-import or.hyu.ssd.document.domain.entity.Document;
-import or.hyu.ssd.document.domain.entity.DocumentAiCheckSnapshot;
-import or.hyu.ssd.document.domain.entity.DocumentComment;
-import or.hyu.ssd.document.domain.entity.DocumentLog;
-import or.hyu.ssd.document.domain.entity.DocumentParagraph;
-import or.hyu.ssd.document.domain.entity.EvaluatorCheckList;
-import or.hyu.ssd.document.domain.entity.EvaluatorReview;
-import or.hyu.ssd.document.domain.entity.Folder;
+import or.hyu.ssd.document.domain.model.CheckList;
+import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentAiCheckSnapshot;
+import or.hyu.ssd.document.domain.model.DocumentComment;
+import or.hyu.ssd.document.domain.model.DocumentLog;
+import or.hyu.ssd.document.domain.model.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.EvaluatorCheckList;
+import or.hyu.ssd.document.domain.model.EvaluatorReview;
+import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.infra.persistence.base.BaseJpaEntity;
 import or.hyu.ssd.infra.persistence.document.entity.CheckListJpaEntity;
 import or.hyu.ssd.infra.persistence.document.entity.DocumentAiCheckSnapshotJpaEntity;
@@ -174,6 +174,7 @@ public final class DocumentPersistenceMapper {
 
         return FolderJpaEntity.builder()
                 .id(folder.getId())
+                .version(folder.getVersion())
                 .build();
     }
 
@@ -410,6 +411,7 @@ public final class DocumentPersistenceMapper {
 
         return DocumentJpaEntity.builder()
                 .id(document.getId())
+                .version(document.getVersion())
                 .build();
     }
 
@@ -420,6 +422,7 @@ public final class DocumentPersistenceMapper {
 
         return Document.builder()
                 .id(entity.getId())
+                .version(entity.getVersion())
                 .build();
     }
 
