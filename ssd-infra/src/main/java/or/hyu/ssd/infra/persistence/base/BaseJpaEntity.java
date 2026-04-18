@@ -21,9 +21,10 @@ import java.time.LocalDateTime;
 public abstract class BaseJpaEntity {
 
     @CreatedDate
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     protected LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     protected LocalDateTime updatedAt;
 }
