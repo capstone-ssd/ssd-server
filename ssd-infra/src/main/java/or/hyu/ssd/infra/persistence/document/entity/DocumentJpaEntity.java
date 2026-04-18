@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -25,7 +26,13 @@ import java.util.Map;
 @Getter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "documents")
+@Table(
+        name = "documents",
+        indexes = {
+                @Index(name = "idx_documents_member_folder_updated_at", columnList = "member_id, folder_id, updated_at"),
+                @Index(name = "idx_documents_member_title", columnList = "member_id, title")
+        }
+)
 public class DocumentJpaEntity extends BaseJpaEntity {
 
     @Id
