@@ -11,4 +11,4 @@ pluginManagement {
 
 rootProject.name = 'ssd'
 
-include 'ssd-api', 'ssd-domain', 'ssd-infra', 'ssd-core'
+include 'ssd-api', 'ssd-domain', 'ssd-infra', 'ssd-common', 'ssd-auth', 'ssd-external'

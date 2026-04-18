@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':ssd-common')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    implementation platform('software.amazon.awssdk:bom:2.32.20')
+    implementation 'software.amazon.awssdk:s3'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

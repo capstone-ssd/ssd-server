@@ -4,14 +4,11 @@ plugins {
 
 dependencies {
     implementation project(':ssd-domain')
-    implementation project(':ssd-core')
+    implementation project(':ssd-common')
+    implementation project(':ssd-external')
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
-    implementation platform('software.amazon.awssdk:bom:2.32.20')
-    implementation 'software.amazon.awssdk:s3'
+    implementation 'io.github.openfeign:feign-core:13.6'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
