@@ -1,21 +1,26 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.FolderRepository;
+import or.hyu.ssd.infra.persistence.document.entity.QFolderJpaEntity;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
 import or.hyu.ssd.infra.persistence.document.repository.jpa.FolderJpaRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
 public class FolderRepositoryImpl implements FolderRepository {
 
     private final FolderJpaRepository folderJpaRepository;
+    private final JPAQueryFactory queryFactory;
 
     @Override
     public Folder save(Folder folder) {
@@ -56,6 +61,24 @@ public class FolderRepositoryImpl implements FolderRepository {
     @Override
     public boolean existsByMember_IdAndParent_Id(Long memberId, Long parentId) {
         return folderJpaRepository.existsByMember_IdAndParent_Id(memberId, parentId);
+    }
+
+    @Override
+    public Set<Long> findParentIdsHavingChildren(Long memberId, List<Long> parentIds) {
+        if (parentIds == null || parentIds.isEmpty()) {
+            return Set.of();
+        }
+
+        QFolderJpaEntity child = new QFolderJpaEntity("child");
+        return new LinkedHashSet<>(queryFactory
+                .select(child.parent.id)
+                .distinct()
+                .from(child)
+                .where(
+                        child.member.id.eq(memberId),
+                        child.parent.id.in(parentIds)
+                )
+                .fetch());
     }
 
     @Override

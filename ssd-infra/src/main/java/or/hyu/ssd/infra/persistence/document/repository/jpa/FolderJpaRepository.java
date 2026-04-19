@@ -1,8 +1,8 @@
 package or.hyu.ssd.infra.persistence.document.repository.jpa;
 
 import or.hyu.ssd.infra.persistence.document.entity.FolderJpaEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
