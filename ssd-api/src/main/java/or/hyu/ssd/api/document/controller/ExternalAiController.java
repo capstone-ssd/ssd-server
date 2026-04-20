@@ -9,6 +9,7 @@ import or.hyu.ssd.api.document.response.ExternalAiChecklistResponse;
 import or.hyu.ssd.api.document.response.ExternalAiBatchResponse;
 import or.hyu.ssd.api.document.response.ExternalAiDocumentCheckResponse;
 import or.hyu.ssd.api.document.response.ExternalAiEvaluationCardResponse;
+import or.hyu.ssd.api.document.response.ExternalAiHealthResponse;
 import or.hyu.ssd.api.document.response.ExternalAiKeywordResponse;
 import or.hyu.ssd.api.document.response.ExternalAiSummaryResponse;
 import or.hyu.ssd.api.document.request.ExternalDocumentIdRequest;
@@ -33,6 +34,29 @@ public class ExternalAiController {
 
     private final ExternalAiService externalAiService;
     private final ExternalAiBatchService externalAiBatchService;
+
+    @GetMapping("/v1/external-ai/health")
+    @Operation(
+            summary = "외부 AI 서버 헬스체크",
+            description = """
+                    ### 개요
+                    - 외부 AI 서버의 `/health` 엔드포인트에 연결 가능한지 확인합니다.
+                    - 외부 서버가 정상 응답하면 `UP`, 실패하면 `DOWN` 상태를 반환합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 응답
+                    - 200 OK
+                    - data.status: `UP` 또는 `DOWN`
+                    - data.available: 연결 가능 여부
+                    - data.message: 상태 메시지
+                    """
+    )
+    public ResponseEntity<ApiResponse<ExternalAiHealthResponse>> health() {
+        ExternalAiHealthResponse response = ExternalAiHealthResponse.from(externalAiService.health());
+        return ResponseEntity.ok(ApiResponse.ok(response, "외부 AI 서버 상태가 조회되었습니다."));
+    }
 
     @PostMapping("/v1/external-ai/evaluate")
     @Operation(

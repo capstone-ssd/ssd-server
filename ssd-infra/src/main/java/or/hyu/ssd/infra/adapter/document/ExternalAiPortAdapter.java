@@ -5,6 +5,7 @@ import feign.codec.DecodeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.document.port.ExternalAiPort;
+import or.hyu.ssd.document.port.dto.ExternalAiHealthStatus;
 import or.hyu.ssd.document.port.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.document.port.dto.ExternalCheckNewTextResponse;
 import or.hyu.ssd.document.port.dto.ExternalEvaluationRequest;
@@ -28,6 +29,30 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
     private static final int MAX_LOG_BODY_LENGTH = 200;
 
     private final ExternalAiClient externalAiClient;
+
+    @Override
+    public ExternalAiHealthStatus health() {
+        try {
+            externalAiClient.health();
+            return ExternalAiHealthStatus.up("외부 AI 서버가 정상 응답했습니다.");
+        } catch (FeignException e) {
+            Throwable cause = e.getCause();
+            log.warn(
+                    "[외부 AI 서버 헬스체크 실패] endpoint=GET /health, status={}, causeType={}, causeMessage={}",
+                    e.status(),
+                    cause == null ? "(none)" : cause.getClass().getSimpleName(),
+                    sanitize(cause == null ? null : cause.getMessage(), MAX_LOG_BODY_LENGTH)
+            );
+            return ExternalAiHealthStatus.down(resolveHealthFailureMessage(e.status()));
+        } catch (RuntimeException e) {
+            log.warn(
+                    "[외부 AI 서버 헬스체크 실패] endpoint=GET /health, causeType={}, causeMessage={}",
+                    e.getClass().getSimpleName(),
+                    sanitize(e.getMessage(), MAX_LOG_BODY_LENGTH)
+            );
+            return ExternalAiHealthStatus.down("외부 AI 서버에 연결할 수 없습니다.");
+        }
+    }
 
     @Override
     public ExternalEvaluationResponse evaluate(ExternalEvaluationRequest request) {
@@ -82,6 +107,13 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
             log.error("[외부 AI 응답 처리 실패] endpoint={}", endpoint, e);
             throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_RESPONSE_INVALID);
         }
+    }
+
+    private String resolveHealthFailureMessage(int status) {
+        if (status > 0) {
+            return "외부 AI 서버가 비정상 응답을 반환했습니다. status=" + status;
+        }
+        return "외부 AI 서버에 연결할 수 없습니다.";
     }
 
     private String sanitize(String text, int maxLength) {

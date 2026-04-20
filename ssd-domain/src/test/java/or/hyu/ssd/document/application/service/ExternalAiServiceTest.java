@@ -24,7 +24,9 @@ import or.hyu.ssd.document.application.result.ExternalAiChecklistResult;
 import or.hyu.ssd.document.application.result.ExternalAiDocumentCheckResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.document.application.result.ExternalAiHealthResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
+import or.hyu.ssd.document.port.dto.ExternalAiHealthStatus;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.domain.model.Role;
 
@@ -54,6 +56,21 @@ class ExternalAiServiceTest {
 
     @InjectMocks
     private ExternalAiService externalAiService;
+
+    @Test
+    @DisplayName("health()는 외부 AI 서버 상태를 그대로 반환한다")
+    void health_returnsExternalAiHealth() {
+        // given
+        when(externalAiPort.health()).thenReturn(ExternalAiHealthStatus.down("외부 AI 서버에 연결할 수 없습니다."));
+
+        // when
+        ExternalAiHealthResult response = externalAiService.health();
+
+        // then
+        assertThat(response.status()).isEqualTo("DOWN");
+        assertThat(response.available()).isFalse();
+        assertThat(response.message()).isEqualTo("외부 AI 서버에 연결할 수 없습니다.");
+    }
 
     @Test
     @DisplayName("summarizeBasic()는 외부 요약 결과를 DB 반영 서비스에 위임한다")
