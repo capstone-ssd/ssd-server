@@ -2,6 +2,7 @@ package or.hyu.ssd.document.application.service;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.document.port.ExternalAiPort;
+import or.hyu.ssd.document.port.dto.ExternalAiHealthStatus;
 import or.hyu.ssd.document.port.dto.ExternalCheckNewTextBlockRequest;
 import or.hyu.ssd.document.port.dto.ExternalCheckNewTextRequest;
 import or.hyu.ssd.document.port.dto.ExternalCheckNewTextResponse;
@@ -23,6 +24,7 @@ import or.hyu.ssd.document.application.result.ExternalAiChecklistResult;
 import or.hyu.ssd.document.application.result.ExternalAiDocumentCheckResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.document.application.result.ExternalAiHealthResult;
 import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 import or.hyu.ssd.common.exception.ErrorCode;
@@ -46,6 +48,12 @@ public class ExternalAiService {
     private final DocumentRepository documentRepository;
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
+
+    @Transactional(readOnly = true)
+    public ExternalAiHealthResult health() {
+        ExternalAiHealthStatus healthStatus = externalAiPort.health();
+        return ExternalAiHealthResult.of(healthStatus.available(), healthStatus.message());
+    }
 
     public ExternalAiEvaluationCardResult evaluate(ExternalDocumentIdCommand command, Long memberId) {
         Document doc = getOwnedDocument(command.docId(), memberId);

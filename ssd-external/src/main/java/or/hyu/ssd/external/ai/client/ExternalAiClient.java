@@ -10,6 +10,7 @@ import or.hyu.ssd.external.ai.dto.ExternalSummarizationKeywordRequest;
 import or.hyu.ssd.external.ai.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.external.config.ExternalAiFeignConfig;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
         configuration = ExternalAiFeignConfig.class
 )
 public interface ExternalAiClient {
+
+    @GetMapping("/docs")
+    void health();
 
     @PostMapping("/evaluate")
     ExternalEvaluationResponse evaluate(@RequestBody ExternalEvaluationRequest request);
