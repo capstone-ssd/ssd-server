@@ -66,6 +66,8 @@ public class FolderService {
             }
         }
 
+        folderRepository.save(folder);
+
         return UpdateFolderResult.of(folder.getId());
     }
 

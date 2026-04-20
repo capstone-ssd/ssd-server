@@ -118,6 +118,7 @@ public class DocumentCommandService {
             createdBlockCount = blockChangeSummary.createdBlockCount();
         }
         saveDocumentLog(document, member, deletedBlockCount, createdBlockCount);
+        documentRepository.save(document);
 
         return UpdateDocumentResult.of(document.getId());
     }
@@ -143,6 +144,7 @@ public class DocumentCommandService {
 
             boolean newValue = !document.isBookmark();
             document.updateIfPresent(null, null, null, null, newValue);
+            documentRepository.save(document);
             documentRepository.flush();
             return DocumentBookmarkResult.of(document.getId(), document.isBookmark());
         });
