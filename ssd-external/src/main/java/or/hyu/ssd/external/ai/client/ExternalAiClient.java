@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 )
 public interface ExternalAiClient {
 
-    @GetMapping("/health")
+    @GetMapping("/docs")
     void health();
 
     @PostMapping("/evaluate")
