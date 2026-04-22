@@ -4,6 +4,7 @@ import or.hyu.ssd.document.domain.model.Document;
 import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.document.domain.model.DocumentLog;
 import or.hyu.ssd.document.domain.model.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.DocumentPurpose;
 import or.hyu.ssd.document.repository.CheckListRepository;
 import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.document.repository.DocumentCommentRepository;
@@ -89,7 +90,8 @@ class DocumentCommandServiceTest {
                         paragraphBlock("첫 문단 제목", "#", 99),
                         paragraphBlock("둘째 문단", "", 100)
                 ),
-                0L
+                0L,
+                DocumentPurpose.EVALUATION
         );
         givenDocumentSaveReturns(42L);
         givenParagraphSaveReturnsInput();
@@ -102,6 +104,7 @@ class DocumentCommandServiceTest {
         ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
         verify(documentRepository).save(documentCaptor.capture());
         assertThat(documentCaptor.getValue().getTitle()).isEqualTo("첫 문단 제목");
+        assertThat(documentCaptor.getValue().getPurposeOrDefault()).isEqualTo(DocumentPurpose.EVALUATION);
 
         assertThat(captureSavedParagraphs())
                 .extracting(DocumentParagraph::getPageNumber, DocumentParagraph::getBlockId)
@@ -279,7 +282,8 @@ class DocumentCommandServiceTest {
                         paragraphBlock("문단1", "#", 1),
                         imageBlock(2, "img-1")
                 ),
-                0L
+                0L,
+                DocumentPurpose.WRITING
         );
         givenDocumentSaveReturns(50L);
         givenParagraphSaveReturnsInput();
@@ -310,7 +314,8 @@ class DocumentCommandServiceTest {
                 "이미지 본문",
                 "<img src=\"img-1\" />",
                 List.of(imageBlock(2, "img-1")),
-                0L
+                0L,
+                DocumentPurpose.WRITING
         );
         when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(documentImageResolver.resolveImageUrl(any(), anyInt(), any(), any()))
@@ -337,6 +342,7 @@ class DocumentCommandServiceTest {
                     .content(document.getContent())
                     .folder(document.getFolder())
                     .bookmark(document.isBookmark())
+                    .purpose(document.getPurpose())
                     .member(document.getMember())
                     .build();
         });
@@ -400,6 +406,7 @@ class DocumentCommandServiceTest {
                 .title("문서 제목")
                 .content("문서 본문")
                 .bookmark(false)
+                .purpose(DocumentPurpose.WRITING)
                 .member(member)
                 .build();
     }

@@ -15,6 +15,7 @@
 | Term | Definition | Allowed aliases | Disallowed aliases | Follow-up issue |
 | --- | --- | --- | --- | --- |
 | Document | SSD에서 저장, 조회, 요약, 평가의 기준이 되는 사업계획서 문서 aggregate다. | 문서 | file, paper | `#139`, `#141`, `#142` |
+| DocumentPurpose | 문서가 작성 흐름용인지 평가 흐름용인지 구분하는 공식 enum이다. `Document` 저장 필드와 생성/조회 API에서 함께 사용한다. | purpose, 문서 목적 | type, mode, category | `#154` |
 | Paragraph | 문서 내용 중 문단/문장 같은 텍스트 콘텐츠를 가리키는 도메인 용어다. `Paragraph` 자체는 식별 스코프 이름이 아니라 텍스트 내용 개념을 뜻한다. | text paragraph, 문단 | block(문서-로컬 식별 단위를 가리킬 때), image | `#139`, `#140` |
 | Block | 하나의 문서 안에서 각 내용 항목을 식별하고, 순서/주석/변경 비교 기준으로 삼는 문서-로컬 단위다. 현재는 `blockId`와 함께 text/image 항목을 공통 처리하는 문맥에 사용한다. | document-local block, 블록 | paragraph(텍스트 내용 자체를 가리킬 때) | `#138`, `#139`, `#140`, `#141`, `#142` |
 | Review | 사람이 남긴 평가 결과다. SSD에서는 특히 `Evaluator`가 남긴 리뷰를 뜻한다. | evaluator review, human review | evaluation, ai review | `#140` |

@@ -20,6 +20,7 @@ public class Document extends AuditableDomainEntity {
     private String content;
     private Folder folder;
     private boolean bookmark;
+    private DocumentPurpose purpose;
     private String summary;
     private String shortSummary;
     private String details;
@@ -60,14 +61,34 @@ public class Document extends AuditableDomainEntity {
     private Integer reviewCount;
     private Long version;
 
-    public static Document of(String title, String content, Folder folder, boolean bookmark, Member member) {
+    public static Document of(
+            String title,
+            String content,
+            Folder folder,
+            boolean bookmark,
+            Member member,
+            DocumentPurpose purpose
+    ) {
         return Document.builder()
                 .title(title)
                 .content(content)
                 .folder(folder)
                 .bookmark(bookmark)
                 .member(member)
+                .purpose(purpose)
                 .build();
+    }
+
+    public DocumentPurpose getPurposeOrDefault() {
+        return purpose == null ? DocumentPurpose.WRITING : purpose;
+    }
+
+    public boolean isWritingPurpose() {
+        return getPurposeOrDefault() == DocumentPurpose.WRITING;
+    }
+
+    public boolean isEvaluationPurpose() {
+        return getPurposeOrDefault() == DocumentPurpose.EVALUATION;
     }
 
     public void updateIfPresent(String title, String content, String summary, String details, Boolean bookmark) {

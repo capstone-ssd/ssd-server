@@ -1,12 +1,14 @@
 package or.hyu.ssd.document.application.result;
 
 import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentPurpose;
 
 import java.time.LocalDateTime;
 
 public record DocumentListItemResult(
         Long id,
         String title,
+        DocumentPurpose purpose,
         Long folderId,
         LocalDateTime updatedAt
 ) {
@@ -14,6 +16,7 @@ public record DocumentListItemResult(
         return new DocumentListItemResult(
                 doc.getId(),
                 doc.getTitle(),
+                doc.getPurposeOrDefault(),
                 doc.getFolder() != null ? doc.getFolder().getId() : null,
                 doc.getUpdatedAt()
         );
