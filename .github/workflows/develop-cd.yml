@@ -97,8 +97,10 @@ jobs:
           key: ${{ secrets.KEY }}
           script_stop: true
           script: |
-            sudo rm -rf /tmp/deploy /tmp/k6 /tmp/monitoring /tmp/.runtime /tmp/application-dev.yml
-            mkdir -p /tmp
+            export DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
+            sudo docker system prune -af || true
+            rm -rf "${DEPLOY_ROOT}"
+            mkdir -p "${DEPLOY_ROOT}"
 
       - name: SSH 키 준비
         env:
@@ -113,11 +115,12 @@ jobs:
           HOST: ${{ secrets.HOST }}
         run: |
           SSH_OPTS="-i ~/.ssh/id_deploy_key -p ${SSH_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
 
-          ssh ${SSH_OPTS} ubuntu@"${HOST}" 'mkdir -p /tmp/.runtime'
-          cat .runtime/application-dev.yml | ssh ${SSH_OPTS} ubuntu@"${HOST}" 'cat > /tmp/.runtime/application-dev.yml'
-          tar czf - deploy/ec2 | ssh ${SSH_OPTS} ubuntu@"${HOST}" 'tar xzf - -C /tmp'
-          tar czf - k6/monitoring | ssh ${SSH_OPTS} ubuntu@"${HOST}" 'tar xzf - -C /tmp'
+          ssh ${SSH_OPTS} ubuntu@"${HOST}" "mkdir -p ${DEPLOY_ROOT}/.runtime"
+          cat .runtime/application-dev.yml | ssh ${SSH_OPTS} ubuntu@"${HOST}" "cat > ${DEPLOY_ROOT}/.runtime/application-dev.yml"
+          tar czf - deploy/ec2 | ssh ${SSH_OPTS} ubuntu@"${HOST}" "tar xzf - -C ${DEPLOY_ROOT}"
+          tar czf - k6/monitoring | ssh ${SSH_OPTS} ubuntu@"${HOST}" "tar xzf - -C ${DEPLOY_ROOT}"
 
       - name: EC2 Blue/Green 배포
         uses: appleboy/ssh-action@v1.0.3
@@ -128,17 +131,18 @@ jobs:
           key: ${{ secrets.KEY }}
           script_stop: true
           script: |
-            chmod +x /tmp/deploy/ec2/install_infra.sh /tmp/deploy/ec2/install_monitoring.sh /tmp/deploy/ec2/blue_green_deploy.sh
+            export DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
+            chmod +x "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh" "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
             export APP_NAME="ssd"
             export DOCKER_REPO="${{ env.DOCKER_REPO }}"
             export IMAGE_TAG="${{ github.sha }}"
             export SPRING_PROFILES_ACTIVE="dev"
-            export APP_CONFIG_SOURCE="/tmp/.runtime/application-dev.yml"
+            export APP_CONFIG_SOURCE="${DEPLOY_ROOT}/.runtime/application-dev.yml"
             export APP_CONFIG_FILE="/opt/ssd/config/application-dev.yml"
             export HEALTH_PATH="/swagger-ui/index.html"
             export NETWORK_NAME="ssd-net"
             export NGINX_SERVER_NAME="dev-api.simsaimdang.shop"
             export NGINX_UPSTREAM_FILE="/etc/nginx/conf.d/ssd-upstream.conf"
-            sudo -E /tmp/deploy/ec2/install_infra.sh
-            sudo -E /tmp/deploy/ec2/install_monitoring.sh
-            sudo -E /tmp/deploy/ec2/blue_green_deploy.sh
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh"
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh"
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
