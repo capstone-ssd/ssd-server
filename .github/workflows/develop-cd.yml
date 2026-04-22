@@ -100,16 +100,24 @@ jobs:
             sudo rm -rf /tmp/deploy /tmp/k6 /tmp/monitoring /tmp/.runtime /tmp/application-dev.yml
             mkdir -p /tmp
 
+      - name: SSH 키 준비
+        env:
+          SSH_KEY: ${{ secrets.KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy_key
+          chmod 600 ~/.ssh/id_deploy_key
+
       - name: 배포 리소스 전송
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          port: ${{ env.SSH_PORT }}
-          username: ubuntu
-          key: ${{ secrets.KEY }}
-          source: "deploy/ec2,k6/monitoring,.runtime/application-dev.yml"
-          target: /tmp
-          overwrite: true
+        env:
+          HOST: ${{ secrets.HOST }}
+        run: |
+          SSH_OPTS="-i ~/.ssh/id_deploy_key -p ${SSH_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+          ssh ${SSH_OPTS} ubuntu@"${HOST}" 'mkdir -p /tmp/.runtime'
+          cat .runtime/application-dev.yml | ssh ${SSH_OPTS} ubuntu@"${HOST}" 'cat > /tmp/.runtime/application-dev.yml'
+          tar czf - deploy/ec2 | ssh ${SSH_OPTS} ubuntu@"${HOST}" 'tar xzf - -C /tmp'
+          tar czf - k6/monitoring | ssh ${SSH_OPTS} ubuntu@"${HOST}" 'tar xzf - -C /tmp'
 
       - name: EC2 Blue/Green 배포
         uses: appleboy/ssh-action@v1.0.3
