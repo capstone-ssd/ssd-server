@@ -64,6 +64,7 @@ public class DocumentController {
                     - paragraphs (array, optional): 문단 메타데이터 배열 (content, role, blockId만 입력. pageNumber는 생성 API에서 받지 않으며 1로 저장)
                       - role 허용값: "", "#", "##", "###", "####", "#####", "######"
                     - folderId (number, optional): 폴더 ID (없으면 루트)
+                    - purpose (string, required): 문서 목적 (`WRITING`, `EVALUATION`)
 
                     ### 응답
                     - 200 OK
@@ -96,6 +97,7 @@ public class DocumentController {
 
                     ### multipart 파트
                     - request (application/json, required): 문서 생성 요청 JSON
+                      - request 내부 purpose 필드는 필수이며 `WRITING`, `EVALUATION` 중 하나입니다.
                     - imageMetas (application/json, optional): blobKey/blockId 매핑 배열
                     - files (file[], optional): 실제 이미지 파일 배열
                     """
@@ -231,7 +233,7 @@ public class DocumentController {
                     ### 응답
                     - 200 OK
                     - data:
-                      - id, title, text, paragraphs, summary, details, folderId, bookmark
+                      - id, title, text, paragraphs, summary, details, purpose, folderId, bookmark
                       - authorId, authorName
 
                     ### 오류
@@ -276,6 +278,7 @@ public class DocumentController {
                     - data[]
                       - id: 문서 ID
                       - title: 제목
+                      - purpose: 문서 목적 (`WRITING`, `EVALUATION`)
                       - folderId: 폴더 ID (없으면 루트)
                       - updatedAt: 마지막 수정 시각
 

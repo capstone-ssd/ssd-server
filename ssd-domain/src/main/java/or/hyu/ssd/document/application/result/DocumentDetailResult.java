@@ -1,6 +1,7 @@
 package or.hyu.ssd.document.application.result;
 
 import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.domain.model.DocumentPurpose;
 
 import java.util.List;
 
@@ -11,6 +12,7 @@ public record DocumentDetailResult(
         List<DocumentBlockResult> blocks,
         String summary,
         String details,
+        DocumentPurpose purpose,
         Long folderId,
         boolean bookmark,
         Long authorId,
@@ -26,6 +28,7 @@ public record DocumentDetailResult(
                 blocks == null ? List.of() : List.copyOf(blocks),
                 document.getSummary(),
                 document.getDetails(),
+                document.getPurposeOrDefault(),
                 document.getFolder() != null ? document.getFolder().getId() : null,
                 document.isBookmark(),
                 authorId,

@@ -5,6 +5,7 @@ import or.hyu.ssd.document.domain.model.Document;
 import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.document.domain.model.DocumentLog;
 import or.hyu.ssd.document.domain.model.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.DocumentPurpose;
 import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.CheckListRepository;
 import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
@@ -78,7 +79,7 @@ public class DocumentCommandService {
         String resolvedText = documentImageResolver.replaceBlobKeys(command.text(), collectUploadedImageUrls(resolvedBlocks));
         String title = resolveTitle(command.title(), resolvedText, resolvedBlocks);
         Folder folder = resolveFolderOrNull(memberId, command.folderId());
-        Document document = Document.of(title, resolvedText, folder, false, member);
+        Document document = Document.of(title, resolvedText, folder, false, member, resolvePurpose(command.purpose()));
 
         Document saved = documentRepository.save(document);
         saveCreateParagraphsIfPresent(saved, resolvedBlocks);
@@ -229,6 +230,10 @@ public class DocumentCommandService {
         if (folderId != null && folderId < 0L) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더 ID는 0 이상이어야 합니다");
         }
+    }
+
+    private DocumentPurpose resolvePurpose(DocumentPurpose purpose) {
+        return purpose == null ? DocumentPurpose.WRITING : purpose;
     }
 
     private boolean isBlankProvided(String value) {

@@ -2,6 +2,8 @@ package or.hyu.ssd.infra.persistence.document.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,6 +17,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import or.hyu.ssd.document.domain.model.DocumentPurpose;
 import or.hyu.ssd.infra.persistence.base.BaseJpaEntity;
 import or.hyu.ssd.infra.persistence.member.entity.MemberJpaEntity;
 import org.hibernate.annotations.Comment;
@@ -55,6 +58,11 @@ public class DocumentJpaEntity extends BaseJpaEntity {
     @Comment("사업계획서 즐겨찾기 여부 (입력: bookmark)")
     @Column(name = "bookmark", nullable = false)
     private boolean bookmark;
+
+    @Comment("문서 목적 구분 (작성/평가)")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "purpose", length = 20)
+    private DocumentPurpose purpose;
 
     @Comment("ai가 생성한 사업계획서 세 줄 요약 (입력: summary)")
     @Column(name = "summary", columnDefinition = "TEXT")
@@ -216,7 +224,8 @@ public class DocumentJpaEntity extends BaseJpaEntity {
             String content,
             FolderJpaEntity folder,
             boolean bookmark,
-            MemberJpaEntity member
+            MemberJpaEntity member,
+            DocumentPurpose purpose
     ) {
         return DocumentJpaEntity.builder()
                 .title(title)
@@ -224,6 +233,7 @@ public class DocumentJpaEntity extends BaseJpaEntity {
                 .folder(folder)
                 .bookmark(bookmark)
                 .member(member)
+                .purpose(purpose)
                 .build();
     }
 

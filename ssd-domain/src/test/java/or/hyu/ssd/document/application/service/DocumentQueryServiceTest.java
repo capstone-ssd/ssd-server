@@ -3,6 +3,7 @@ package or.hyu.ssd.document.application.service;
 import or.hyu.ssd.document.domain.model.Document;
 import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.document.domain.model.DocumentParagraph;
+import or.hyu.ssd.document.domain.model.DocumentPurpose;
 import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.document.repository.DocumentRepository;
@@ -59,6 +60,7 @@ class DocumentQueryServiceTest {
 
         assertThat(result.id()).isEqualTo(42L);
         assertThat(result.authorId()).isEqualTo(1L);
+        assertThat(result.purpose()).isEqualTo(DocumentPurpose.EVALUATION);
         assertThat(result.blocks()).hasSize(2);
         assertThat(result.blocks().get(0).content()).isEqualTo("문단");
         assertThat(result.blocks().get(1).url()).isEqualTo("https://s3.example.com/image.png");
@@ -81,6 +83,7 @@ class DocumentQueryServiceTest {
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).id()).isEqualTo(100L);
+        assertThat(results.get(0).purpose()).isEqualTo(DocumentPurpose.EVALUATION);
         assertThat(results.get(0).folderId()).isNull();
     }
 
@@ -91,6 +94,7 @@ class DocumentQueryServiceTest {
                 .content("content")
                 .folder(folder)
                 .bookmark(false)
+                .purpose(DocumentPurpose.EVALUATION)
                 .member(member)
                 .build();
     }
