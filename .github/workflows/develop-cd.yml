@@ -88,6 +88,18 @@ jobs:
           cache-from: type=gha,scope=develop-cd-docker
           cache-to: type=gha,mode=max,scope=develop-cd-docker
 
+      - name: 원격 배포 임시 경로 정리
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          port: ${{ env.SSH_PORT }}
+          username: ubuntu
+          key: ${{ secrets.KEY }}
+          script_stop: true
+          script: |
+            sudo rm -rf /tmp/deploy /tmp/k6 /tmp/monitoring /tmp/.runtime /tmp/application-dev.yml
+            mkdir -p /tmp
+
       - name: 배포 리소스 전송
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -97,6 +109,7 @@ jobs:
           key: ${{ secrets.KEY }}
           source: "deploy/ec2,k6/monitoring,.runtime/application-dev.yml"
           target: /tmp
+          overwrite: true
 
       - name: EC2 Blue/Green 배포
         uses: appleboy/ssh-action@v1.0.3
