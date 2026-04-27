@@ -9,6 +9,7 @@ WORKDIR /workspace
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY gradle ./gradle
 COPY ssd-api/build.gradle ./ssd-api/build.gradle
+COPY ssd-application/build.gradle ./ssd-application/build.gradle
 COPY ssd-domain/build.gradle ./ssd-domain/build.gradle
 COPY ssd-common/build.gradle ./ssd-common/build.gradle
 COPY ssd-auth/build.gradle ./ssd-auth/build.gradle
@@ -22,6 +23,7 @@ RUN --mount=type=cache,target=/root/.gradle \
 
 # 소스 변경이 의존성 레이어까지 깨지지 않도록 소스 복사는 뒤에서 수행합니다.
 COPY ssd-api/src ./ssd-api/src
+COPY ssd-application/src ./ssd-application/src
 COPY ssd-domain/src ./ssd-domain/src
 COPY ssd-common/src ./ssd-common/src
 COPY ssd-auth/src ./ssd-auth/src
