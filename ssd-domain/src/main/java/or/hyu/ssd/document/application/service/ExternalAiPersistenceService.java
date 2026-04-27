@@ -14,13 +14,11 @@ import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class ExternalAiPersistenceService {
 

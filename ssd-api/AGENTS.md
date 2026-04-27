@@ -6,8 +6,8 @@
   - REST 컨트롤러 제공
   - 인증/인가 필터 체인 구성
   - 요청 입력 검증 및 응답 포맷 고정
-  - 도메인 서비스 호출 오케스트레이션
-- 비즈니스 계산/정책 결정은 `ssd-domain`에 위임한다.
+  - 애플리케이션 facade 호출
+- 비즈니스 계산/정책 결정은 `ssd-domain`에, 트랜잭션 경계는 `ssd-application`에 위임한다.
 
 ## Tech Stack & Constraints
 - Spring Boot Web, Spring Security, OpenFeign, Springdoc OpenAPI, JWT
@@ -38,7 +38,7 @@
 - 컨트롤러에서는 아래 작업만 수행한다.
   - 요청 파싱/검증
   - 인증 정보 주입
-  - 도메인 서비스 호출
+  - 애플리케이션 facade 호출
   - `ApiResponse.ok(...)`로 래핑
 - API 요청/응답 DTO는 이 모듈의 `request`, `response` 패키지에 둔다.
 - 컨트롤러는 API DTO를 그대로 도메인에 누수시키지 말고, 필요하면 도메인 command/result로 경계에서 변환한다.

@@ -7,14 +7,14 @@
   - 도메인 모델(`domain/model`)
   - 도메인 리포지토리 인터페이스와 외부 포트
   - AI/문서/회원 컨텍스트 유스케이스
-- `ssd-api`는 이 모듈의 서비스/DTO를 호출하고, `ssd-infra`는 저장소 인터페이스를 구현한다.
+- `ssd-application`은 이 모듈의 유스케이스를 트랜잭션 경계 안에서 호출하고, `ssd-infra`는 저장소 인터페이스를 구현한다.
 
 ## Tech Stack & Constraints
-- Spring Context, Spring TX, Spring Data Commons, Validation API
+- Spring Context, Spring Data Commons, Validation API
 - 제약
   - 도메인 서비스는 인프라 구현체를 직접 참조하지 않는다.
   - 저장소는 인터페이스로만 선언하고 구현은 `ssd-infra`에 둔다.
-  - 트랜잭션 경계는 서비스 계층에 둔다.
+  - 트랜잭션 경계는 이 모듈에 두지 않고 `ssd-application` facade에서 관리한다.
   - 도메인 모델의 상태 변경은 의도된 메서드(`update*`, `of`)를 통해 수행한다.
   - 도메인 모듈에는 JPA 엔티티나 `JpaRepository`를 두지 않는다.
 
@@ -28,7 +28,7 @@
 ### Service Pattern
 - 권한/소유권 검증을 가장 먼저 수행한다.
 - 예외는 `ErrorCode` + `UserExceptionHandler`로 통일한다.
-- 읽기 전용 조회는 `@Transactional(readOnly = true)`를 우선 적용한다.
+- 읽기/쓰기 트랜잭션 설정은 `ssd-application` facade에 둔다.
 - 동시성 충돌 가능 작업은 낙관적 락/재시도 유틸을 사용한다.
 
 ### Domain Repository Pattern

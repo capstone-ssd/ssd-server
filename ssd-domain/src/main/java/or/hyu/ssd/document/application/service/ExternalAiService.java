@@ -30,7 +30,6 @@ import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -49,7 +48,6 @@ public class ExternalAiService {
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
 
-    @Transactional(readOnly = true)
     public ExternalAiHealthResult health() {
         ExternalAiHealthStatus healthStatus = externalAiPort.health();
         return ExternalAiHealthResult.of(healthStatus.available(), healthStatus.message());
@@ -148,7 +146,6 @@ public class ExternalAiService {
         );
     }
 
-    @Transactional(readOnly = true)
     public ExternalAiEvaluationCardResult getEvaluation(Long documentId, Long memberId) {
         Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiEvaluationCardResult.of(
@@ -163,19 +160,16 @@ public class ExternalAiService {
         );
     }
 
-    @Transactional(readOnly = true)
     public ExternalAiSummaryResult getSummary(Long documentId, Long memberId) {
         Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiSummaryResult.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
     }
 
-    @Transactional(readOnly = true)
     public ExternalAiKeywordResult getKeyword(Long documentId, Long memberId) {
         Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiKeywordResult.of(doc.getId(), doc.getKeywords());
     }
 
-    @Transactional(readOnly = true)
     public ExternalAiChecklistResult getChecklist(Long documentId, Long memberId) {
         Document doc = getOwnedDocument(documentId, memberId);
         return ExternalAiChecklistResult.of(doc.getId(), doc.getExternalChecklistSnapshot());

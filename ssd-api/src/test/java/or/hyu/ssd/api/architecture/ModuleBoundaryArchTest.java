@@ -10,7 +10,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 class ModuleBoundaryArchTest {
 
     @ArchTest
-    static final ArchRule domain_must_not_depend_on_api_auth_external_or_infra =
+    static final ArchRule domain_must_not_depend_on_application_api_auth_external_or_infra =
             noClasses()
                     .that()
                     .resideInAnyPackage(
@@ -22,6 +22,7 @@ class ModuleBoundaryArchTest {
                     .should()
                     .dependOnClassesThat()
                     .resideInAnyPackage(
+                            "or.hyu.ssd.application..",
                             "or.hyu.ssd.api..",
                             "or.hyu.ssd.auth..",
                             "or.hyu.ssd.external..",
@@ -37,6 +38,7 @@ class ModuleBoundaryArchTest {
                     .dependOnClassesThat()
                     .resideInAnyPackage(
                             "or.hyu.ssd.api..",
+                            "or.hyu.ssd.application..",
                             "or.hyu.ssd.auth..",
                             "or.hyu.ssd.external..",
                             "or.hyu.ssd.infra..",
@@ -44,6 +46,20 @@ class ModuleBoundaryArchTest {
                             "or.hyu.ssd.member..",
                             "or.hyu.ssd.ai..",
                             "or.hyu.ssd.shared.."
+                    );
+
+    @ArchTest
+    static final ArchRule application_must_not_depend_on_api_auth_external_or_infra =
+            noClasses()
+                    .that()
+                    .resideInAnyPackage("or.hyu.ssd.application..")
+                    .should()
+                    .dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "or.hyu.ssd.api..",
+                            "or.hyu.ssd.auth..",
+                            "or.hyu.ssd.external..",
+                            "or.hyu.ssd.infra.."
                     );
 
     @ArchTest

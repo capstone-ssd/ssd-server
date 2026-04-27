@@ -8,7 +8,7 @@ import or.hyu.ssd.api.document.response.DocumentCommentItemResponse;
 import or.hyu.ssd.api.document.request.DocumentCommentRequest;
 import or.hyu.ssd.api.document.response.DocumentCommentResponse;
 import or.hyu.ssd.api.document.request.DocumentCommentUpdateRequest;
-import or.hyu.ssd.document.application.service.DocumentCommentService;
+import or.hyu.ssd.application.document.DocumentCommentFacade;
 import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +33,7 @@ import jakarta.validation.constraints.Positive;
 @Tag(name = "주석 API", description = "문단 주석 생성/조회")
 public class DocumentCommentController {
 
-    private final DocumentCommentService documentCommentService;
+    private final DocumentCommentFacade documentCommentFacade;
 
     @PostMapping("/v1/documents/{documentId}/comments")
     @Operation(
@@ -66,7 +66,7 @@ public class DocumentCommentController {
             @Valid @RequestBody DocumentCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentCommentResponse dto = DocumentCommentResponse.from(documentCommentService.create(documentId, user.getMember().getId(), request.toCommand()));
+        DocumentCommentResponse dto = DocumentCommentResponse.from(documentCommentFacade.create(documentId, user.getMember().getId(), request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 저장되었습니다"));
     }
 
@@ -100,7 +100,7 @@ public class DocumentCommentController {
             @Valid @RequestBody DocumentCommentUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentCommentResponse dto = DocumentCommentResponse.from(documentCommentService.update(id, user.getMember().getId(), request.toCommand()));
+        DocumentCommentResponse dto = DocumentCommentResponse.from(documentCommentFacade.update(id, user.getMember().getId(), request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "주석이 수정되었습니다"));
     }
 
@@ -131,7 +131,7 @@ public class DocumentCommentController {
             @PathVariable @Positive(message = "주석 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        documentCommentService.delete(id, user.getMember().getId());
+        documentCommentFacade.delete(id, user.getMember().getId());
         return ResponseEntity.ok(ApiResponse.ok("주석이 삭제되었습니다"));
     }
 
@@ -161,7 +161,7 @@ public class DocumentCommentController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        List<DocumentCommentItemResponse> items = documentCommentService.list(documentId, user.getMember().getId()).stream()
+        List<DocumentCommentItemResponse> items = documentCommentFacade.list(documentId, user.getMember().getId()).stream()
                 .map(DocumentCommentItemResponse::from)
                 .toList();
         return ResponseEntity.ok(ApiResponse.ok(items, "주석이 조회되었습니다"));

@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+    implementation project(':ssd-application')
     implementation project(':ssd-domain')
     implementation project(':ssd-common')
     implementation project(':ssd-infra')

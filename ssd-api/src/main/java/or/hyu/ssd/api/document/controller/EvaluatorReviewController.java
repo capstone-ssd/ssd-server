@@ -10,7 +10,7 @@ import or.hyu.ssd.api.document.response.EvaluatorReviewDetailResponse;
 import or.hyu.ssd.api.document.response.EvaluatorReviewIdResponse;
 import or.hyu.ssd.api.document.response.EvaluatorReviewListResponse;
 import or.hyu.ssd.api.document.request.EvaluatorReviewUpdateRequest;
-import or.hyu.ssd.document.application.service.EvaluatorReviewService;
+import or.hyu.ssd.application.document.EvaluatorReviewFacade;
 import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "리뷰 API", description = "문서 평가 리뷰 생성/수정/조회/삭제")
 public class EvaluatorReviewController {
 
-    private final EvaluatorReviewService evaluatorReviewService;
+    private final EvaluatorReviewFacade evaluatorReviewFacade;
 
     @PostMapping("/v1/documents/{documentId}/reviews")
     @Operation(
@@ -63,7 +63,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewIdResponse response = EvaluatorReviewIdResponse.from(
-                evaluatorReviewService.create(documentId, user.getMember().getId(), request.toCommand())
+                evaluatorReviewFacade.create(documentId, user.getMember().getId(), request.toCommand())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 저장되었습니다"));
     }
@@ -85,7 +85,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewDetailResponse response = EvaluatorReviewDetailResponse.from(
-                evaluatorReviewService.update(documentId, user.getMember().getId(), request.toCommand())
+                evaluatorReviewFacade.update(documentId, user.getMember().getId(), request.toCommand())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 수정되었습니다"));
     }
@@ -103,7 +103,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewDetailResponse response = EvaluatorReviewDetailResponse.from(
-                evaluatorReviewService.getMyReview(documentId, user.getMember().getId())
+                evaluatorReviewFacade.getMyReview(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰가 조회되었습니다"));
     }
@@ -122,7 +122,7 @@ public class EvaluatorReviewController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         EvaluatorReviewListResponse response = EvaluatorReviewListResponse.from(
-                evaluatorReviewService.list(documentId, user.getMember().getId())
+                evaluatorReviewFacade.list(documentId, user.getMember().getId())
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "리뷰 목록이 조회되었습니다"));
     }
@@ -140,7 +140,7 @@ public class EvaluatorReviewController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        evaluatorReviewService.delete(documentId, user.getMember().getId());
+        evaluatorReviewFacade.delete(documentId, user.getMember().getId());
         return ResponseEntity.ok(ApiResponse.ok("리뷰가 삭제되었습니다"));
     }
 }

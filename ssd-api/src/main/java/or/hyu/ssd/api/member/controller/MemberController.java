@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.api.member.response.GetMyMemberResponse;
 import or.hyu.ssd.auth.principal.CustomUserDetails;
-import or.hyu.ssd.member.application.service.MemberService;
+import or.hyu.ssd.application.member.MemberFacade;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "회원 API", description = "회원 조회 관련 엔드포인트")
 public class MemberController {
 
-    private final MemberService memberService;
+    private final MemberFacade memberFacade;
 
     @GetMapping("/v1/members/me")
     @Operation(
@@ -43,7 +43,7 @@ public class MemberController {
     public ResponseEntity<ApiResponse<GetMyMemberResponse>> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        GetMyMemberResponse response = GetMyMemberResponse.from(memberService.getMyInfo(user.getMember().getId()));
+        GetMyMemberResponse response = GetMyMemberResponse.from(memberFacade.getMyInfo(user.getMember().getId()));
         return ResponseEntity.ok(ApiResponse.ok(response, "회원 정보가 조회되었습니다"));
     }
 }

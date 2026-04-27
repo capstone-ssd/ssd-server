@@ -18,14 +18,12 @@ import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class FolderService {
 
@@ -76,7 +74,6 @@ public class FolderService {
         deleteRecursively(folder, memberId);
     }
 
-    @Transactional(readOnly = true)
     public FolderContentResult listContent(Long memberId, Long parentId) {
         ensureAuthenticated(memberId);
         Long requestedFolderId = (parentId == null) ? 0L : parentId;
@@ -106,7 +103,6 @@ public class FolderService {
         );
     }
 
-    @Transactional(readOnly = true)
     public FolderContentResult listAllContent(Long memberId) {
         ensureAuthenticated(memberId);
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));

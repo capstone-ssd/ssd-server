@@ -11,7 +11,7 @@ import or.hyu.ssd.api.document.response.CreateFolderResponse;
 import or.hyu.ssd.api.document.response.FolderContentResponse;
 import or.hyu.ssd.api.document.request.UpdateFolderRequest;
 import or.hyu.ssd.api.document.response.UpdateFolderResponse;
-import or.hyu.ssd.document.application.service.FolderService;
+import or.hyu.ssd.application.document.FolderFacade;
 import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +31,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 )
 public class FolderController {
 
-    private final FolderService folderService;
+    private final FolderFacade folderFacade;
 
     @PostMapping("/v1/folders")
     @Operation(
@@ -57,7 +57,7 @@ public class FolderController {
             @Valid @RequestBody CreateFolderRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        CreateFolderResponse dto = CreateFolderResponse.from(folderService.create(user.getMember().getId(), request.toCommand()));
+        CreateFolderResponse dto = CreateFolderResponse.from(folderFacade.create(user.getMember().getId(), request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "폴더가 생성되었습니다"));
     }
 
@@ -89,7 +89,7 @@ public class FolderController {
             @Valid @RequestBody UpdateFolderRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UpdateFolderResponse dto = UpdateFolderResponse.from(folderService.update(id, user.getMember().getId(), request.toCommand()));
+        UpdateFolderResponse dto = UpdateFolderResponse.from(folderFacade.update(id, user.getMember().getId(), request.toCommand()));
         return ResponseEntity.ok(ApiResponse.ok(dto, "폴더가 수정되었습니다"));
     }
 
@@ -116,7 +116,7 @@ public class FolderController {
             @PathVariable("id") @Positive(message = "폴더 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        folderService.delete(id, user.getMember().getId());
+        folderFacade.delete(id, user.getMember().getId());
         return ResponseEntity.ok(ApiResponse.ok("폴더가 삭제되었습니다"));
     }
 
@@ -147,7 +147,7 @@ public class FolderController {
             @Parameter(description = "부모 폴더 ID (없으면 루트)", schema = @Schema(type = "integer", example = "0"))
             @RequestParam(name = "parentId", required = false) @PositiveOrZero(message = "parentId는 0 이상이어야 합니다") Long parentId
     ) {
-        FolderContentResponse data = FolderContentResponse.from(folderService.listContent(user.getMember().getId(), parentId));
+        FolderContentResponse data = FolderContentResponse.from(folderFacade.listContent(user.getMember().getId(), parentId));
         return ResponseEntity.ok(ApiResponse.ok(data, "폴더 내용이 조회되었습니다"));
     }
 
@@ -174,7 +174,7 @@ public class FolderController {
     public ResponseEntity<ApiResponse<FolderContentResponse>> listAllPaths(
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        FolderContentResponse data = FolderContentResponse.from(folderService.listAllContent(user.getMember().getId()));
+        FolderContentResponse data = FolderContentResponse.from(folderFacade.listAllContent(user.getMember().getId()));
         return ResponseEntity.ok(ApiResponse.ok(data, "파일 경로 전체 조회에 성공했습니다"));
     }
 }

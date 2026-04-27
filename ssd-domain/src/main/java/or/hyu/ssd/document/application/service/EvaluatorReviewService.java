@@ -16,12 +16,10 @@ import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class EvaluatorReviewService {
 
@@ -69,7 +67,6 @@ public class EvaluatorReviewService {
         return EvaluatorReviewDetailResult.of(review);
     }
 
-    @Transactional(readOnly = true)
     public EvaluatorReviewDetailResult getMyReview(Long documentId, Long memberId) {
         Document document = getDocument(documentId);
         Member reviewer = getReviewer(memberId);
@@ -78,7 +75,6 @@ public class EvaluatorReviewService {
         return EvaluatorReviewDetailResult.of(review);
     }
 
-    @Transactional(readOnly = true)
     public EvaluatorReviewListResult list(Long documentId, Long memberId) {
         Document document = getOwnedDocument(documentId, memberId);
         List<EvaluatorReview> reviews = evaluatorReviewRepository.findAllByDocumentOrderByUpdatedAtDesc(document);

@@ -16,14 +16,12 @@ import or.hyu.ssd.member.repository.MemberRepository;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class DocumentCommentService {
 
@@ -63,7 +61,6 @@ public class DocumentCommentService {
         documentCommentRepository.delete(comment);
     }
 
-    @Transactional(readOnly = true)
     public List<DocumentCommentItemResult> list(Long documentId, Long memberId) {
 
         // 문서 ID로 문서를 가져옵니다

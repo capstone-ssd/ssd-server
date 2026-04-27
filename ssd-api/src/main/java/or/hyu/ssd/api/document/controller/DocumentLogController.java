@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.api.document.response.DocumentLogResponse;
-import or.hyu.ssd.document.application.service.DocumentLogService;
+import or.hyu.ssd.application.document.DocumentLogFacade;
 import or.hyu.ssd.auth.principal.CustomUserDetails;
 import or.hyu.ssd.common.api.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "기록 API", description = "문서 생성/수정 시 자동 생성되는 기록 조회")
 public class DocumentLogController {
 
-    private final DocumentLogService documentLogService;
+    private final DocumentLogFacade documentLogFacade;
 
     @GetMapping("/v1/documents/{documentId}/logs")
     @Operation(
@@ -54,7 +54,7 @@ public class DocumentLogController {
             @PathVariable @Positive(message = "문서 ID는 1 이상이어야 합니다") Long documentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentLogResponse response = DocumentLogResponse.from(documentLogService.list(documentId, user.getMember().getId()));
+        DocumentLogResponse response = DocumentLogResponse.from(documentLogFacade.list(documentId, user.getMember().getId()));
         return ResponseEntity.ok(ApiResponse.ok(response, "기록이 조회되었습니다"));
     }
 }
