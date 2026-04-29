@@ -86,6 +86,20 @@ app:
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
 
+monitoring:
+  resource-alert:
+    enabled: ${RESOURCE_ALERT_ENABLED:false}
+    check-interval-ms: ${RESOURCE_ALERT_CHECK_INTERVAL_MS:60000}
+    cooldown: ${RESOURCE_ALERT_COOLDOWN:5m}
+    consecutive-threshold: ${RESOURCE_ALERT_CONSECUTIVE_THRESHOLD:3}
+    disk-path: ${RESOURCE_ALERT_DISK_PATH:/}
+    disk-usage-threshold: ${RESOURCE_ALERT_DISK_USAGE_THRESHOLD:0.85}
+    cpu-usage-threshold: ${RESOURCE_ALERT_CPU_USAGE_THRESHOLD:0.80}
+    heap-usage-threshold: ${RESOURCE_ALERT_HEAP_USAGE_THRESHOLD:0.80}
+    gc-pause-average-threshold-ms: ${RESOURCE_ALERT_GC_PAUSE_AVERAGE_THRESHOLD_MS:300}
+    hikari-pending-threshold: ${RESOURCE_ALERT_HIKARI_PENDING_THRESHOLD:1}
+    external-ai-health-enabled: ${RESOURCE_ALERT_EXTERNAL_AI_HEALTH_ENABLED:true}
+
 sentry:
   dsn: ${SENTRY_DSN:}
   send-default-pii: true

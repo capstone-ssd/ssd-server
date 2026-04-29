@@ -1,0 +1,28 @@
+package or.hyu.ssd.api.monitoring;
+
+import java.time.Instant;
+
+class ResourceAlertState {
+
+    private int consecutiveCount;
+    private Instant lastNotifiedAt;
+
+    void recordFailure() {
+        consecutiveCount++;
+    }
+
+    void reset() {
+        consecutiveCount = 0;
+    }
+
+    boolean isReadyToNotify(int requiredConsecutiveCount, Instant now, java.time.Duration cooldown) {
+        if (consecutiveCount < requiredConsecutiveCount) {
+            return false;
+        }
+        return lastNotifiedAt == null || !lastNotifiedAt.plus(cooldown).isAfter(now);
+    }
+
+    void markNotified(Instant now) {
+        lastNotifiedAt = now;
+    }
+}
