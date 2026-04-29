@@ -50,7 +50,6 @@ jobs:
       - name: 배포 스크립트 문법 검증
         run: |
           bash -n deploy/ec2/install_infra.sh
-          bash -n deploy/ec2/install_monitoring.sh
           bash -n deploy/ec2/install_prod_monitoring.sh
           bash -n deploy/ec2/blue_green_deploy.sh
 
@@ -121,7 +120,6 @@ jobs:
           ssh ${SSH_OPTS} ubuntu@"${HOST}" "mkdir -p ${DEPLOY_ROOT}/.runtime"
           cat .runtime/application-dev.yml | ssh ${SSH_OPTS} ubuntu@"${HOST}" "cat > ${DEPLOY_ROOT}/.runtime/application-dev.yml"
           tar czf - deploy/ec2 | ssh ${SSH_OPTS} ubuntu@"${HOST}" "tar xzf - -C ${DEPLOY_ROOT}"
-          tar czf - k6/monitoring | ssh ${SSH_OPTS} ubuntu@"${HOST}" "tar xzf - -C ${DEPLOY_ROOT}"
 
       - name: EC2 Blue/Green 배포
         uses: appleboy/ssh-action@v1.0.3
@@ -133,7 +131,7 @@ jobs:
           script_stop: true
           script: |
             export DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
-            chmod +x "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh" "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
+            chmod +x "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh" "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
             export APP_NAME="ssd"
             export DOCKER_REPO="${{ env.DOCKER_REPO }}"
             export IMAGE_TAG="${{ github.sha }}"
@@ -145,6 +143,5 @@ jobs:
             export NGINX_SERVER_NAME="dev-api.simsaimdang.shop"
             export NGINX_UPSTREAM_FILE="/etc/nginx/conf.d/ssd-upstream.conf"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh"
-            sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
