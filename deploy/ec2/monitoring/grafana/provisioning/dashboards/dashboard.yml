@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: SSD Production Dashboards
+    orgId: 1
+    folder: SSD Production
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
