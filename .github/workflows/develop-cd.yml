@@ -51,6 +51,7 @@ jobs:
         run: |
           bash -n deploy/ec2/install_infra.sh
           bash -n deploy/ec2/install_monitoring.sh
+          bash -n deploy/ec2/install_prod_monitoring.sh
           bash -n deploy/ec2/blue_green_deploy.sh
 
       - name: Docker 레포지토리 이름 정규화
@@ -132,7 +133,7 @@ jobs:
           script_stop: true
           script: |
             export DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
-            chmod +x "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh" "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
+            chmod +x "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh" "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
             export APP_NAME="ssd"
             export DOCKER_REPO="${{ env.DOCKER_REPO }}"
             export IMAGE_TAG="${{ github.sha }}"
@@ -145,4 +146,5 @@ jobs:
             export NGINX_UPSTREAM_FILE="/etc/nginx/conf.d/ssd-upstream.conf"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_monitoring.sh"
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
