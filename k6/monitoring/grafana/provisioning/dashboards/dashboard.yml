@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: SSD Load Test Dashboards
+  - name: 부하테스트 대시보드
     orgId: 1
-    folder: SSD Load Test
+    folder: 부하테스트
     type: file
     disableDeletion: false
     allowUiUpdates: false

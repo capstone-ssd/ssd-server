@@ -1,6 +1,6 @@
 {
   "uid": "ssd-prod-overview",
-  "title": "SSD Production Overview",
+  "title": "운영 모니터링 개요",
   "schemaVersion": 39,
   "version": 1,
   "refresh": "15s",

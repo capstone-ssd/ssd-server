@@ -79,7 +79,7 @@
   "templating": {"list": []},
   "time": {"from": "now-30m", "to": "now"},
   "timezone": "browser",
-  "title": "SSD Load Test k6 Overview",
+  "title": "부하테스트 k6 개요",
   "uid": "ssd-loadtest-k6-overview",
   "version": 1,
   "weekStart": ""
