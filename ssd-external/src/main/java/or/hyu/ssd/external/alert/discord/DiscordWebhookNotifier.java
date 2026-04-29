@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.common.alert.ErrorAlertContext;
 import or.hyu.ssd.common.alert.ErrorAlertNotifier;
+import or.hyu.ssd.common.alert.ResourceAlertContext;
+import or.hyu.ssd.common.alert.ResourceAlertNotifier;
 import or.hyu.ssd.external.config.DiscordProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -21,7 +23,7 @@ import java.util.Arrays;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DiscordWebhookNotifier implements ErrorAlertNotifier {
+public class DiscordWebhookNotifier implements ErrorAlertNotifier, ResourceAlertNotifier {
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -35,13 +37,22 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
 
     @Override
     public void notify(ErrorAlertContext context) {
+        send(buildErrorMessage(context));
+    }
+
+    @Override
+    public void notify(ResourceAlertContext context) {
+        send(buildResourceMessage(context));
+    }
+
+    private void send(String message) {
         if (!discordProperties.hasWebhookUrl()) {
             log.debug("Discord webhook URL이 설정되지 않아 전송을 건너뜁니다.");
             return;
         }
 
         try {
-            String payload = buildPayload(buildMessage(context));
+            String payload = buildPayload(message);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(discordProperties.getWebhookUrl()))
                     .timeout(REQUEST_TIMEOUT)
@@ -62,7 +73,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
         }
     }
 
-    private String buildMessage(ErrorAlertContext context) {
+    private String buildErrorMessage(ErrorAlertContext context) {
         return """
                 [SSD 서버 예외 알림]
                 - 시간: %s
@@ -84,6 +95,29 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 context.clientIp(),
                 context.exceptionClass(),
                 context.message()
+        );
+    }
+
+    private String buildResourceMessage(ResourceAlertContext context) {
+        return """
+                [SSD 서버 리소스 알림]
+                - 시간: %s
+                - 환경: %s
+                - 등급: %s
+                - 대상: %s
+                - 지표: %s
+                - 현재값: %s
+                - 기준값: %s
+                - 설명: %s
+                """.formatted(
+                LocalDateTime.now().format(TIME_FORMATTER),
+                resolveEnvironment(),
+                context.level(),
+                context.target(),
+                context.metric(),
+                context.currentValue(),
+                context.threshold(),
+                context.description()
         );
     }
 
