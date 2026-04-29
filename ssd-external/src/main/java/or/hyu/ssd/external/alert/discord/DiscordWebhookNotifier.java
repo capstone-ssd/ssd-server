@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.common.alert.ErrorAlertContext;
 import or.hyu.ssd.common.alert.ErrorAlertNotifier;
-import or.hyu.ssd.common.alert.ResourceAlertContext;
-import or.hyu.ssd.common.alert.ResourceAlertNotifier;
+import or.hyu.ssd.external.alert.ResourceAlertMessage;
+import or.hyu.ssd.external.alert.ResourceAlertSender;
 import or.hyu.ssd.external.config.DiscordProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ import java.util.Arrays;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DiscordWebhookNotifier implements ErrorAlertNotifier, ResourceAlertNotifier {
+public class DiscordWebhookNotifier implements ErrorAlertNotifier, ResourceAlertSender {
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -41,8 +41,8 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier, ResourceAlert
     }
 
     @Override
-    public void notify(ResourceAlertContext context) {
-        send(buildResourceMessage(context));
+    public void send(ResourceAlertMessage message) {
+        send(buildResourceMessage(message));
     }
 
     private void send(String message) {
@@ -98,26 +98,31 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier, ResourceAlert
         );
     }
 
-    private String buildResourceMessage(ResourceAlertContext context) {
+    private String buildResourceMessage(ResourceAlertMessage message) {
         return """
                 [SSD 서버 리소스 알림]
                 - 시간: %s
                 - 환경: %s
                 - 등급: %s
                 - 대상: %s
-                - 지표: %s
                 - 현재값: %s
                 - 기준값: %s
-                - 설명: %s
+                - 연속 감지: %d/%d회
+                - 쿨다운: %s
+                - 가능한 원인: %s
+                - 확인 가이드: %s
                 """.formatted(
                 LocalDateTime.now().format(TIME_FORMATTER),
                 resolveEnvironment(),
-                context.level(),
-                context.target(),
-                context.metric(),
-                context.currentValue(),
-                context.threshold(),
-                context.description()
+                message.level(),
+                message.target(),
+                message.currentValue(),
+                message.threshold(),
+                message.consecutiveCount(),
+                message.requiredConsecutiveCount(),
+                message.cooldown(),
+                message.possibleCause(),
+                message.actionGuide()
         );
     }
 

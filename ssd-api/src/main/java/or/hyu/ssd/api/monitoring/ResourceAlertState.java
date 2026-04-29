@@ -1,5 +1,6 @@
 package or.hyu.ssd.api.monitoring;
 
+import java.time.Duration;
 import java.time.Instant;
 
 class ResourceAlertState {
@@ -15,7 +16,11 @@ class ResourceAlertState {
         consecutiveCount = 0;
     }
 
-    boolean isReadyToNotify(int requiredConsecutiveCount, Instant now, java.time.Duration cooldown) {
+    int consecutiveCount() {
+        return consecutiveCount;
+    }
+
+    boolean isReadyToNotify(int requiredConsecutiveCount, Instant now, Duration cooldown) {
         if (consecutiveCount < requiredConsecutiveCount) {
             return false;
         }

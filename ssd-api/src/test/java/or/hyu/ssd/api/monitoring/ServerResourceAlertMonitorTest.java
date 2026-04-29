@@ -4,9 +4,9 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import or.hyu.ssd.api.config.ResourceAlertProperties;
 import or.hyu.ssd.document.port.ExternalAiPort;
-import or.hyu.ssd.common.alert.ResourceAlertContext;
-import or.hyu.ssd.common.alert.ResourceAlertNotifier;
 import or.hyu.ssd.document.port.dto.ExternalAiHealthStatus;
+import or.hyu.ssd.external.alert.ResourceAlertMessage;
+import or.hyu.ssd.external.alert.ResourceAlertSender;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 class ServerResourceAlertMonitorTest {
 
     @Mock
-    private ResourceAlertNotifier resourceAlertNotifier;
+    private ResourceAlertSender resourceAlertSender;
 
     @Mock
     private ExternalAiPort externalAiPort;
@@ -42,7 +42,7 @@ class ServerResourceAlertMonitorTest {
         ServerResourceAlertMonitor monitor = new ServerResourceAlertMonitor(
                 meterRegistry,
                 properties(),
-                List.of(resourceAlertNotifier),
+                List.of(resourceAlertSender),
                 externalAiPort
         );
 
@@ -50,11 +50,14 @@ class ServerResourceAlertMonitorTest {
         monitor.checkNow();
 
         // then
-        ArgumentCaptor<ResourceAlertContext> contextCaptor = ArgumentCaptor.forClass(ResourceAlertContext.class);
-        verify(resourceAlertNotifier).notify(contextCaptor.capture());
-        assertThat(contextCaptor.getValue().metric()).isEqualTo("CPU 사용률");
-        assertThat(contextCaptor.getValue().currentValue()).isEqualTo("90.00%");
-        assertThat(contextCaptor.getValue().threshold()).isEqualTo("80.00%");
+        ArgumentCaptor<ResourceAlertMessage> messageCaptor = ArgumentCaptor.forClass(ResourceAlertMessage.class);
+        verify(resourceAlertSender).send(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().target()).isEqualTo("CPU 사용률");
+        assertThat(messageCaptor.getValue().currentValue()).isEqualTo("90.00%");
+        assertThat(messageCaptor.getValue().threshold()).isEqualTo("80.00%");
+        assertThat(messageCaptor.getValue().consecutiveCount()).isEqualTo(1);
+        assertThat(messageCaptor.getValue().possibleCause()).contains("요청량 증가");
+        assertThat(messageCaptor.getValue().actionGuide()).contains("Grafana");
     }
 
     @Test
@@ -67,7 +70,7 @@ class ServerResourceAlertMonitorTest {
         ServerResourceAlertMonitor monitor = new ServerResourceAlertMonitor(
                 meterRegistry,
                 properties(),
-                List.of(resourceAlertNotifier),
+                List.of(resourceAlertSender),
                 externalAiPort
         );
 
@@ -75,7 +78,7 @@ class ServerResourceAlertMonitorTest {
         monitor.checkNow();
 
         // then
-        verify(resourceAlertNotifier, never()).notify(org.mockito.ArgumentMatchers.any());
+        verify(resourceAlertSender, never()).send(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -89,7 +92,7 @@ class ServerResourceAlertMonitorTest {
         ServerResourceAlertMonitor monitor = new ServerResourceAlertMonitor(
                 meterRegistry,
                 properties,
-                List.of(resourceAlertNotifier),
+                List.of(resourceAlertSender),
                 externalAiPort
         );
 
@@ -97,11 +100,12 @@ class ServerResourceAlertMonitorTest {
         monitor.checkNow();
 
         // then
-        ArgumentCaptor<ResourceAlertContext> contextCaptor = ArgumentCaptor.forClass(ResourceAlertContext.class);
-        verify(resourceAlertNotifier).notify(contextCaptor.capture());
-        assertThat(contextCaptor.getValue().target()).isEqualTo("External AI Server");
-        assertThat(contextCaptor.getValue().metric()).isEqualTo("외부 AI 서버 Health");
-        assertThat(contextCaptor.getValue().currentValue()).isEqualTo("DOWN");
+        ArgumentCaptor<ResourceAlertMessage> messageCaptor = ArgumentCaptor.forClass(ResourceAlertMessage.class);
+        verify(resourceAlertSender).send(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().target()).isEqualTo("외부 AI 서버 Health");
+        assertThat(messageCaptor.getValue().currentValue()).isEqualTo("DOWN");
+        assertThat(messageCaptor.getValue().threshold()).isEqualTo("UP");
+        assertThat(messageCaptor.getValue().possibleCause()).isEqualTo("외부 AI 서버에 연결할 수 없습니다.");
     }
 
     private ResourceAlertProperties properties() {
