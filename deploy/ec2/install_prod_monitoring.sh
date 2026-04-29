@@ -45,8 +45,12 @@ if [[ ! -s "${DISCORD_WEBHOOK_FILE}" ]]; then
 
   printf '%s' "${webhook_url}" > "${DISCORD_WEBHOOK_FILE}"
   chmod 600 "${DISCORD_WEBHOOK_FILE}"
-  chown "${DEPLOY_USER}:${DEPLOY_USER}" "${DISCORD_WEBHOOK_FILE}"
 fi
+
+# The official Alertmanager image runs as uid/gid 65534(nobody), so a host-owned
+# 600 secret file must be owned by that uid to be readable inside the container.
+chown 65534:65534 "${DISCORD_WEBHOOK_FILE}"
+chmod 600 "${DISCORD_WEBHOOK_FILE}"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   grafana_password="$(openssl rand -base64 24 | tr -d '\n')"
