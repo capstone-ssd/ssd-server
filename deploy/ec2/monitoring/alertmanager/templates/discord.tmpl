@@ -4,7 +4,7 @@
 - 상태: {{ .Status }}
 - 심각도: {{ .Labels.severity }}
 - 서비스: {{ .Labels.service }}
-- 인스턴스: {{ .Labels.instance }}
+- 인스턴스: {{ or .Labels.instance "N/A" }}
 - 요약: {{ .Annotations.summary }}
 - 설명: {{ .Annotations.description }}
 - 대응: {{ .Annotations.action }}

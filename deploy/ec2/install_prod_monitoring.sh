@@ -25,7 +25,7 @@ rm -f "${tmp_dir}/.env" "${tmp_dir}/alertmanager/secrets/discord_webhook_url"
 cp -a "${tmp_dir}/." "${MONITORING_DIR}/"
 chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${MONITORING_DIR}"
 
-install -d -m 700 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "$(dirname "${DISCORD_WEBHOOK_FILE}")"
+install -d -m 750 -o "${DEPLOY_USER}" -g 65534 "$(dirname "${DISCORD_WEBHOOK_FILE}")"
 if [[ ! -s "${DISCORD_WEBHOOK_FILE}" ]]; then
   if [[ ! -f "${APP_CONFIG_FILE}" ]]; then
     echo "[ERROR] application config not found: ${APP_CONFIG_FILE}" >&2
@@ -49,6 +49,8 @@ fi
 
 # The official Alertmanager image runs as uid/gid 65534(nobody), so a host-owned
 # 600 secret file must be owned by that uid to be readable inside the container.
+chown "${DEPLOY_USER}:65534" "$(dirname "${DISCORD_WEBHOOK_FILE}")"
+chmod 750 "$(dirname "${DISCORD_WEBHOOK_FILE}")"
 chown 65534:65534 "${DISCORD_WEBHOOK_FILE}"
 chmod 600 "${DISCORD_WEBHOOK_FILE}"
 
@@ -63,7 +65,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
 fi
 
 cd "${MONITORING_DIR}"
-docker compose -f docker-compose.monitoring.yml config >/tmp/ssd-prod-monitoring-compose.config
+docker compose -f docker-compose.monitoring.yml config >/dev/null
 docker compose -f docker-compose.monitoring.yml up -d
 
 echo "[INFO] SSD production monitoring is running"

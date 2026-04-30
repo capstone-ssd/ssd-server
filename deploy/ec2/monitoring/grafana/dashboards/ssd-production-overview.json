@@ -4,15 +4,182 @@
   "schemaVersion": 39,
   "version": 1,
   "refresh": "15s",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "panels": [
-    { "id": 1, "type": "stat", "title": "SSD API Up", "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}, "targets": [{"expr": "sum(up{job=\"ssd-api\"})", "legendFormat": "up"}], "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 2, "type": "stat", "title": "External AI Health", "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}, "targets": [{"expr": "probe_success{instance=\"http://166.104.223.33:8080/docs\"}", "legendFormat": "external-ai"}], "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 3, "type": "timeseries", "title": "Host CPU Usage", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}, "targets": [{"expr": "(1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * 100", "legendFormat": "CPU %"}], "unit": "percent", "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 4, "type": "timeseries", "title": "Root Disk Usage", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}, "targets": [{"expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})) * 100", "legendFormat": "Disk %"}], "unit": "percent", "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 5, "type": "timeseries", "title": "JVM Heap Usage", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}, "targets": [{"expr": "sum(jvm_memory_used_bytes{job=\"ssd-api\", area=\"heap\"}) / sum(jvm_memory_max_bytes{job=\"ssd-api\", area=\"heap\"}) * 100", "legendFormat": "Heap %"}], "unit": "percent", "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 6, "type": "timeseries", "title": "GC Average Pause", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}, "targets": [{"expr": "rate(jvm_gc_pause_seconds_sum{job=\"ssd-api\"}[5m]) / rate(jvm_gc_pause_seconds_count{job=\"ssd-api\"}[5m]) * 1000", "legendFormat": "GC avg ms"}], "unit": "ms", "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 7, "type": "timeseries", "title": "Hikari Pending Connections", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20}, "targets": [{"expr": "sum(hikaricp_connections_pending{job=\"ssd-api\"})", "legendFormat": "pending"}], "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} },
-    { "id": 8, "type": "timeseries", "title": "HTTP Request Rate", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20}, "targets": [{"expr": "sum(rate(http_server_requests_seconds_count{job=\"ssd-api\"}[5m])) by (method, status)", "legendFormat": "{{method}} {{status}}"}], "datasource": {"type":"prometheus", "uid":"${DS_PROMETHEUS}"} }
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "SSD API Up",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(up{job=\"ssd-api\"})",
+          "legendFormat": "up"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "External AI Health",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "probe_success{job=\"blackbox-http\",instance=\"http://166.104.223.33:8080/docs\"}",
+          "legendFormat": "external-ai"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Host CPU Usage",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "(1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * 100",
+          "legendFormat": "CPU %"
+        }
+      ],
+      "unit": "percent",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Root Disk Usage",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})) * 100",
+          "legendFormat": "Disk %"
+        }
+      ],
+      "unit": "percent",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "JVM Heap Usage",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{job=\"ssd-api\", area=\"heap\"}) / sum(jvm_memory_max_bytes{job=\"ssd-api\", area=\"heap\"}) * 100",
+          "legendFormat": "Heap %"
+        }
+      ],
+      "unit": "percent",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "GC Average Pause",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"ssd-api\"}[5m]) / clamp_min(rate(jvm_gc_pause_seconds_count{job=\"ssd-api\"}[5m]), 1e-9) * 1000",
+          "legendFormat": "GC avg ms"
+        }
+      ],
+      "unit": "ms",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Hikari Pending Connections",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "targets": [
+        {
+          "expr": "sum(hikaricp_connections_pending{job=\"ssd-api\"})",
+          "legendFormat": "pending"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "HTTP Request Rate",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ssd-api\"}[5m])) by (method, status)",
+          "legendFormat": "{{method}} {{status}}"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    }
   ]
 }
