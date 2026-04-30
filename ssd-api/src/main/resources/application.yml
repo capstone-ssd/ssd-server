@@ -86,6 +86,7 @@ app:
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
 
+
 sentry:
   dsn: ${SENTRY_DSN:}
   send-default-pii: true

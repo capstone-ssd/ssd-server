@@ -35,13 +35,17 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
 
     @Override
     public void notify(ErrorAlertContext context) {
+        send(buildErrorMessage(context));
+    }
+
+    private void send(String message) {
         if (!discordProperties.hasWebhookUrl()) {
             log.debug("Discord webhook URL이 설정되지 않아 전송을 건너뜁니다.");
             return;
         }
 
         try {
-            String payload = buildPayload(buildMessage(context));
+            String payload = buildPayload(message);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(discordProperties.getWebhookUrl()))
                     .timeout(REQUEST_TIMEOUT)
@@ -62,7 +66,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
         }
     }
 
-    private String buildMessage(ErrorAlertContext context) {
+    private String buildErrorMessage(ErrorAlertContext context) {
         return """
                 [SSD 서버 예외 알림]
                 - 시간: %s

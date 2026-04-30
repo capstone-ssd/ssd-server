@@ -1,0 +1,103 @@
+groups:
+  - name: ssd-operational-alerts
+    rules:
+      - alert: SsdApiScrapeDown
+        expr: sum(up{job="ssd-api"}) < 1
+        for: 1m
+        labels:
+          severity: critical
+          service: ssd-api
+        annotations:
+          summary: "SSD API 서버 메트릭 수집 실패"
+          description: "Prometheus가 ssd-blue/ssd-green 어느 쪽에서도 1분 이상 /actuator/prometheus를 수집하지 못했습니다."
+          action: "API 컨테이너 상태, Nginx upstream, 최근 배포 로그를 확인하세요."
+
+      - alert: SsdApiHealthDown
+        expr: probe_success{job="blackbox-http", instance="http://dev-api.simsaimdang.shop/actuator/health"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: ssd-api
+        annotations:
+          summary: "SSD API Health check 실패"
+          description: "운영 API /actuator/health endpoint가 1분 이상 정상 응답하지 않습니다."
+          action: "Nginx, 활성 컨테이너, 애플리케이션 로그를 확인하세요."
+
+      - alert: ExternalAiHealthDown
+        expr: probe_success{job="blackbox-http", instance="http://166.104.223.33:8080/docs"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: external-ai
+        annotations:
+          summary: "외부 AI 서버 Health check 실패"
+          description: "외부 AI 서버 docs endpoint가 1분 이상 정상 응답하지 않습니다."
+          action: "외부 AI 서버 프로세스, 네트워크, BASE_URL 설정을 확인하세요."
+
+      - alert: HighHostCpuUsage
+        expr: 1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: host
+        annotations:
+          summary: "EC2 CPU 사용률 높음"
+          description: "호스트 CPU 사용률이 5분 이상 80%를 초과했습니다."
+          action: "최근 트래픽, CPU bound 작업, Docker 컨테이너별 CPU 사용률을 확인하세요."
+
+      - alert: HighHostDiskUsage
+        expr: |
+          1 - (
+            node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}
+            /
+            node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: host
+        annotations:
+          summary: "EC2 Disk 사용률 높음"
+          description: "루트 디스크 사용률이 5분 이상 85%를 초과했습니다."
+          action: "Docker image/container log/volume 사용량과 애플리케이션 로그를 정리하세요."
+
+      - alert: HighJvmHeapUsage
+        expr: |
+          sum(jvm_memory_used_bytes{job="ssd-api", area="heap"})
+          /
+          sum(jvm_memory_max_bytes{job="ssd-api", area="heap"})
+          > 0.8
+        for: 3m
+        labels:
+          severity: warning
+          service: ssd-api
+        annotations:
+          summary: "JVM Heap 사용률 높음"
+          description: "JVM Heap 사용률이 3분 이상 80%를 초과했습니다."
+          action: "대용량 문서 처리, 메모리 누수, GC pause 추이를 함께 확인하세요."
+
+      - alert: HighGcPause
+        expr: |
+          rate(jvm_gc_pause_seconds_sum{job="ssd-api"}[5m])
+          /
+          rate(jvm_gc_pause_seconds_count{job="ssd-api"}[5m])
+          > 0.3
+        for: 3m
+        labels:
+          severity: warning
+          service: ssd-api
+        annotations:
+          summary: "GC Pause 증가"
+          description: "최근 5분 GC 평균 Pause가 300ms를 초과했습니다."
+          action: "Heap 사용률, Full GC 여부, 최근 대용량 요청을 확인하세요."
+
+      - alert: HikariPendingConnection
+        expr: sum(hikaricp_connections_pending{job="ssd-api"}) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "DB 커넥션 풀 대기 발생"
+          description: "HikariCP pending connection이 1분 이상 발생했습니다."
+          action: "DB slow query, 커넥션 풀 크기, 장시간 트랜잭션을 확인하세요."

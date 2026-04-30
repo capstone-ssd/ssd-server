@@ -108,7 +108,7 @@
   "templating": {"list": []},
   "time": {"from": "now-30m", "to": "now"},
   "timezone": "browser",
-  "title": "SSD Load Test JVM Overview",
+  "title": "부하테스트 JVM 개요",
   "uid": "ssd-loadtest-jvm-overview",
   "version": 1,
   "weekStart": ""
