@@ -8,6 +8,7 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=2GB
       - --web.enable-lifecycle
     ports:
       - "127.0.0.1:9091:9090"
