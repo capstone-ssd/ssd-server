@@ -10,7 +10,8 @@ public record DocumentListItemResult(
         String title,
         DocumentPurpose purpose,
         Long folderId,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean bookmark
 ) {
     public static DocumentListItemResult of(Document doc) {
         return new DocumentListItemResult(
@@ -18,7 +19,8 @@ public record DocumentListItemResult(
                 doc.getTitle(),
                 doc.getPurposeOrDefault(),
                 doc.getFolder() != null ? doc.getFolder().getId() : null,
-                doc.getUpdatedAt()
+                doc.getUpdatedAt(),
+                doc.isBookmark()
         );
     }
 }

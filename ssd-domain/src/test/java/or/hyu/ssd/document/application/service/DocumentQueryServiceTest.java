@@ -72,7 +72,7 @@ class DocumentQueryServiceTest {
         // given
         Member member = member(1L);
         Long user = member.getId();
-        Document rootDocument = document(100L, "루트 문서", null, member);
+        Document rootDocument = document(100L, "루트 문서", null, member, true);
 
         // when
         when(documentRepository.findAllByMember_IdAndFolderIsNull(1L, Sort.by(Sort.Order.desc("createdAt"))))
@@ -85,15 +85,20 @@ class DocumentQueryServiceTest {
         assertThat(results.get(0).id()).isEqualTo(100L);
         assertThat(results.get(0).purpose()).isEqualTo(DocumentPurpose.EVALUATION);
         assertThat(results.get(0).folderId()).isNull();
+        assertThat(results.get(0).bookmark()).isTrue();
     }
 
     private Document document(Long id, String title, Folder folder, Member member) {
+        return document(id, title, folder, member, false);
+    }
+
+    private Document document(Long id, String title, Folder folder, Member member, boolean bookmark) {
         return Document.builder()
                 .id(id)
                 .title(title)
                 .content("content")
                 .folder(folder)
-                .bookmark(false)
+                .bookmark(bookmark)
                 .purpose(DocumentPurpose.EVALUATION)
                 .member(member)
                 .build();

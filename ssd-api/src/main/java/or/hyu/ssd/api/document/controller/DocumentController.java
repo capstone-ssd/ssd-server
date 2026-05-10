@@ -281,6 +281,7 @@ public class DocumentController {
                       - purpose: 문서 목적 (`WRITING`, `EVALUATION`)
                       - folderId: 폴더 ID (없으면 루트)
                       - updatedAt: 마지막 수정 시각
+                      - bookmark: 즐겨찾기 여부
 
                     ### 오류
                     - MEMBER_NOT_FOUND: 인증 정보 없음/회원 없음
