@@ -107,7 +107,7 @@ class FolderServiceTest {
         // when
         Folder root = folder(1L, "작성하기", null, member);
         Folder child = folder(11L, "1분기 계획서", root, member);
-        Document docInRoot = document(101L, "사업계획서_v1.pdf", root, member);
+        Document docInRoot = document(101L, "사업계획서_v1.pdf", root, member, true);
         Document docInChild = document(102L, "사업계획서_v2_최종.pdf", child, member);
 
         // then
@@ -127,6 +127,8 @@ class FolderServiceTest {
         assertThat(result.folders().get(1).parentId()).isEqualTo(1L);
         assertThat(result.documents().get(0).folderId()).isEqualTo(1L);
         assertThat(result.documents().get(1).folderId()).isEqualTo(11L);
+        assertThat(result.documents().get(0).bookmark()).isTrue();
+        assertThat(result.documents().get(1).bookmark()).isFalse();
     }
 
     @Test
@@ -205,12 +207,16 @@ class FolderServiceTest {
     }
 
     private Document document(Long id, String title, Folder folder, Member member) {
+        return document(id, title, folder, member, false);
+    }
+
+    private Document document(Long id, String title, Folder folder, Member member, boolean bookmark) {
         return Document.builder()
                 .id(id)
                 .title(title)
                 .content("content")
                 .folder(folder)
-                .bookmark(false)
+                .bookmark(bookmark)
                 .member(member)
                 .build();
     }

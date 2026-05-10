@@ -140,6 +140,7 @@ public class FolderController {
                       - currentFolderId: 현재 조회 중인 폴더 ID (루트는 0)
                       - folders[]: 하위 폴더 목록
                       - documents[]: 해당 폴더 내부 문서 목록
+                        - bookmark: 문서 즐겨찾기 여부
                     """
     )
     public ResponseEntity<ApiResponse<FolderContentResponse>> listFolders(
@@ -169,6 +170,7 @@ public class FolderController {
                       - currentFolderId: 0 (루트 기준)
                       - folders[]: 전체 폴더 목록
                       - documents[]: 전체 문서 목록
+                        - bookmark: 문서 즐겨찾기 여부
                     """
     )
     public ResponseEntity<ApiResponse<FolderContentResponse>> listAllPaths(

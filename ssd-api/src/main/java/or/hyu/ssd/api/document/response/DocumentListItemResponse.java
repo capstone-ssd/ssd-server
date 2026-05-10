@@ -10,7 +10,8 @@ public record DocumentListItemResponse(
         String title,
         DocumentPurpose purpose,
         Long folderId,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean bookmark
 ) {
     public static DocumentListItemResponse from(DocumentListItemResult result) {
         return new DocumentListItemResponse(
@@ -18,7 +19,8 @@ public record DocumentListItemResponse(
                 result.title(),
                 result.purpose(),
                 result.folderId(),
-                result.updatedAt()
+                result.updatedAt(),
+                result.bookmark()
         );
     }
 }
