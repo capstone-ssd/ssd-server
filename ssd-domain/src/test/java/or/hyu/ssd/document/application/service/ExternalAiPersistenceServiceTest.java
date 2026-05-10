@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -83,6 +84,7 @@ class ExternalAiPersistenceServiceTest {
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.getEvaluation()).contains("## 문제 인식");
         verify(documentAiCheckSnapshotRepository).deleteAllByDocument(document);
+        verify(documentAiCheckSnapshotRepository).flush();
         verify(documentAiCheckSnapshotRepository).saveAll(any());
     }
 
@@ -112,6 +114,10 @@ class ExternalAiPersistenceServiceTest {
         assertThat(response.changedBlockIds()).containsExactly(3);
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();
+        var inOrder = inOrder(documentAiCheckSnapshotRepository);
+        inOrder.verify(documentAiCheckSnapshotRepository).deleteAllByDocument(document);
+        inOrder.verify(documentAiCheckSnapshotRepository).flush();
+        inOrder.verify(documentAiCheckSnapshotRepository).saveAll(any());
     }
 
     private Document document(Long id) {

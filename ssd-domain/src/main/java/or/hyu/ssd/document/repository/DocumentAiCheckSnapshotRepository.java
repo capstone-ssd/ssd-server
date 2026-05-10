@@ -11,4 +11,6 @@ public interface DocumentAiCheckSnapshotRepository {
     List<DocumentAiCheckSnapshot> saveAll(Iterable<DocumentAiCheckSnapshot> snapshots);
 
     void deleteAllByDocument(Document document);
+
+    void flush();
 }

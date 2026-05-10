@@ -37,4 +37,9 @@ public class DocumentAiCheckSnapshotRepositoryImpl implements DocumentAiCheckSna
     public void deleteAllByDocument(Document document) {
         documentAiCheckSnapshotJpaRepository.deleteAllByDocument(DocumentPersistenceMapper.toDocumentRef(document));
     }
+
+    @Override
+    public void flush() {
+        documentAiCheckSnapshotJpaRepository.flush();
+    }
 }

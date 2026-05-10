@@ -107,6 +107,7 @@ public class ExternalAiPersistenceService {
 
     private void refreshAiCheckSnapshots(Document doc, List<DocumentParagraph> currentParagraphs) {
         documentAiCheckSnapshotRepository.deleteAllByDocument(doc);
+        documentAiCheckSnapshotRepository.flush();
         if (currentParagraphs == null || currentParagraphs.isEmpty()) {
             return;
         }
