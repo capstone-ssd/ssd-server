@@ -37,6 +37,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -112,11 +114,11 @@ class ExternalAiServiceTest {
                 new ExternalEvaluationResponse(
                         "7",
                         new ExternalEvaluationReportResponse(
-                                new ExternalEvaluatorMetricResponse(90.0, "팀 리뷰"),
-                                new ExternalEvaluatorMetricResponse(80.0, "실현 가능성 리뷰"),
-                                new ExternalEvaluatorMetricResponse(70.0, "문제 리뷰"),
-                                new ExternalEvaluatorMetricResponse(60.0, "BM 리뷰"),
-                                new ExternalEvaluatorMetricResponse(50.0, "성장 리뷰")
+                                new ExternalEvaluatorMetricResponse(9.0, "팀 리뷰"),
+                                new ExternalEvaluatorMetricResponse(8.0, "실현 가능성 리뷰"),
+                                new ExternalEvaluatorMetricResponse(7.0, "문제 리뷰"),
+                                new ExternalEvaluatorMetricResponse(6.0, "BM 리뷰"),
+                                new ExternalEvaluatorMetricResponse(5.0, "성장 리뷰")
                         ),
                         Map.of("problem_is_clear", true)
                 )
@@ -140,6 +142,17 @@ class ExternalAiServiceTest {
         assertThat(response.documentId()).isEqualTo(7L);
         assertThat(response.totalScore()).isEqualTo(70);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
+        verify(externalAiPersistenceService).saveEvaluation(
+                eq(7L),
+                eq(ExternalAiEvaluationMetricResult.of("문제 인식", 70, "문제 리뷰")),
+                eq(ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현 가능성 리뷰")),
+                eq(ExternalAiEvaluationMetricResult.of("성장 전략", 50, "성장 리뷰")),
+                eq(ExternalAiEvaluationMetricResult.of("Business Model", 60, "BM 리뷰")),
+                eq(ExternalAiEvaluationMetricResult.of("팀 구성", 90, "팀 리뷰")),
+                eq(70),
+                eq(Map.of("problem_is_clear", true)),
+                eq(currentParagraphs)
+        );
     }
 
     @Test

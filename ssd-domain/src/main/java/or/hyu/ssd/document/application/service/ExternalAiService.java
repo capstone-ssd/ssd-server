@@ -42,6 +42,10 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class ExternalAiService {
 
+    private static final int EXTERNAL_AI_SCORE_SCALE_MULTIPLIER = 10;
+    private static final int MIN_SCORE = 0;
+    private static final int MAX_SCORE = 100;
+
     private final ExternalAiPort externalAiPort;
     private final ExternalAiPersistenceService externalAiPersistenceService;
     private final DocumentRepository documentRepository;
@@ -235,12 +239,12 @@ public class ExternalAiService {
         if (score == null) {
             return null;
         }
-        long rounded = Math.round(score);
-        if (rounded < 0) {
-            return 0;
+        long rounded = Math.round(score * EXTERNAL_AI_SCORE_SCALE_MULTIPLIER);
+        if (rounded < MIN_SCORE) {
+            return MIN_SCORE;
         }
-        if (rounded > 100) {
-            return 100;
+        if (rounded > MAX_SCORE) {
+            return MAX_SCORE;
         }
         return (int) rounded;
     }
