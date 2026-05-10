@@ -15,9 +15,19 @@ class ExternalCheckNewTextRequestTest {
     @Test
     @DisplayName("check new text 요청은 변경 블록 목록을 blocks 필드로 전송한다")
     void request_usesBlocksField() {
-        assertThat(jsonPropertyValue(ExternalCheckNewTextRequest.class, "docId")).isEqualTo("doc_id");
-        assertThat(jsonPropertyValue(ExternalCheckNewTextRequest.class, "blocks")).isEqualTo("blocks");
-        assertThat(jsonPropertyValue(ExternalCheckNewTextBlockRequest.class, "blockId")).isEqualTo("block_id");
+        // given
+        Class<ExternalCheckNewTextRequest> requestType = ExternalCheckNewTextRequest.class;
+        Class<ExternalCheckNewTextBlockRequest> blockType = ExternalCheckNewTextBlockRequest.class;
+
+        // when
+        String docIdField = jsonPropertyValue(requestType, "docId");
+        String blocksField = jsonPropertyValue(requestType, "blocks");
+        String blockIdField = jsonPropertyValue(blockType, "blockId");
+
+        // then
+        assertThat(docIdField).isEqualTo("doc_id");
+        assertThat(blocksField).isEqualTo("blocks");
+        assertThat(blockIdField).isEqualTo("block_id");
     }
 
     private String jsonPropertyValue(Class<? extends Record> recordType, String componentName) {
