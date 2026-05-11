@@ -39,6 +39,19 @@
   - 실제 주소는 저장소에 기록하지 않고 내부 운영 문서 또는 시크릿 변수로 관리합니다.
   - 이 포트는 k6를 `K6_WEB_DASHBOARD=true`로 실행할 때만 열립니다.
 
+## 부하테스트 모니터링 기동
+부하테스트용 Prometheus/Grafana는 dev 서버 RAM 절약을 위해 평시에는 중지합니다.
+
+```bash
+sudo LOADTEST_MONITORING_ENABLED=true /home/ubuntu/ssd-deploy/deploy/ec2/install_monitoring.sh
+```
+
+부하테스트가 끝난 뒤에는 다시 중지합니다.
+
+```bash
+sudo LOADTEST_MONITORING_ENABLED=false /home/ubuntu/ssd-deploy/deploy/ec2/install_monitoring.sh
+```
+
 ## JVM 메트릭
 - SSD 앱은 `/actuator/prometheus`를 공개합니다.
 - Grafana `SSD Load Test JVM Overview`에서 아래 항목을 확인할 수 있습니다.
