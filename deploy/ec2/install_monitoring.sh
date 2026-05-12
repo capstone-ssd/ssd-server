@@ -8,6 +8,7 @@ MONITORING_COMPOSE_FILE="${MONITORING_ROOT}/docker-compose.monitoring.yml"
 GRAFANA_PORT="${GRAFANA_PORT:-3000}"
 PROMETHEUS_PORT="${PROMETHEUS_PORT:-9090}"
 K6_DASHBOARD_PORT="${K6_DASHBOARD_PORT:-5665}"
+LOADTEST_MONITORING_ENABLED="${LOADTEST_MONITORING_ENABLED:-false}"
 
 copy_if_changed() {
   local source_file="$1"
@@ -25,6 +26,51 @@ copy_if_changed() {
 container_running() {
   local container_name="$1"
   [[ "$(docker inspect -f '{{.State.Running}}' "${container_name}" 2>/dev/null || true)" == "true" ]]
+}
+
+is_enabled() {
+  local normalized
+  normalized="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+
+  case "${normalized}" in
+    true|1|yes|y|on)
+      return 0
+      ;;
+    false|0|no|n|off)
+      return 1
+      ;;
+    *)
+      echo "[ERROR] LOADTEST_MONITORING_ENABLED must be true or false: ${1}" >&2
+      exit 1
+      ;;
+  esac
+}
+
+stop_loadtest_monitoring() {
+  if command -v docker >/dev/null 2>&1; then
+    docker compose -f "${MONITORING_COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
+  else
+    echo "[WARN] docker is not installed, skip compose down"
+  fi
+}
+
+sync_ufw_rules() {
+  if ! command -v ufw >/dev/null 2>&1; then
+    return
+  fi
+  if ! ufw status | grep -q "Status: active"; then
+    return
+  fi
+
+  if is_enabled "${LOADTEST_MONITORING_ENABLED}"; then
+    ufw allow "${GRAFANA_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw allow "${PROMETHEUS_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw allow "${K6_DASHBOARD_PORT}/tcp" >/dev/null 2>&1 || true
+  else
+    ufw --force delete allow "${GRAFANA_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw --force delete allow "${PROMETHEUS_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw --force delete allow "${K6_DASHBOARD_PORT}/tcp" >/dev/null 2>&1 || true
+  fi
 }
 
 resolve_monitoring_source_dir() {
@@ -49,6 +95,15 @@ resolve_monitoring_source_dir() {
 
   return 1
 }
+
+if ! is_enabled "${LOADTEST_MONITORING_ENABLED}"; then
+  echo "[INFO] Loadtest monitoring disabled, stop containers if they exist"
+  stop_loadtest_monitoring
+  sync_ufw_rules
+  echo "[INFO] Loadtest monitoring is disabled"
+  echo "[INFO] Set LOADTEST_MONITORING_ENABLED=true to start it"
+  exit 0
+fi
 
 MONITORING_SOURCE_DIR="$(resolve_monitoring_source_dir || true)"
 if [[ -z "${MONITORING_SOURCE_DIR}" ]]; then
@@ -92,22 +147,16 @@ if command -v docker >/dev/null 2>&1; then
     || ! container_running "ssd-loadtest-cadvisor"; then
     docker compose -f "${MONITORING_COMPOSE_FILE}" up -d
   else
-    echo "[INFO] Monitoring unchanged, skip compose up"
+    echo "[INFO] Loadtest monitoring unchanged, skip compose up"
   fi
 else
   echo "[ERROR] docker is not installed" >&2
   exit 1
 fi
 
-if command -v ufw >/dev/null 2>&1; then
-  if ufw status | grep -q "Status: active"; then
-    ufw allow "${GRAFANA_PORT}/tcp" >/dev/null 2>&1 || true
-    ufw allow "${PROMETHEUS_PORT}/tcp" >/dev/null 2>&1 || true
-    ufw allow "${K6_DASHBOARD_PORT}/tcp" >/dev/null 2>&1 || true
-  fi
-fi
+sync_ufw_rules
 
-echo "[INFO] Monitoring install complete"
+echo "[INFO] Loadtest monitoring install complete"
 echo "[INFO] Grafana:    http://<server>:${GRAFANA_PORT}"
 echo "[INFO] Prometheus: http://<server>:${PROMETHEUS_PORT}"
 echo "[INFO] k6 Web UI:  http://<server>:${K6_DASHBOARD_PORT}"

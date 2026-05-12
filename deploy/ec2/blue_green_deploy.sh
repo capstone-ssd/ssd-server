@@ -17,6 +17,8 @@ NETWORK_NAME="${NETWORK_NAME:-ssd-net}"
 APP_CONFIG_FILE="${APP_CONFIG_FILE:-/opt/${APP_NAME}/config/application-dev.yml}"
 SPRING_CONFIG_ADDITIONAL_LOCATION="${SPRING_CONFIG_ADDITIONAL_LOCATION:-optional:file:/config/}"
 TIME_ZONE="${APP_TIME_ZONE:-Asia/Seoul}"
+APP_LOG_DIR="${APP_LOG_DIR:-/opt/${APP_NAME}/logs}"
+APP_JAVA_TOOL_OPTIONS="${APP_JAVA_TOOL_OPTIONS:--Xms256m -Xmx256m -Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M}"
 
 BLUE_PORT="${BLUE_PORT:-8080}"
 GREEN_PORT="${GREEN_PORT:-8081}"
@@ -29,7 +31,7 @@ HEALTH_RETRY_SLEEP_SECONDS="${HEALTH_RETRY_SLEEP_SECONDS:-2}"
 
 NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
 
-mkdir -p "$(dirname "${STATE_FILE}")"
+mkdir -p "$(dirname "${STATE_FILE}")" "${APP_LOG_DIR}"
 
 if [[ ! -f "${APP_CONFIG_FILE}" ]]; then
   echo "[ERROR] application config not found: ${APP_CONFIG_FILE}" >&2
@@ -58,6 +60,7 @@ LEGACY_APP_CONTAINER_NAME="${LEGACY_APP_CONTAINER_NAME:-infra-app-1}"
 
 echo "[INFO] Current=${CURRENT_COLOR}(${CURRENT_PORT}), Next=${NEXT_COLOR}(${NEXT_PORT})"
 echo "[INFO] Pull image: ${IMAGE}"
+echo "[INFO] JAVA_TOOL_OPTIONS=${APP_JAVA_TOOL_OPTIONS}"
 docker pull "${IMAGE}"
 
 docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1 || docker network create "${NETWORK_NAME}"
@@ -71,8 +74,10 @@ docker run -d \
   --network "${NETWORK_NAME}" \
   -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILE}" \
   -e SPRING_CONFIG_ADDITIONAL_LOCATION="${SPRING_CONFIG_ADDITIONAL_LOCATION}" \
+  -e JAVA_TOOL_OPTIONS="${APP_JAVA_TOOL_OPTIONS}" \
   -e TZ="${TIME_ZONE}" \
   -v "${APP_CONFIG_FILE}:/config/application-dev.yml:ro" \
+  -v "${APP_LOG_DIR}:/logs" \
   -p "127.0.0.1:${NEXT_PORT}:${APP_PORT}" \
   "${IMAGE}"
 
