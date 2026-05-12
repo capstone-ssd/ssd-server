@@ -29,7 +29,10 @@ container_running() {
 }
 
 is_enabled() {
-  case "${1,,}" in
+  local normalized
+  normalized="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+
+  case "${normalized}" in
     true|1|yes|y|on)
       return 0
       ;;
@@ -41,6 +44,33 @@ is_enabled() {
       exit 1
       ;;
   esac
+}
+
+stop_loadtest_monitoring() {
+  if command -v docker >/dev/null 2>&1; then
+    docker compose -f "${MONITORING_COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
+  else
+    echo "[WARN] docker is not installed, skip compose down"
+  fi
+}
+
+sync_ufw_rules() {
+  if ! command -v ufw >/dev/null 2>&1; then
+    return
+  fi
+  if ! ufw status | grep -q "Status: active"; then
+    return
+  fi
+
+  if is_enabled "${LOADTEST_MONITORING_ENABLED}"; then
+    ufw allow "${GRAFANA_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw allow "${PROMETHEUS_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw allow "${K6_DASHBOARD_PORT}/tcp" >/dev/null 2>&1 || true
+  else
+    ufw --force delete allow "${GRAFANA_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw --force delete allow "${PROMETHEUS_PORT}/tcp" >/dev/null 2>&1 || true
+    ufw --force delete allow "${K6_DASHBOARD_PORT}/tcp" >/dev/null 2>&1 || true
+  fi
 }
 
 resolve_monitoring_source_dir() {
@@ -65,6 +95,15 @@ resolve_monitoring_source_dir() {
 
   return 1
 }
+
+if ! is_enabled "${LOADTEST_MONITORING_ENABLED}"; then
+  echo "[INFO] Loadtest monitoring disabled, stop containers if they exist"
+  stop_loadtest_monitoring
+  sync_ufw_rules
+  echo "[INFO] Loadtest monitoring is disabled"
+  echo "[INFO] Set LOADTEST_MONITORING_ENABLED=true to start it"
+  exit 0
+fi
 
 MONITORING_SOURCE_DIR="$(resolve_monitoring_source_dir || true)"
 if [[ -z "${MONITORING_SOURCE_DIR}" ]]; then
@@ -101,39 +140,23 @@ while IFS= read -r -d '' dashboard_file; do
 done < <(find "${MONITORING_SOURCE_DIR}/grafana/dashboards" -maxdepth 1 -type f -name '*.json' -print0)
 
 if command -v docker >/dev/null 2>&1; then
-  if is_enabled "${LOADTEST_MONITORING_ENABLED}"; then
-    if (( monitoring_changed == 1 )) \
-      || ! container_running "ssd-loadtest-prometheus" \
-      || ! container_running "ssd-loadtest-grafana" \
-      || ! container_running "ssd-loadtest-node-exporter" \
-      || ! container_running "ssd-loadtest-cadvisor"; then
-      docker compose -f "${MONITORING_COMPOSE_FILE}" up -d
-    else
-      echo "[INFO] Loadtest monitoring unchanged, skip compose up"
-    fi
+  if (( monitoring_changed == 1 )) \
+    || ! container_running "ssd-loadtest-prometheus" \
+    || ! container_running "ssd-loadtest-grafana" \
+    || ! container_running "ssd-loadtest-node-exporter" \
+    || ! container_running "ssd-loadtest-cadvisor"; then
+    docker compose -f "${MONITORING_COMPOSE_FILE}" up -d
   else
-    echo "[INFO] Loadtest monitoring disabled, stop containers if they exist"
-    docker compose -f "${MONITORING_COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
+    echo "[INFO] Loadtest monitoring unchanged, skip compose up"
   fi
 else
   echo "[ERROR] docker is not installed" >&2
   exit 1
 fi
 
-if is_enabled "${LOADTEST_MONITORING_ENABLED}" && command -v ufw >/dev/null 2>&1; then
-  if ufw status | grep -q "Status: active"; then
-    ufw allow "${GRAFANA_PORT}/tcp" >/dev/null 2>&1 || true
-    ufw allow "${PROMETHEUS_PORT}/tcp" >/dev/null 2>&1 || true
-    ufw allow "${K6_DASHBOARD_PORT}/tcp" >/dev/null 2>&1 || true
-  fi
-fi
+sync_ufw_rules
 
-if is_enabled "${LOADTEST_MONITORING_ENABLED}"; then
-  echo "[INFO] Loadtest monitoring install complete"
-  echo "[INFO] Grafana:    http://<server>:${GRAFANA_PORT}"
-  echo "[INFO] Prometheus: http://<server>:${PROMETHEUS_PORT}"
-  echo "[INFO] k6 Web UI:  http://<server>:${K6_DASHBOARD_PORT}"
-else
-  echo "[INFO] Loadtest monitoring is disabled"
-  echo "[INFO] Set LOADTEST_MONITORING_ENABLED=true to start it"
-fi
+echo "[INFO] Loadtest monitoring install complete"
+echo "[INFO] Grafana:    http://<server>:${GRAFANA_PORT}"
+echo "[INFO] Prometheus: http://<server>:${PROMETHEUS_PORT}"
+echo "[INFO] k6 Web UI:  http://<server>:${K6_DASHBOARD_PORT}"
