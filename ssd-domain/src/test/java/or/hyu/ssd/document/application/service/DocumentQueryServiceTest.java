@@ -47,6 +47,7 @@ class DocumentQueryServiceTest {
         Member member = member(1L);
         Long user = member.getId();
         Document document = document(42L, "문서 제목", null, member);
+        document.markExternalAiProcessed();
 
         // when
         when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
@@ -61,6 +62,7 @@ class DocumentQueryServiceTest {
         assertThat(result.id()).isEqualTo(42L);
         assertThat(result.authorId()).isEqualTo(1L);
         assertThat(result.purpose()).isEqualTo(DocumentPurpose.EVALUATION);
+        assertThat(result.hasExternalAiResult()).isTrue();
         assertThat(result.blocks()).hasSize(2);
         assertThat(result.blocks().get(0).content()).isEqualTo("문단");
         assertThat(result.blocks().get(1).url()).isEqualTo("https://s3.example.com/image.png");

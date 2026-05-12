@@ -234,6 +234,7 @@ public class DocumentController {
                     - 200 OK
                     - data:
                       - id, title, text, paragraphs, summary, details, purpose, folderId, bookmark
+                      - hasExternalAiResult(boolean): 외부 AI 결과가 한 번이라도 정상 반영되었는지 여부
                       - authorId, authorName
 
                     ### 오류

@@ -85,7 +85,7 @@ class ExternalAiServiceTest {
         when(externalAiPort.summarizeBasic(any())).thenReturn(
                 new ExternalSummarizationBasicResponse("7", "핵심 요약", "짧은 요약")
         );
-        when(externalAiPersistenceService.saveSummary(7L, "핵심 요약", "짧은 요약"))
+        when(externalAiPersistenceService.saveSummary(user, 7L, "핵심 요약", "짧은 요약"))
                 .thenReturn(ExternalAiSummaryResult.of(7L, "핵심 요약", "짧은 요약"));
 
         // when
@@ -123,7 +123,7 @@ class ExternalAiServiceTest {
                         Map.of("problem_is_clear", true)
                 )
         );
-        when(externalAiPersistenceService.saveEvaluation(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(externalAiPersistenceService.saveEvaluation(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(ExternalAiEvaluationCardResult.of(
                         7L,
                         70,
@@ -143,6 +143,7 @@ class ExternalAiServiceTest {
         assertThat(response.totalScore()).isEqualTo(70);
         assertThat(response.checkList()).containsEntry("problem_is_clear", true);
         verify(externalAiPersistenceService).saveEvaluation(
+                eq(user),
                 eq(7L),
                 eq(ExternalAiEvaluationMetricResult.of("문제 인식", 70, "문제 리뷰")),
                 eq(ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현 가능성 리뷰")),

@@ -1,5 +1,6 @@
 package or.hyu.ssd.api.document.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
 import or.hyu.ssd.document.domain.model.DocumentPurpose;
 
@@ -15,6 +16,8 @@ public record GetDocumentResponse(
         DocumentPurpose purpose,
         Long folderId,
         boolean bookmark,
+        @Schema(description = "외부 AI 결과가 한 번이라도 정상 반영되었는지 여부")
+        boolean hasExternalAiResult,
         Long authorId,
         String authorName
 ) {
@@ -29,6 +32,7 @@ public record GetDocumentResponse(
                 result.purpose(),
                 result.folderId(),
                 result.bookmark(),
+                result.hasExternalAiResult(),
                 result.authorId(),
                 result.authorName()
         );

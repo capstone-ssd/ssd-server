@@ -15,6 +15,7 @@ public record DocumentDetailResult(
         DocumentPurpose purpose,
         Long folderId,
         boolean bookmark,
+        boolean hasExternalAiResult,
         Long authorId,
         String authorName
 ) {
@@ -31,6 +32,7 @@ public record DocumentDetailResult(
                 document.getPurposeOrDefault(),
                 document.getFolder() != null ? document.getFolder().getId() : null,
                 document.isBookmark(),
+                document.isExternalAiProcessed(),
                 authorId,
                 authorName
         );

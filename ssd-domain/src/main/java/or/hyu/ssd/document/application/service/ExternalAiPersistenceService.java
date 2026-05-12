@@ -26,6 +26,7 @@ public class ExternalAiPersistenceService {
     private final DocumentAiCheckSnapshotRepository documentAiCheckSnapshotRepository;
 
     public ExternalAiEvaluationCardResult saveEvaluation(
+            Long memberId,
             Long documentId,
             ExternalAiEvaluationMetricResult problemRecognition,
             ExternalAiEvaluationMetricResult feasibility,
@@ -36,7 +37,7 @@ public class ExternalAiPersistenceService {
             Map<String, Boolean> checkList,
             List<DocumentParagraph> currentParagraphs
     ) {
-        Document doc = getDocument(documentId);
+        Document doc = getOwnedDocument(documentId, memberId);
         doc.updateExternalEvaluationMetrics(
                 totalScore,
                 problemRecognition.score(),
@@ -60,6 +61,7 @@ public class ExternalAiPersistenceService {
                 teamComposition,
                 doc.getExternalChecklistSnapshot()
         ));
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiEvaluationCardResult.of(
                 doc.getId(),
@@ -73,29 +75,33 @@ public class ExternalAiPersistenceService {
         );
     }
 
-    public ExternalAiSummaryResult saveSummary(Long documentId, String summary, String shortSummary) {
-        Document doc = getDocument(documentId);
+    public ExternalAiSummaryResult saveSummary(Long memberId, Long documentId, String summary, String shortSummary) {
+        Document doc = getOwnedDocument(documentId, memberId);
         doc.updateSummary(summary, shortSummary);
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiSummaryResult.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
     }
 
-    public ExternalAiKeywordResult saveKeyword(Long documentId, String keyword) {
-        Document doc = getDocument(documentId);
+    public ExternalAiKeywordResult saveKeyword(Long memberId, Long documentId, String keyword) {
+        Document doc = getOwnedDocument(documentId, memberId);
         doc.updateKeywords(keyword);
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiKeywordResult.of(doc.getId(), doc.getKeywords());
     }
 
     public ExternalAiDocumentCheckResult mergeChecklist(
+            Long memberId,
             Long documentId,
             List<Integer> changedBlockIds,
             Map<String, Boolean> checkList,
             List<DocumentParagraph> currentParagraphs
     ) {
-        Document doc = getDocument(documentId);
+        Document doc = getOwnedDocument(documentId, memberId);
         doc.mergeExternalChecklist(checkList);
         refreshAiCheckSnapshots(doc, currentParagraphs);
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiDocumentCheckResult.of(doc.getId(), changedBlockIds, doc.getExternalChecklistSnapshot());
     }
@@ -103,6 +109,20 @@ public class ExternalAiPersistenceService {
     private Document getDocument(Long documentId) {
         return documentRepository.findById(documentId)
                 .orElseThrow(() -> new DocumentException(ErrorCode.DOCUMENT_NOT_FOUND));
+    }
+
+    private Document getOwnedDocument(Long documentId, Long memberId) {
+        if (memberId == null) {
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        Document doc = getDocument(documentId);
+        if (doc.getMember() == null || doc.getMember().getId() == null) {
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        if (!doc.getMember().getId().equals(memberId)) {
+            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
+        }
+        return doc;
     }
 
     private void refreshAiCheckSnapshots(Document doc, List<DocumentParagraph> currentParagraphs) {

@@ -26,6 +26,7 @@ public class Document extends AuditableDomainEntity {
     private String details;
     private String evaluation;
     private String keywords;
+    private boolean externalAiProcessed;
     private Integer externalAiTotalScore;
     private Integer externalAiProblemRecognitionScore;
     private String externalAiProblemRecognitionReview;
@@ -132,6 +133,10 @@ public class Document extends AuditableDomainEntity {
 
     public void updateKeywords(String keywords) {
         this.keywords = keywords;
+    }
+
+    public void markExternalAiProcessed() {
+        this.externalAiProcessed = true;
     }
 
     public void updateExternalEvaluationMetrics(

@@ -14,7 +14,9 @@ import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.ExternalAiDocumentCheckResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
+import or.hyu.ssd.common.exception.DocumentException;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.domain.model.Role;
 
@@ -23,8 +25,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,13 +51,30 @@ class ExternalAiPersistenceServiceTest {
         when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
 
         // when
-        ExternalAiSummaryResult response = externalAiPersistenceService.saveSummary(7L, "요약", "짧은 요약");
+        ExternalAiSummaryResult response = externalAiPersistenceService.saveSummary(1L, 7L, "요약", "짧은 요약");
 
         // then
         assertThat(response.summary()).isEqualTo("요약");
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
         assertThat(document.getSummary()).isEqualTo("요약");
         assertThat(document.getShortSummary()).isEqualTo("짧은 요약");
+        assertThat(document.isExternalAiProcessed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("saveKeyword()는 keyword를 저장하고 AI 결과 반영 상태로 변경한다")
+    void saveKeyword_marksExternalAiProcessed() {
+        // given
+        Document document = document(7L);
+        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+
+        // when
+        ExternalAiKeywordResult response = externalAiPersistenceService.saveKeyword(1L, 7L, "SaaS, AI");
+
+        // then
+        assertThat(response.keyword()).isEqualTo("SaaS, AI");
+        assertThat(document.getKeywords()).isEqualTo("SaaS, AI");
+        assertThat(document.isExternalAiProcessed()).isTrue();
     }
 
     @Test
@@ -65,6 +86,7 @@ class ExternalAiPersistenceServiceTest {
 
         // when
         ExternalAiEvaluationCardResult response = externalAiPersistenceService.saveEvaluation(
+                1L,
                 7L,
                 ExternalAiEvaluationMetricResult.of("문제 인식", 70, "문제 리뷰"),
                 ExternalAiEvaluationMetricResult.of("실현 가능성", 80, "실현 가능성 리뷰"),
@@ -83,6 +105,7 @@ class ExternalAiPersistenceServiceTest {
         assertThat(document.getExternalAiProblemRecognitionReview()).isEqualTo("문제 리뷰");
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.getEvaluation()).contains("## 문제 인식");
+        assertThat(document.isExternalAiProcessed()).isTrue();
         verify(documentAiCheckSnapshotRepository).deleteAllByDocument(document);
         verify(documentAiCheckSnapshotRepository).flush();
         verify(documentAiCheckSnapshotRepository).saveAll(any());
@@ -101,6 +124,7 @@ class ExternalAiPersistenceServiceTest {
 
         // when
         ExternalAiDocumentCheckResult response = externalAiPersistenceService.mergeChecklist(
+                1L,
                 7L,
                 List.of(3),
                 Map.of(
@@ -114,10 +138,26 @@ class ExternalAiPersistenceServiceTest {
         assertThat(response.changedBlockIds()).containsExactly(3);
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();
+        assertThat(document.isExternalAiProcessed()).isTrue();
         var inOrder = inOrder(documentAiCheckSnapshotRepository);
         inOrder.verify(documentAiCheckSnapshotRepository).deleteAllByDocument(document);
         inOrder.verify(documentAiCheckSnapshotRepository).flush();
         inOrder.verify(documentAiCheckSnapshotRepository).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("saveSummary()는 문서 소유자가 아니면 저장하지 않는다")
+    void saveSummary_rejectsNotOwner() {
+        // given
+        Document document = document(7L);
+        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+
+        // when
+        assertThatThrownBy(() -> externalAiPersistenceService.saveSummary(2L, 7L, "요약", "짧은 요약"))
+                .isInstanceOf(DocumentException.class);
+
+        // then
+        verify(documentRepository, never()).save(any());
     }
 
     private Document document(Long id) {

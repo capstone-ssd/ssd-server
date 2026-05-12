@@ -86,6 +86,7 @@ public class ExternalAiService {
         );
 
         return externalAiPersistenceService.saveEvaluation(
+                memberId,
                 doc.getId(),
                 problemRecognition,
                 feasibility,
@@ -107,7 +108,7 @@ public class ExternalAiService {
 
         String summary = firstNonBlank(response.summary(), response.small());
         String shortSummary = normalize(response.small());
-        return externalAiPersistenceService.saveSummary(doc.getId(), summary, shortSummary);
+        return externalAiPersistenceService.saveSummary(memberId, doc.getId(), summary, shortSummary);
     }
 
     public ExternalAiKeywordResult summarizeKeyword(ExternalDocumentIdCommand command, Long memberId) {
@@ -117,7 +118,7 @@ public class ExternalAiService {
                 doc.getContent()
         ));
 
-        return externalAiPersistenceService.saveKeyword(doc.getId(), normalize(response.keyword()));
+        return externalAiPersistenceService.saveKeyword(memberId, doc.getId(), normalize(response.keyword()));
     }
 
     public ExternalAiDocumentCheckResult checkNewText(ExternalDocumentIdCommand command, Long memberId) {
@@ -143,6 +144,7 @@ public class ExternalAiService {
         ));
 
         return externalAiPersistenceService.mergeChecklist(
+                memberId,
                 doc.getId(),
                 changedParagraphs.stream().map(DocumentParagraph::getBlockId).toList(),
                 response.checkList(),
