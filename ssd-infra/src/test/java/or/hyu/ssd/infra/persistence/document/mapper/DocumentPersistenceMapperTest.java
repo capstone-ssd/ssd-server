@@ -16,6 +16,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DocumentPersistenceMapperTest {
 
     @Test
+    void toDomain_preservesExternalAiProcessed() {
+        // given
+        DocumentJpaEntity entity = DocumentJpaEntity.builder()
+                .id(1L)
+                .title("문서")
+                .content("본문")
+                .externalAiProcessed(true)
+                .build();
+
+        // when
+        Document document = DocumentPersistenceMapper.toDomain(entity);
+
+        // then
+        assertThat(document.isExternalAiProcessed()).isTrue();
+    }
+
+    @Test
+    void toJpa_preservesExternalAiProcessed() {
+        // given
+        Document document = Document.builder()
+                .id(1L)
+                .title("문서")
+                .content("본문")
+                .externalAiProcessed(true)
+                .build();
+
+        // when
+        DocumentJpaEntity entity = DocumentPersistenceMapper.toJpa(document);
+
+        // then
+        assertThat(entity.isExternalAiProcessed()).isTrue();
+    }
+
+    @Test
     void toJpa_preservesDocumentVersionForParagraphDocumentRef() {
         // given
         Document document = Document.builder()

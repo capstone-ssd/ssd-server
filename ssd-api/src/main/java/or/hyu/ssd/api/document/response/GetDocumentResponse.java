@@ -15,6 +15,7 @@ public record GetDocumentResponse(
         DocumentPurpose purpose,
         Long folderId,
         boolean bookmark,
+        boolean hasExternalAiResult,
         Long authorId,
         String authorName
 ) {
@@ -29,6 +30,7 @@ public record GetDocumentResponse(
                 result.purpose(),
                 result.folderId(),
                 result.bookmark(),
+                result.hasExternalAiResult(),
                 result.authorId(),
                 result.authorName()
         );

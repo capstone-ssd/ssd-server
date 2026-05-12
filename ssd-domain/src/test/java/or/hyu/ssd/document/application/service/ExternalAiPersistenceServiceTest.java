@@ -14,6 +14,7 @@ import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.document.application.result.ExternalAiDocumentCheckResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationCardResult;
 import or.hyu.ssd.document.application.result.ExternalAiEvaluationMetricResult;
+import or.hyu.ssd.document.application.result.ExternalAiKeywordResult;
 import or.hyu.ssd.document.application.result.ExternalAiSummaryResult;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.domain.model.Role;
@@ -54,6 +55,23 @@ class ExternalAiPersistenceServiceTest {
         assertThat(response.shortSummary()).isEqualTo("짧은 요약");
         assertThat(document.getSummary()).isEqualTo("요약");
         assertThat(document.getShortSummary()).isEqualTo("짧은 요약");
+        assertThat(document.isExternalAiProcessed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("saveKeyword()는 keyword를 저장하고 AI 결과 반영 상태로 변경한다")
+    void saveKeyword_marksExternalAiProcessed() {
+        // given
+        Document document = document(7L);
+        when(documentRepository.findById(7L)).thenReturn(Optional.of(document));
+
+        // when
+        ExternalAiKeywordResult response = externalAiPersistenceService.saveKeyword(7L, "SaaS, AI");
+
+        // then
+        assertThat(response.keyword()).isEqualTo("SaaS, AI");
+        assertThat(document.getKeywords()).isEqualTo("SaaS, AI");
+        assertThat(document.isExternalAiProcessed()).isTrue();
     }
 
     @Test
@@ -83,6 +101,7 @@ class ExternalAiPersistenceServiceTest {
         assertThat(document.getExternalAiProblemRecognitionReview()).isEqualTo("문제 리뷰");
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.getEvaluation()).contains("## 문제 인식");
+        assertThat(document.isExternalAiProcessed()).isTrue();
         verify(documentAiCheckSnapshotRepository).deleteAllByDocument(document);
         verify(documentAiCheckSnapshotRepository).flush();
         verify(documentAiCheckSnapshotRepository).saveAll(any());
@@ -114,6 +133,7 @@ class ExternalAiPersistenceServiceTest {
         assertThat(response.changedBlockIds()).containsExactly(3);
         assertThat(document.isChecklistProblemIsClear()).isTrue();
         assertThat(document.isChecklistMarketDefinitionIsCorrect()).isTrue();
+        assertThat(document.isExternalAiProcessed()).isTrue();
         var inOrder = inOrder(documentAiCheckSnapshotRepository);
         inOrder.verify(documentAiCheckSnapshotRepository).deleteAllByDocument(document);
         inOrder.verify(documentAiCheckSnapshotRepository).flush();

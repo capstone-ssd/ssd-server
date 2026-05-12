@@ -234,6 +234,7 @@ public class DocumentController {
                     - 200 OK
                     - data:
                       - id, title, text, paragraphs, summary, details, purpose, folderId, bookmark
+                      - hasExternalAiResult
                       - authorId, authorName
 
                     ### 오류

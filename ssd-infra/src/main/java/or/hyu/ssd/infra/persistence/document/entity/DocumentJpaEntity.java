@@ -84,6 +84,10 @@ public class DocumentJpaEntity extends BaseJpaEntity {
     @Column(name = "keywords", columnDefinition = "TEXT")
     private String keywords;
 
+    @Comment("외부 AI 결과 반영 여부")
+    @Column(name = "external_ai_processed", nullable = false, columnDefinition = "boolean default false")
+    private boolean externalAiProcessed;
+
     @Comment("외부 AI 종합평가 총점")
     @Column(name = "external_ai_total_score")
     private Integer externalAiTotalScore;
@@ -278,6 +282,10 @@ public class DocumentJpaEntity extends BaseJpaEntity {
 
     public void updateKeywords(String keywords) {
         this.keywords = keywords;
+    }
+
+    public void markExternalAiProcessed() {
+        this.externalAiProcessed = true;
     }
 
     public void updateExternalEvaluationMetrics(

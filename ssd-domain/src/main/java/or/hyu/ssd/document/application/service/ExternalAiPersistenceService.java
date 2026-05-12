@@ -60,6 +60,7 @@ public class ExternalAiPersistenceService {
                 teamComposition,
                 doc.getExternalChecklistSnapshot()
         ));
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiEvaluationCardResult.of(
                 doc.getId(),
@@ -76,6 +77,7 @@ public class ExternalAiPersistenceService {
     public ExternalAiSummaryResult saveSummary(Long documentId, String summary, String shortSummary) {
         Document doc = getDocument(documentId);
         doc.updateSummary(summary, shortSummary);
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiSummaryResult.of(doc.getId(), doc.getSummary(), doc.getShortSummary());
     }
@@ -83,6 +85,7 @@ public class ExternalAiPersistenceService {
     public ExternalAiKeywordResult saveKeyword(Long documentId, String keyword) {
         Document doc = getDocument(documentId);
         doc.updateKeywords(keyword);
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiKeywordResult.of(doc.getId(), doc.getKeywords());
     }
@@ -96,6 +99,7 @@ public class ExternalAiPersistenceService {
         Document doc = getDocument(documentId);
         doc.mergeExternalChecklist(checkList);
         refreshAiCheckSnapshots(doc, currentParagraphs);
+        doc.markExternalAiProcessed();
         documentRepository.save(doc);
         return ExternalAiDocumentCheckResult.of(doc.getId(), changedBlockIds, doc.getExternalChecklistSnapshot());
     }
