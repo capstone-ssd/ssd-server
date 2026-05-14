@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("performance")
 @Testcontainers
-@ActiveProfiles("local")
+@ActiveProfiles("integration-test")
 @SpringBootTest(classes = SsdApplication.class)
 class DocumentSearchPerformanceIntegrationTest {
 
@@ -57,8 +57,13 @@ class DocumentSearchPerformanceIntegrationTest {
         registry.add("spring.jpa.properties.hibernate.format_sql", () -> "false");
         registry.add("spring.data.redis.host", () -> "localhost");
         registry.add("spring.data.redis.port", () -> "6379");
+        registry.add("spring.jwt.secret", () -> "test-jwt-secret-test-jwt-secret-test-jwt-secret");
         registry.add("spring.security.oauth2.client.registration.kakao.client-id", () -> "test-client-id");
+        registry.add("spring.security.oauth2.client.registration.kakao.scope", () -> "profile_nickname,profile_image,account_email");
         registry.add("app.external-ai.base-url", () -> "http://localhost:9999");
+        registry.add("app.cookie.domain", () -> "");
+        registry.add("app.cookie.same-site", () -> "Lax");
+        registry.add("app.cookie.secure", () -> "false");
         registry.add("app.storage.s3.bucket", () -> "test-bucket");
         registry.add("app.storage.s3.region", () -> "ap-northeast-2");
         registry.add("app.storage.s3.access-key", () -> "test-access-key");
