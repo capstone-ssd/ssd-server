@@ -12,6 +12,7 @@ description = 'ssd'
 ext {
     set('springCloudVersion', "2025.1.0")
     set('springAiVersion', "2.0.0-M1")
+    set('testcontainersVersion', "1.21.3")
 }
 
 def stripBlockComments = { String content ->
@@ -168,7 +169,23 @@ subprojects {
         testClassesDirs = sourceSets.integrationTest.output.classesDirs
         classpath = sourceSets.integrationTest.runtimeClasspath
         shouldRunAfter tasks.named('test')
-        useJUnitPlatform()
+        useJUnitPlatform {
+            excludeTags 'performance'
+        }
+    }
+
+    tasks.register('performanceIntegrationTest', Test) {
+        description = 'Runs performance integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.integrationTest.output.classesDirs
+        classpath = sourceSets.integrationTest.runtimeClasspath
+        shouldRunAfter tasks.named('integrationTest')
+        systemProperty 'searchPerfDocs', System.getProperty('searchPerfDocs', '10000')
+        systemProperty 'searchPerfWarmups', System.getProperty('searchPerfWarmups', '10')
+        systemProperty 'searchPerfIterations', System.getProperty('searchPerfIterations', '50')
+        useJUnitPlatform {
+            includeTags 'performance'
+        }
     }
 
     tasks.register('verifyTestConventions') {
