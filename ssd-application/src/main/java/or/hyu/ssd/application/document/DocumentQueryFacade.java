@@ -24,4 +24,8 @@ public class DocumentQueryFacade {
     public List<DocumentListItemResult> listDocuments(Long memberId, DocumentSort sortOption, Long folderId) {
         return documentQueryService.listDocuments(memberId, sortOption, folderId);
     }
+
+    public List<DocumentListItemResult> searchDocuments(Long memberId, String keyword, DocumentSort sortOption) {
+        return documentQueryService.searchDocuments(memberId, keyword, sortOption);
+    }
 }
