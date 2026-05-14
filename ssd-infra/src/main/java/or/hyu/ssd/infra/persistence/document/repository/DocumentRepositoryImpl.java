@@ -34,6 +34,20 @@ public class DocumentRepositoryImpl implements DocumentRepository {
     }
 
     @Override
+    public List<Document> findAllByMember_IdAndTitleContaining(Long memberId, String keyword, Sort sort) {
+        return documentJpaRepository.findAllByMember_IdAndTitleContaining(memberId, keyword, sort).stream()
+                .map(DocumentPersistenceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Document> findAllByMember_IdAndTitleStartingWith(Long memberId, String keyword, Sort sort) {
+        return documentJpaRepository.findAllByMember_IdAndTitleStartingWith(memberId, keyword, sort).stream()
+                .map(DocumentPersistenceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Document> findAllByMember_IdAndFolder_Id(Long memberId, Long folderId, Sort sort) {
         return documentJpaRepository.findAllByMember_IdAndFolder_Id(memberId, folderId, sort).stream()
                 .map(DocumentPersistenceMapper::toDomain)

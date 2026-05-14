@@ -11,6 +11,7 @@ import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.document.application.support.DocumentSort;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
 import or.hyu.ssd.document.application.result.DocumentListItemResult;
+import or.hyu.ssd.common.exception.DocumentException;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.domain.model.Role;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +26,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,6 +92,64 @@ class DocumentQueryServiceTest {
         assertThat(results.get(0).purpose()).isEqualTo(DocumentPurpose.EVALUATION);
         assertThat(results.get(0).folderId()).isNull();
         assertThat(results.get(0).bookmark()).isTrue();
+    }
+
+    @Test
+    @DisplayName("searchDocuments()는 회원의 문서 중 제목에 검색어가 포함된 문서를 조회한다")
+    void searchDocuments_returnsMatchedDocumentsByTitle() {
+        // given
+        Member member = member(1L);
+        Long user = member.getId();
+        Document document = document(200L, "AI 사업계획서", null, member, true);
+        Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
+        when(documentRepository.findAllByMember_IdAndTitleContaining(1L, "사업", sort))
+                .thenReturn(List.of(document));
+
+        // when
+        List<DocumentListItemResult> results = documentQueryService.searchDocuments(user, " 사업 ", DocumentSort.MODIFIED);
+
+        // then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).id()).isEqualTo(200L);
+        assertThat(results.get(0).title()).isEqualTo("AI 사업계획서");
+        assertThat(results.get(0).bookmark()).isTrue();
+        verify(documentRepository).findAllByMember_IdAndTitleContaining(1L, "사업", sort);
+    }
+
+    @Test
+    @DisplayName("searchDocumentsByTitlePrefix()는 회원의 문서 중 제목이 검색어로 시작하는 문서를 조회한다")
+    void searchDocumentsByTitlePrefix_returnsMatchedDocumentsByTitlePrefix() {
+        // given
+        Member member = member(1L);
+        Long user = member.getId();
+        Document document = document(201L, "사업계획서 AI", null, member, true);
+        Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
+        when(documentRepository.findAllByMember_IdAndTitleStartingWith(1L, "사업", sort))
+                .thenReturn(List.of(document));
+
+        // when
+        List<DocumentListItemResult> results = documentQueryService.searchDocumentsByTitlePrefix(user, " 사업 ", DocumentSort.MODIFIED);
+
+        // then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).id()).isEqualTo(201L);
+        assertThat(results.get(0).title()).isEqualTo("사업계획서 AI");
+        assertThat(results.get(0).bookmark()).isTrue();
+        verify(documentRepository).findAllByMember_IdAndTitleStartingWith(1L, "사업", sort);
+    }
+
+    @Test
+    @DisplayName("searchDocuments()는 검색어가 공백이면 예외를 던진다")
+    void searchDocuments_rejectsBlankKeyword() {
+        // given
+        Member member = member(1L);
+
+        // when
+        assertThatThrownBy(() -> documentQueryService.searchDocuments(member.getId(), "   ", DocumentSort.LATEST))
+                .isInstanceOf(DocumentException.class);
+
+        // then
+        verifyNoInteractions(documentRepository);
     }
 
     private Document document(Long id, String title, Folder folder, Member member) {

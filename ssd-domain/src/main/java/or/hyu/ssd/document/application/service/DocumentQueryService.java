@@ -36,12 +36,7 @@ public class DocumentQueryService {
     public List<DocumentListItemResult> listDocuments(Long memberId, DocumentSort sortOption, Long folderId) {
         assertAuthenticatedMember(memberId);
 
-        Sort sort = switch (sortOption) {
-            case LATEST -> Sort.by(Sort.Order.desc("createdAt"));
-            case OLDEST -> Sort.by(Sort.Order.asc("createdAt"));
-            case NAME -> Sort.by(Sort.Order.asc("title"));
-            case MODIFIED -> Sort.by(Sort.Order.desc("updatedAt"));
-        };
+        Sort sort = toSort(sortOption);
 
         List<Document> documents;
         if (folderId == null) {
@@ -56,6 +51,40 @@ public class DocumentQueryService {
         return documents.stream()
                 .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
+    }
+
+    public List<DocumentListItemResult> searchDocuments(Long memberId, String keyword, DocumentSort sortOption) {
+        assertAuthenticatedMember(memberId);
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        return documentRepository.findAllByMember_IdAndTitleContaining(memberId, normalizedKeyword, toSort(sortOption)).stream()
+                .map(DocumentListItemResult::of)
+                .collect(Collectors.toList());
+    }
+
+    public List<DocumentListItemResult> searchDocumentsByTitlePrefix(Long memberId, String keyword, DocumentSort sortOption) {
+        assertAuthenticatedMember(memberId);
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        return documentRepository.findAllByMember_IdAndTitleStartingWith(memberId, normalizedKeyword, toSort(sortOption)).stream()
+                .map(DocumentListItemResult::of)
+                .collect(Collectors.toList());
+    }
+
+    private Sort toSort(DocumentSort sortOption) {
+        return switch (sortOption) {
+            case LATEST -> Sort.by(Sort.Order.desc("createdAt"));
+            case OLDEST -> Sort.by(Sort.Order.asc("createdAt"));
+            case NAME -> Sort.by(Sort.Order.asc("title"));
+            case MODIFIED -> Sort.by(Sort.Order.desc("updatedAt"));
+        };
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "검색어는 공백일 수 없습니다");
+        }
+        return keyword.trim();
     }
 
     private Document loadDocument(Long documentId) {

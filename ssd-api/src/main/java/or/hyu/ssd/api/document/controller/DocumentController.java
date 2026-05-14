@@ -28,6 +28,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.web.multipart.MultipartFile;
@@ -300,6 +301,54 @@ public class DocumentController {
                 .map(DocumentListItemResponse::from)
                 .toList();
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
+    }
+
+    @GetMapping("/v1/documents/search")
+    @Operation(
+            summary = "문서 제목 검색",
+            description = """
+                    ### 개요
+                    - 로그인한 회원의 문서 중 제목에 검색어가 포함된 문서를 조회합니다.
+                    - 검색은 제목 기준 LIKE 검색으로 수행합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Query keyword (required): 검색어
+                    - Query sort (optional, default=LATEST)
+                      - LATEST: 생성일 최신순
+                      - OLDEST: 생성일 오래된순
+                      - NAME: 제목 오름차순
+                      - MODIFIED: 수정일 최신순
+
+                    ### 응답
+                    - 200 OK
+                    - data[]
+                      - id: 문서 ID
+                      - title: 제목
+                      - purpose: 문서 목적 (`WRITING`, `EVALUATION`)
+                      - folderId: 폴더 ID (없으면 루트)
+                      - updatedAt: 마지막 수정 시각
+                      - bookmark: 즐겨찾기 여부
+
+                    ### 오류
+                    - REQ40002: 검색어가 비어 있음
+                    - MEMBER_NOT_FOUND: 인증 정보 없음/회원 없음
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
+    public ResponseEntity<ApiResponse<List<DocumentListItemResponse>>> searchDocuments(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "검색어", example = "사업계획서")
+            @RequestParam(name = "keyword") @NotBlank(message = "검색어는 필수입니다") String keyword,
+            @Parameter(description = "정렬 옵션", schema = @Schema(allowableValues = {"LATEST","OLDEST","NAME","MODIFIED"}))
+            @RequestParam(name = "sort", defaultValue = "LATEST") DocumentSort sort
+    ) {
+        List<DocumentListItemResponse> list = documentQueryFacade.searchDocuments(user.getMember().getId(), keyword, sort).stream()
+                .map(DocumentListItemResponse::from)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(list, "문서 검색 결과가 조회되었습니다"));
     }
 
     @PatchMapping("/v1/documents/{id}/bookmark")
