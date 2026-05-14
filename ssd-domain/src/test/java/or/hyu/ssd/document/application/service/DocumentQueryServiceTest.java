@@ -117,6 +117,28 @@ class DocumentQueryServiceTest {
     }
 
     @Test
+    @DisplayName("searchDocumentsByTitlePrefix()는 회원의 문서 중 제목이 검색어로 시작하는 문서를 조회한다")
+    void searchDocumentsByTitlePrefix_returnsMatchedDocumentsByTitlePrefix() {
+        // given
+        Member member = member(1L);
+        Long user = member.getId();
+        Document document = document(201L, "사업계획서 AI", null, member, true);
+        Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
+        when(documentRepository.findAllByMember_IdAndTitleStartingWith(1L, "사업", sort))
+                .thenReturn(List.of(document));
+
+        // when
+        List<DocumentListItemResult> results = documentQueryService.searchDocumentsByTitlePrefix(user, " 사업 ", DocumentSort.MODIFIED);
+
+        // then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).id()).isEqualTo(201L);
+        assertThat(results.get(0).title()).isEqualTo("사업계획서 AI");
+        assertThat(results.get(0).bookmark()).isTrue();
+        verify(documentRepository).findAllByMember_IdAndTitleStartingWith(1L, "사업", sort);
+    }
+
+    @Test
     @DisplayName("searchDocuments()는 검색어가 공백이면 예외를 던진다")
     void searchDocuments_rejectsBlankKeyword() {
         // given

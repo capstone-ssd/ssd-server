@@ -11,6 +11,8 @@ public interface DocumentJpaRepository extends JpaRepository<DocumentJpaEntity, 
 
     List<DocumentJpaEntity> findAllByMember_IdAndTitleContaining(Long memberId, String keyword, Sort sort);
 
+    List<DocumentJpaEntity> findAllByMember_IdAndTitleStartingWith(Long memberId, String keyword, Sort sort);
+
     List<DocumentJpaEntity> findAllByMember_IdAndFolder_Id(Long memberId, Long folderId, Sort sort);
 
     List<DocumentJpaEntity> findAllByMember_IdAndFolderIsNull(Long memberId, Sort sort);

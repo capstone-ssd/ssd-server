@@ -15,6 +15,8 @@ public interface DocumentRepository {
 
     List<Document> findAllByMember_IdAndTitleContaining(Long memberId, String keyword, Sort sort);
 
+    List<Document> findAllByMember_IdAndTitleStartingWith(Long memberId, String keyword, Sort sort);
+
     List<Document> findAllByMember_IdAndFolder_Id(Long memberId, Long folderId, Sort sort);
 
     List<Document> findAllByMember_IdAndFolderIsNull(Long memberId, Sort sort);

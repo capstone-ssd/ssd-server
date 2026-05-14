@@ -62,6 +62,15 @@ public class DocumentQueryService {
                 .collect(Collectors.toList());
     }
 
+    public List<DocumentListItemResult> searchDocumentsByTitlePrefix(Long memberId, String keyword, DocumentSort sortOption) {
+        assertAuthenticatedMember(memberId);
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        return documentRepository.findAllByMember_IdAndTitleStartingWith(memberId, normalizedKeyword, toSort(sortOption)).stream()
+                .map(DocumentListItemResult::of)
+                .collect(Collectors.toList());
+    }
+
     private Sort toSort(DocumentSort sortOption) {
         return switch (sortOption) {
             case LATEST -> Sort.by(Sort.Order.desc("createdAt"));

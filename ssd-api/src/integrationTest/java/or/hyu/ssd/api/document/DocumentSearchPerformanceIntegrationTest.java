@@ -52,7 +52,7 @@ class DocumentSearchPerformanceIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.datasource.driver-class-name", postgres::getDriverClassName);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
         registry.add("spring.jpa.properties.hibernate.show_sql", () -> "false");
         registry.add("spring.jpa.properties.hibernate.format_sql", () -> "false");
         registry.add("spring.data.redis.host", () -> "localhost");
@@ -75,8 +75,8 @@ class DocumentSearchPerformanceIntegrationTest {
     private DocumentQueryFacade documentQueryFacade;
 
     @Test
-    @DisplayName("searchDocuments()는 대량 문서에서 제목 검색 성능 기준값을 출력한다")
-    void searchDocuments_printsPerformanceBaseline() {
+    @DisplayName("searchDocuments()는 대량 문서에서 포함 검색과 Prefix 검색 성능을 비교한다")
+    void searchDocuments_comparesContainsAndPrefixPerformance() {
         // given
         int documentCount = Integer.getInteger("searchPerfDocs", DEFAULT_DOCUMENT_COUNT);
         int warmups = Integer.getInteger("searchPerfWarmups", DEFAULT_WARMUPS);
@@ -84,27 +84,53 @@ class DocumentSearchPerformanceIntegrationTest {
         Long ownerId = prepareDataset(documentCount);
 
         // when
-        SearchPerformanceResult result = measure(
+        SearchPerformanceResult containsResult = measure(
                 () -> documentQueryFacade.searchDocuments(ownerId, KEYWORD, DocumentSort.MODIFIED),
                 warmups,
                 iterations
         );
-        List<DocumentListItemResult> searchResults = documentQueryFacade.searchDocuments(ownerId, KEYWORD, DocumentSort.MODIFIED);
+        SearchPerformanceResult prefixResult = measure(
+                () -> documentQueryFacade.searchDocumentsByTitlePrefix(ownerId, KEYWORD, DocumentSort.MODIFIED),
+                warmups,
+                iterations
+        );
+        List<DocumentListItemResult> containsSearchResults = documentQueryFacade.searchDocuments(ownerId, KEYWORD, DocumentSort.MODIFIED);
+        List<DocumentListItemResult> prefixSearchResults = documentQueryFacade.searchDocumentsByTitlePrefix(ownerId, KEYWORD, DocumentSort.MODIFIED);
 
         // then
-        assertThat(searchResults).isNotEmpty();
-        assertThat(searchResults).allMatch(document -> document.title().contains(KEYWORD));
-        assertThat(searchResults).allMatch(document -> document.id() <= documentCount);
+        assertThat(containsSearchResults).isNotEmpty();
+        assertThat(prefixSearchResults).hasSameSizeAs(containsSearchResults);
+        assertThat(containsSearchResults).allMatch(document -> document.title().contains(KEYWORD));
+        assertThat(prefixSearchResults).allMatch(document -> document.title().startsWith(KEYWORD));
+        assertThat(containsSearchResults).allMatch(document -> document.id() <= documentCount);
+        assertThat(prefixSearchResults).allMatch(document -> document.id() <= documentCount);
         System.out.printf(
-                "[DocumentSearchPerformance] docs=%d, warmups=%d, iterations=%d, keyword=%s, resultCount=%d, avg=%dms, p95=%dms, p99=%dms%n",
+                "[DocumentSearchPerformance] mode=CONTAINS, docs=%d, warmups=%d, iterations=%d, keyword=%s, resultCount=%d, avg=%dms, p95=%dms, p99=%dms%n",
                 documentCount,
                 warmups,
                 iterations,
                 KEYWORD,
-                searchResults.size(),
-                result.avgMillis(),
-                result.p95Millis(),
-                result.p99Millis()
+                containsSearchResults.size(),
+                containsResult.avgMillis(),
+                containsResult.p95Millis(),
+                containsResult.p99Millis()
+        );
+        System.out.printf(
+                "[DocumentSearchPerformance] mode=PREFIX, docs=%d, warmups=%d, iterations=%d, keyword=%s, resultCount=%d, avg=%dms, p95=%dms, p99=%dms%n",
+                documentCount,
+                warmups,
+                iterations,
+                KEYWORD,
+                prefixSearchResults.size(),
+                prefixResult.avgMillis(),
+                prefixResult.p95Millis(),
+                prefixResult.p99Millis()
+        );
+        System.out.printf(
+                "[DocumentSearchPerformance] prefixImprovement=avg %.2f%%, p95 %.2f%%, p99 %.2f%%%n",
+                improvementRate(containsResult.avgMillis(), prefixResult.avgMillis()),
+                improvementRate(containsResult.p95Millis(), prefixResult.p95Millis()),
+                improvementRate(containsResult.p99Millis(), prefixResult.p99Millis())
         );
     }
 
@@ -142,7 +168,7 @@ class DocumentSearchPerformanceIntegrationTest {
                     int sequence = from + index;
                     boolean matched = sequence % 100 == 0;
                     LocalDateTime timestamp = LocalDateTime.now().minusSeconds(documentCount - sequence);
-                    ps.setString(1, matched ? "AI 사업계획서 " + sequence : "일반 문서 " + sequence);
+                    ps.setString(1, matched ? KEYWORD + " AI " + sequence : "일반 문서 " + sequence);
                     ps.setString(2, "성능 테스트 본문 " + sequence);
                     ps.setBoolean(3, false);
                     ps.setString(4, "EVALUATION");
@@ -164,7 +190,7 @@ class DocumentSearchPerformanceIntegrationTest {
     private void insertOtherMemberDocument(Long memberId) {
         jdbcTemplate.update(
                 documentInsertSql(),
-                "AI 사업계획서 노출되면 안 되는 문서",
+                KEYWORD + " 노출되면 안 되는 문서",
                 "다른 회원 문서",
                 false,
                 "EVALUATION",
@@ -232,6 +258,13 @@ class DocumentSearchPerformanceIntegrationTest {
         int index = (int) Math.ceil(elapsedNanos.size() * (percentile / 100.0)) - 1;
         int safeIndex = Math.max(0, Math.min(index, elapsedNanos.size() - 1));
         return TimeUnit.NANOSECONDS.toMillis(elapsedNanos.get(safeIndex));
+    }
+
+    private double improvementRate(long before, long after) {
+        if (before == 0) {
+            return 0.0;
+        }
+        return ((double) before - after) / before * 100.0;
     }
 
     private record SearchPerformanceResult(
