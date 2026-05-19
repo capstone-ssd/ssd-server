@@ -68,6 +68,7 @@ class DocumentSearchPerformanceIntegrationTest {
         registry.add("app.storage.s3.region", () -> "ap-northeast-2");
         registry.add("app.storage.s3.access-key", () -> "test-access-key");
         registry.add("app.storage.s3.secret-key", () -> "test-secret-key");
+        registry.add("app.search.pg-trgm.enabled", () -> "true");
         registry.add("sentry.dsn", () -> "");
 
         // then

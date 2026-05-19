@@ -13,6 +13,7 @@ import or.hyu.ssd.api.document.response.GetDocumentResponse;
 import or.hyu.ssd.api.document.response.DocumentListItemResponse;
 import or.hyu.ssd.api.document.request.MoveDocumentFolderRequest;
 import or.hyu.ssd.api.document.response.MoveDocumentFolderResponse;
+import or.hyu.ssd.api.document.response.DocumentSearchSuggestionResponse;
 import or.hyu.ssd.api.document.request.UpdateDocumentRequest;
 import or.hyu.ssd.api.document.response.UpdateDocumentResponse;
 import or.hyu.ssd.application.document.DocumentCommandFacade;
@@ -30,6 +31,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -393,6 +395,46 @@ public class DocumentController {
                 .map(DocumentListItemResponse::from)
                 .toList();
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 검색 결과가 조회되었습니다"));
+    }
+
+    @GetMapping("/v1/documents/search/suggestions")
+    @Operation(
+            summary = "문서 검색어 추천",
+            description = """
+                    ### 개요
+                    - 로그인한 회원의 문서 제목과 AI 키워드에서 검색어와 유사한 관련 검색어를 조회합니다.
+                    - PostgreSQL pg_trgm의 similarity 점수를 기준으로 정렬합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken}
+
+                    ### 요청
+                    - Query keyword (required): 추천 기준 검색어
+                    - Query limit (optional, default=5, max=10): 추천어 개수
+
+                    ### 응답
+                    - 200 OK
+                    - data[]
+                      - keyword: 추천 검색어
+                      - score: pg_trgm similarity 점수
+
+                    ### 오류
+                    - REQ40002: 검색어가 비어 있음
+                    - MEMBER_NOT_FOUND: 인증 정보 없음/회원 없음
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
+    public ResponseEntity<ApiResponse<List<DocumentSearchSuggestionResponse>>> suggestSearchKeywords(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "추천 기준 검색어", example = "사업")
+            @RequestParam(name = "keyword") @NotBlank(message = "검색어는 필수입니다") String keyword,
+            @Parameter(description = "추천어 개수", example = "5")
+            @RequestParam(name = "limit", defaultValue = "5") @Positive(message = "limit은 1 이상이어야 합니다") @Max(value = 10, message = "limit은 10 이하여야 합니다") Integer limit
+    ) {
+        List<DocumentSearchSuggestionResponse> list = documentQueryFacade.suggestSearchKeywords(user.getMember().getId(), keyword, limit).stream()
+                .map(DocumentSearchSuggestionResponse::from)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(list, "관련 검색어가 조회되었습니다"));
     }
 
     @PatchMapping("/v1/documents/{id}/bookmark")

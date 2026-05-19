@@ -3,6 +3,7 @@ package or.hyu.ssd.application.document;
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
 import or.hyu.ssd.document.application.result.DocumentListItemResult;
+import or.hyu.ssd.document.application.result.DocumentSearchSuggestionResult;
 import or.hyu.ssd.document.application.service.DocumentQueryService;
 import or.hyu.ssd.document.application.support.DocumentSort;
 import org.springframework.stereotype.Service;
@@ -31,5 +32,9 @@ public class DocumentQueryFacade {
 
     public List<DocumentListItemResult> searchDocumentsByTitlePrefix(Long memberId, String keyword, DocumentSort sortOption) {
         return documentQueryService.searchDocumentsByTitlePrefix(memberId, keyword, sortOption);
+    }
+
+    public List<DocumentSearchSuggestionResult> suggestSearchKeywords(Long memberId, String keyword, Integer limit) {
+        return documentQueryService.suggestSearchKeywords(memberId, keyword, limit);
     }
 }

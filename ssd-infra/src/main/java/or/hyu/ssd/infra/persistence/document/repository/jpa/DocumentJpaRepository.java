@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface DocumentJpaRepository extends JpaRepository<DocumentJpaEntity, Long> {
+public interface DocumentJpaRepository extends JpaRepository<DocumentJpaEntity, Long>, DocumentJpaRepositoryCustom {
     List<DocumentJpaEntity> findAllByMember_Id(Long memberId, Sort sort);
 
     @EntityGraph(attributePaths = {"folder", "member"})

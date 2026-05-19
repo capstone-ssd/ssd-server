@@ -1,6 +1,7 @@
 package or.hyu.ssd.infra.persistence.document.repository;
 
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.document.application.result.DocumentSearchSuggestionResult;
 import or.hyu.ssd.document.domain.model.Document;
 import or.hyu.ssd.document.repository.DocumentRepository;
 import or.hyu.ssd.infra.persistence.document.mapper.DocumentPersistenceMapper;
@@ -44,6 +45,16 @@ public class DocumentRepositoryImpl implements DocumentRepository {
     public List<Document> findAllByMember_IdAndTitleStartingWith(Long memberId, String keyword, Sort sort) {
         return documentJpaRepository.findAllByMember_IdAndTitleStartingWith(memberId, keyword, sort).stream()
                 .map(DocumentPersistenceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<DocumentSearchSuggestionResult> findSearchSuggestions(Long memberId, String keyword, int limit, double threshold) {
+        return documentJpaRepository.findSearchSuggestions(memberId, keyword, limit, threshold).stream()
+                .map(projection -> DocumentSearchSuggestionResult.of(
+                        projection.getKeyword(),
+                        projection.getScore() == null ? 0.0 : projection.getScore()
+                ))
                 .toList();
     }
 

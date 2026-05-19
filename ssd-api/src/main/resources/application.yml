@@ -82,6 +82,9 @@ app:
       - https://ssd-client-zfl2.vercel.app
   external-ai:
     base-url: ${EXTERNAL_AI_BASE_URL}
+  search:
+    pg-trgm:
+      enabled: true
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
