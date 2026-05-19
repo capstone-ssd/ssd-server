@@ -20,9 +20,11 @@ import or.hyu.ssd.document.application.support.DocumentImageResolver;
 import or.hyu.ssd.document.application.support.DocumentImageUploadPart;
 import or.hyu.ssd.document.application.command.CreateDocumentCommand;
 import or.hyu.ssd.document.application.command.DocumentBlockCommand;
+import or.hyu.ssd.document.application.command.MoveDocumentFolderCommand;
 import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 import or.hyu.ssd.document.application.result.CreateDocumentResult;
 import or.hyu.ssd.document.application.result.DocumentBookmarkResult;
+import or.hyu.ssd.document.application.result.MoveDocumentFolderResult;
 import or.hyu.ssd.document.application.result.UpdateDocumentResult;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.repository.MemberRepository;
@@ -120,6 +122,19 @@ public class DocumentCommandService {
         documentRepository.save(document);
 
         return UpdateDocumentResult.of(document.getId());
+    }
+
+    public MoveDocumentFolderResult moveDocumentFolder(Long documentId, Long memberId, MoveDocumentFolderCommand command) {
+        validateMoveFolderRequest(command);
+        Document document = loadDocument(documentId);
+        assertDocumentOwner(document, memberId);
+
+        Folder folder = resolveFolderOrNull(memberId, command.folderId());
+        document.updateFolder(folder);
+        Document saved = documentRepository.save(document);
+
+        Long movedFolderId = saved.getFolder() == null ? null : saved.getFolder().getId();
+        return MoveDocumentFolderResult.of(saved.getId(), movedFolderId);
     }
 
     public void deleteDocument(Long documentId, Long memberId) {
@@ -222,6 +237,13 @@ public class DocumentCommandService {
         if (command.text() == null || command.text().trim().isEmpty()) {
             throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "내용은 공백일 수 없습니다");
         }
+    }
+
+    private void validateMoveFolderRequest(MoveDocumentFolderCommand command) {
+        if (command == null || command.folderId() == null) {
+            throw new DocumentException(ErrorCode.REQUEST_BODY_INVALID_VALUE, "폴더 ID는 필수입니다");
+        }
+        validateFolderId(command.folderId());
     }
 
     private void validateFolderId(Long folderId) {

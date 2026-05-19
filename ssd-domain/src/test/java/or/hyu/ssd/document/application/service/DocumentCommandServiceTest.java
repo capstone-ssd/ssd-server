@@ -5,6 +5,7 @@ import or.hyu.ssd.document.domain.model.DocumentBlockType;
 import or.hyu.ssd.document.domain.model.DocumentLog;
 import or.hyu.ssd.document.domain.model.DocumentParagraph;
 import or.hyu.ssd.document.domain.model.DocumentPurpose;
+import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.CheckListRepository;
 import or.hyu.ssd.document.repository.DocumentAiCheckSnapshotRepository;
 import or.hyu.ssd.document.repository.DocumentCommentRepository;
@@ -18,8 +19,10 @@ import or.hyu.ssd.document.application.support.DocumentImageResolver;
 import or.hyu.ssd.document.application.support.DocumentImageUploadPart;
 import or.hyu.ssd.document.application.command.CreateDocumentCommand;
 import or.hyu.ssd.document.application.command.DocumentBlockCommand;
+import or.hyu.ssd.document.application.command.MoveDocumentFolderCommand;
 import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 import or.hyu.ssd.document.application.result.CreateDocumentResult;
+import or.hyu.ssd.document.application.result.MoveDocumentFolderResult;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.domain.model.Role;
 import or.hyu.ssd.member.repository.MemberRepository;
@@ -43,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -270,6 +274,122 @@ class DocumentCommandServiceTest {
     }
 
     @Test
+    @DisplayName("moveDocumentFolder()는 본인 문서를 본인 폴더로 이동한다")
+    void moveDocumentFolder_movesDocumentToOwnedFolder() {
+        // given
+        Member member = member(1L);
+        Document document = document(42L, member);
+        Folder targetFolder = folder(7L, member);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(folderRepository.findById(7L)).thenReturn(Optional.of(targetFolder));
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        MoveDocumentFolderResult result = documentCommandService.moveDocumentFolder(
+                42L,
+                member.getId(),
+                new MoveDocumentFolderCommand(7L)
+        );
+
+        // then
+        assertThat(document.getFolder()).isEqualTo(targetFolder);
+        assertThat(result.documentId()).isEqualTo(42L);
+        assertThat(result.folderId()).isEqualTo(7L);
+        verify(documentRepository).save(document);
+    }
+
+    @Test
+    @DisplayName("moveDocumentFolder()는 folderId가 0이면 문서를 루트로 이동한다")
+    void moveDocumentFolder_movesDocumentToRoot() {
+        // given
+        Member member = member(1L);
+        Document document = document(42L, member, folder(7L, member));
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        MoveDocumentFolderResult result = documentCommandService.moveDocumentFolder(
+                42L,
+                member.getId(),
+                new MoveDocumentFolderCommand(0L)
+        );
+
+        // then
+        assertThat(document.getFolder()).isNull();
+        assertThat(result.documentId()).isEqualTo(42L);
+        assertThat(result.folderId()).isNull();
+        verify(folderRepository, never()).findById(any());
+        verify(documentRepository).save(document);
+    }
+
+    @Test
+    @DisplayName("moveDocumentFolder()는 다른 회원의 문서 이동을 거부한다")
+    void moveDocumentFolder_rejectsOtherMemberDocument() {
+        // given
+        Member owner = member(1L);
+        Document document = document(42L, owner);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+
+        // when
+        ThrowingCallable action = () -> documentCommandService.moveDocumentFolder(
+                42L,
+                2L,
+                new MoveDocumentFolderCommand(7L)
+        );
+
+        // then
+        assertThatThrownBy(action)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class);
+        verify(folderRepository, never()).findById(any());
+        verify(documentRepository, never()).save(any(Document.class));
+    }
+
+    @Test
+    @DisplayName("moveDocumentFolder()는 다른 회원의 폴더로 이동을 거부한다")
+    void moveDocumentFolder_rejectsOtherMemberFolder() {
+        // given
+        Member member = member(1L);
+        Member otherMember = member(2L);
+        Document document = document(42L, member);
+        Folder otherFolder = folder(7L, otherMember);
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(folderRepository.findById(7L)).thenReturn(Optional.of(otherFolder));
+
+        // when
+        ThrowingCallable action = () -> documentCommandService.moveDocumentFolder(
+                42L,
+                member.getId(),
+                new MoveDocumentFolderCommand(7L)
+        );
+
+        // then
+        assertThatThrownBy(action)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class);
+        verify(documentRepository, never()).save(any(Document.class));
+    }
+
+    @Test
+    @DisplayName("moveDocumentFolder()는 음수 folderId를 거부한다")
+    void moveDocumentFolder_rejectsNegativeFolderId() {
+        // given
+        MoveDocumentFolderCommand command = new MoveDocumentFolderCommand(-1L);
+
+        // when
+        ThrowingCallable action = () -> documentCommandService.moveDocumentFolder(
+                42L,
+                1L,
+                command
+        );
+
+        // then
+        assertThatThrownBy(action)
+                .isInstanceOf(or.hyu.ssd.common.exception.DocumentException.class)
+                .hasMessage("폴더 ID는 0 이상이어야 합니다");
+        verify(documentRepository, never()).findById(any());
+        verify(documentRepository, never()).save(any(Document.class));
+    }
+
+    @Test
     @DisplayName("createDocument()는 이미지 블록의 blobKey를 S3 URL로 치환해 저장한다")
     void createDocument_uploadsImageBlocksAndPersistsImageType() {
         // given
@@ -401,12 +521,26 @@ class DocumentCommandServiceTest {
     }
 
     private Document document(Long id, Member member) {
+        return document(id, member, null);
+    }
+
+    private Document document(Long id, Member member, Folder folder) {
         return Document.builder()
                 .id(id)
                 .title("문서 제목")
                 .content("문서 본문")
+                .folder(folder)
                 .bookmark(false)
                 .purpose(DocumentPurpose.WRITING)
+                .member(member)
+                .build();
+    }
+
+    private Folder folder(Long id, Member member) {
+        return Folder.builder()
+                .id(id)
+                .name("폴더")
+                .color("#FFFFFF")
                 .member(member)
                 .build();
     }

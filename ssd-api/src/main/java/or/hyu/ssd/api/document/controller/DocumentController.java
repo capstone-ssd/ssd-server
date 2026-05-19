@@ -11,6 +11,8 @@ import or.hyu.ssd.api.document.response.CreateDocumentResponse;
 import or.hyu.ssd.api.document.request.DocumentImageMetaRequest;
 import or.hyu.ssd.api.document.response.GetDocumentResponse;
 import or.hyu.ssd.api.document.response.DocumentListItemResponse;
+import or.hyu.ssd.api.document.request.MoveDocumentFolderRequest;
+import or.hyu.ssd.api.document.response.MoveDocumentFolderResponse;
 import or.hyu.ssd.api.document.request.UpdateDocumentRequest;
 import or.hyu.ssd.api.document.response.UpdateDocumentResponse;
 import or.hyu.ssd.application.document.DocumentCommandFacade;
@@ -182,6 +184,48 @@ public class DocumentController {
                 documentCommandFacade.updateDocument(id, user.getMember().getId(), request.toCommand(), toImageUploadParts(imageMetas, files))
         );
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
+    }
+
+    @PatchMapping(value = "/v1/documents/{id}/folder", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "문서 폴더 이동",
+            description = """
+                    ### 개요
+                    - 문서 ID로 문서를 대상 폴더로 이동합니다.
+
+                    ### 인증
+                    - Authorization: Bearer {accessToken} (문서 작성자만)
+
+                    ### 요청
+                    - Path: /api/v1/documents/{id}/folder
+                    - Body(JSON, required)
+                      - folderId (number, required): 이동할 대상 폴더 ID
+                      - folderId가 0이면 루트로 이동합니다.
+
+                    ### 응답
+                    - 200 OK
+                    - data.documentId: 이동된 문서 ID
+                    - data.folderId: 이동 후 폴더 ID (루트면 null)
+
+                    ### 오류
+                    - DOC40401: 문서를 찾을 수 없음
+                    - DOC40301: 문서 소유자가 아님
+                    - FOLDER_NOT_FOUND: 폴더를 찾을 수 없음
+                    - FOLDER_FORBIDDEN: 폴더 소유자가 아님
+                    - REQ40001: JSON 파싱 실패 또는 잘못된 folderId
+                    - TOKEN4030x: 토큰 누락/만료/위조
+                    """
+    )
+    public ResponseEntity<ApiResponse<MoveDocumentFolderResponse>> moveDocumentFolder(
+            @Parameter(description = "이동할 문서 ID", example = "42")
+            @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
+            @Valid @RequestBody MoveDocumentFolderRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        MoveDocumentFolderResponse dto = MoveDocumentFolderResponse.from(
+                documentCommandFacade.moveDocumentFolder(id, user.getMember().getId(), request.toCommand())
+        );
+        return ResponseEntity.ok(ApiResponse.ok(dto, "문서 폴더가 이동되었습니다"));
     }
 
 
