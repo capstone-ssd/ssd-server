@@ -11,6 +11,7 @@ import or.hyu.ssd.document.application.support.DocumentSort;
 import or.hyu.ssd.document.application.result.DocumentBlockResult;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
 import or.hyu.ssd.document.application.result.DocumentListItemResult;
+import or.hyu.ssd.document.application.result.DocumentSearchSuggestionResult;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.DocumentException;
 import org.springframework.data.domain.Sort;
@@ -22,6 +23,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DocumentQueryService {
+
+    private static final int DEFAULT_SUGGESTION_LIMIT = 5;
+    private static final int MAX_SUGGESTION_LIMIT = 10;
+    private static final int MIN_SUGGESTION_KEYWORD_LENGTH = 2;
+    private static final double DEFAULT_SUGGESTION_THRESHOLD = 0.2;
 
     private final DocumentRepository documentRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
@@ -69,6 +75,27 @@ public class DocumentQueryService {
         return documentRepository.findAllByMember_IdAndTitleStartingWith(memberId, normalizedKeyword, toSort(sortOption)).stream()
                 .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
+    }
+
+    public List<DocumentSearchSuggestionResult> suggestSearchKeywords(Long memberId, String keyword, Integer limit) {
+        assertAuthenticatedMember(memberId);
+        String normalizedKeyword = normalizeKeyword(keyword);
+        if (normalizedKeyword.length() < MIN_SUGGESTION_KEYWORD_LENGTH) {
+            return List.of();
+        }
+        return documentRepository.findSearchSuggestions(
+                memberId,
+                normalizedKeyword,
+                normalizeSuggestionLimit(limit),
+                DEFAULT_SUGGESTION_THRESHOLD
+        );
+    }
+
+    private int normalizeSuggestionLimit(Integer limit) {
+        if (limit == null) {
+            return DEFAULT_SUGGESTION_LIMIT;
+        }
+        return Math.min(Math.max(limit, 1), MAX_SUGGESTION_LIMIT);
     }
 
     private Sort toSort(DocumentSort sortOption) {

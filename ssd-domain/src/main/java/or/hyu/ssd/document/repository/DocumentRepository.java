@@ -1,6 +1,7 @@
 package or.hyu.ssd.document.repository;
 
 import or.hyu.ssd.document.domain.model.Document;
+import or.hyu.ssd.document.application.result.DocumentSearchSuggestionResult;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
@@ -16,6 +17,8 @@ public interface DocumentRepository {
     List<Document> findAllByMember_IdAndTitleContaining(Long memberId, String keyword, Sort sort);
 
     List<Document> findAllByMember_IdAndTitleStartingWith(Long memberId, String keyword, Sort sort);
+
+    List<DocumentSearchSuggestionResult> findSearchSuggestions(Long memberId, String keyword, int limit, double threshold);
 
     List<Document> findAllByMember_IdAndFolder_Id(Long memberId, Long folderId, Sort sort);
 

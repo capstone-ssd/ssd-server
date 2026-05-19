@@ -11,6 +11,7 @@ import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.document.application.support.DocumentSort;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
 import or.hyu.ssd.document.application.result.DocumentListItemResult;
+import or.hyu.ssd.document.application.result.DocumentSearchSuggestionResult;
 import or.hyu.ssd.common.exception.DocumentException;
 import or.hyu.ssd.member.domain.model.Member;
 import or.hyu.ssd.member.domain.model.Role;
@@ -149,6 +150,42 @@ class DocumentQueryServiceTest {
                 .isInstanceOf(DocumentException.class);
 
         // then
+        verifyNoInteractions(documentRepository);
+    }
+
+    @Test
+    @DisplayName("suggestSearchKeywords()는 회원 문서 기반 관련 검색어를 조회한다")
+    void suggestSearchKeywords_returnsRelatedKeywords() {
+        // given
+        Member member = member(1L);
+        Long user = member.getId();
+        when(documentRepository.findSearchSuggestions(1L, "사업", 5, 0.2))
+                .thenReturn(List.of(
+                        DocumentSearchSuggestionResult.of("사업계획서", 0.72),
+                        DocumentSearchSuggestionResult.of("사업 모델", 0.61)
+                ));
+
+        // when
+        List<DocumentSearchSuggestionResult> results = documentQueryService.suggestSearchKeywords(user, " 사업 ", 5);
+
+        // then
+        assertThat(results)
+                .extracting(DocumentSearchSuggestionResult::keyword)
+                .containsExactly("사업계획서", "사업 모델");
+        verify(documentRepository).findSearchSuggestions(1L, "사업", 5, 0.2);
+    }
+
+    @Test
+    @DisplayName("suggestSearchKeywords()는 한 글자 검색어면 빈 목록을 반환한다")
+    void suggestSearchKeywords_returnsEmptyListWhenKeywordTooShort() {
+        // given
+        Member member = member(1L);
+
+        // when
+        List<DocumentSearchSuggestionResult> results = documentQueryService.suggestSearchKeywords(member.getId(), "사", 5);
+
+        // then
+        assertThat(results).isEmpty();
         verifyNoInteractions(documentRepository);
     }
 
