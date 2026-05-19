@@ -33,8 +33,10 @@ flowchart LR
 | `CREATE EXTENSION pg_trgm` | DB 초기화 | trigram 함수와 연산자 활성화 |
 | `GIN (... gin_trgm_ops)` | `documents.title`, `documents.keywords` | 포함 검색과 유사도 검색 성능 개선 |
 | `%` 연산자 | 추천 후보 필터링 | 유사도가 임계치 이상인 문자열만 후보로 사용 |
-| `similarity(a, b)` | 추천 점수 계산 | 검색어와 후보 키워드의 관련도 계산 |
-| `regexp_split_to_table` | AI 키워드 분해 | `keywords` 컬럼의 comma-separated 값을 개별 추천어로 분리 |
+| `similarity(a, b)` | 제목 추천 점수 계산 | 검색어와 문서 제목의 관련도 계산 |
+| QueryDSL `numberTemplate` | 제목 유사도 함수 호출 | QueryDSL에서 PostgreSQL `similarity()` 호출 |
+| QueryDSL `booleanTemplate` | 유사 후보 필터링 | QueryDSL에서 PostgreSQL `%` 연산자 호출 |
+| Java comma split | AI 키워드 분해 | `keywords` 컬럼 값을 애플리케이션에서 comma 기준으로 분리 |
 
 ## 4. DB 설정
 
@@ -60,9 +62,10 @@ flowchart LR
     D --> E["DocumentRepository"]
     E --> F["documents.title 후보"]
     E --> G["documents.keywords 후보"]
-    F --> H["similarity(keyword, input)"]
-    G --> H
+    F --> H["DB similarity(title, input)"]
+    G --> K["Java split + trigram similarity"]
     H --> I["score 기준 정렬"]
+    K --> I
     I --> J["상위 limit개 반환"]
 ```
 
