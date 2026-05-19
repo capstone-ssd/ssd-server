@@ -9,11 +9,8 @@ import or.hyu.ssd.infra.persistence.document.entity.QDocumentJpaEntity;
 import or.hyu.ssd.infra.persistence.document.repository.projection.DocumentSearchSuggestionProjection;
 
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -92,33 +89,20 @@ public class DocumentJpaRepositoryImpl implements DocumentJpaRepositoryCustom {
                 .map(String::trim)
                 .filter(value -> !value.isEmpty())
                 .distinct()
-                .map(value -> new Suggestion(value, trigramSimilarity(value, keyword)))
+                .map(value -> new Suggestion(value, findSimilarityScore(value, keyword)))
                 .filter(suggestion -> suggestion.score() >= threshold)
                 .toList();
     }
 
-    private double trigramSimilarity(String left, String right) {
-        Set<String> leftTrigrams = trigrams(left);
-        Set<String> rightTrigrams = trigrams(right);
-        if (leftTrigrams.isEmpty() && rightTrigrams.isEmpty()) {
-            return 1.0;
-        }
-        if (leftTrigrams.isEmpty() || rightTrigrams.isEmpty()) {
-            return 0.0;
-        }
-
-        Set<String> intersection = new LinkedHashSet<>(leftTrigrams);
-        intersection.retainAll(rightTrigrams);
-        return (double) intersection.size() / Math.max(leftTrigrams.size(), rightTrigrams.size());
-    }
-
-    private Set<String> trigrams(String value) {
-        String normalized = "  " + value.toLowerCase(Locale.ROOT).trim() + " ";
-        Set<String> trigrams = new LinkedHashSet<>();
-        for (int index = 0; index <= normalized.length() - 3; index++) {
-            trigrams.add(normalized.substring(index, index + 3));
-        }
-        return trigrams;
+    private double findSimilarityScore(String candidate, String keyword) {
+        NumberExpression<Double> scoreExpression = Expressions.numberTemplate(
+                Double.class,
+                "similarity({0}, {1})",
+                candidate,
+                keyword
+        );
+        Double score = queryFactory.select(scoreExpression).fetchOne();
+        return score == null ? 0.0 : score;
     }
 
     private record Suggestion(String keyword, Double score) {

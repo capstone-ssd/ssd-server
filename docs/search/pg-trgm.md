@@ -36,13 +36,13 @@ flowchart LR
 | `similarity(a, b)` | 제목 추천 점수 계산 | 검색어와 문서 제목의 관련도 계산 |
 | QueryDSL `numberTemplate` | 제목 유사도 함수 호출 | QueryDSL에서 PostgreSQL `similarity()` 호출 |
 | QueryDSL `booleanTemplate` | 유사 후보 필터링 | QueryDSL에서 PostgreSQL `%` 연산자 호출 |
-| Java comma split | AI 키워드 분해 | `keywords` 컬럼 값을 애플리케이션에서 comma 기준으로 분리 |
+| Java comma split | AI 키워드 분해 | `keywords` 컬럼 값을 애플리케이션에서 comma 기준으로 분리한 뒤 QueryDSL로 DB `similarity()`를 호출 |
 
 ## 4. DB 설정
 
 애플리케이션 시작 시 `app.search.pg-trgm.enabled=true`이면 아래 설정을 적용한다.
 
-~~~sql
+```sql
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE INDEX IF NOT EXISTS idx_documents_title_trgm
@@ -50,20 +50,20 @@ ON documents USING gin (title gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_documents_keywords_trgm
 ON documents USING gin (keywords gin_trgm_ops);
-~~~
+```
 
 ## 5. 관련 검색어 추천 흐름
 
 ```mermaid
 flowchart LR
-    A["Client keyword"] --> B["GET /documents/search/suggestions"]
+    A["Client keyword"] --> B["GET /api/v1/documents/search/suggestions"]
     B --> C["DocumentQueryFacade"]
     C --> D["DocumentQueryService"]
     D --> E["DocumentRepository"]
     E --> F["documents.title 후보"]
     E --> G["documents.keywords 후보"]
     F --> H["DB similarity(title, input)"]
-    G --> K["Java split + trigram similarity"]
+    G --> K["Java split + DB similarity"]
     H --> I["score 기준 정렬"]
     K --> I
     I --> J["상위 limit개 반환"]
@@ -89,7 +89,7 @@ flowchart LR
 
 응답 예시는 아래와 같다.
 
-~~~json
+```json
 {
   "success": true,
   "code": "COMMON200",
@@ -105,7 +105,7 @@ flowchart LR
     }
   ]
 }
-~~~
+```
 
 ## 8. 주의사항
 

@@ -2,9 +2,11 @@ package or.hyu.ssd.application.document;
 
 import lombok.RequiredArgsConstructor;
 import or.hyu.ssd.document.application.command.CreateDocumentCommand;
+import or.hyu.ssd.document.application.command.MoveDocumentFolderCommand;
 import or.hyu.ssd.document.application.command.UpdateDocumentCommand;
 import or.hyu.ssd.document.application.result.CreateDocumentResult;
 import or.hyu.ssd.document.application.result.DocumentBookmarkResult;
+import or.hyu.ssd.document.application.result.MoveDocumentFolderResult;
 import or.hyu.ssd.document.application.result.UpdateDocumentResult;
 import or.hyu.ssd.document.application.service.DocumentCommandService;
 import or.hyu.ssd.document.application.support.DocumentImageUploadPart;
@@ -43,6 +45,10 @@ public class DocumentCommandFacade {
             List<DocumentImageUploadPart> imageUploadParts
     ) {
         return documentCommandService.updateDocument(documentId, memberId, command, imageUploadParts);
+    }
+
+    public MoveDocumentFolderResult moveDocumentFolder(Long documentId, Long memberId, MoveDocumentFolderCommand command) {
+        return documentCommandService.moveDocumentFolder(documentId, memberId, command);
     }
 
     public void deleteDocument(Long documentId, Long memberId) {

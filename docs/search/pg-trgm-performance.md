@@ -61,13 +61,13 @@ ON documents USING gin (keywords gin_trgm_ops);
 | Buffer hit | `1914` |
 | Execution Time | `10.003ms` |
 
-```mermaid
+~~~mermaid
 flowchart LR
     A["documents 전체 스캔"] --> B["member_id = 1 필터"]
     B --> C["title LIKE '%사업계획서%' 필터"]
     C --> D["updated_at DESC 정렬"]
     D --> E["LIMIT 20 반환"]
-```
+~~~
 
 ## 7. pg_trgm 설치만 적용한 LIKE 검색 실행계획
 
@@ -94,7 +94,7 @@ flowchart LR
 | Buffer hit | `953` |
 | Execution Time | `4.621ms` |
 
-```mermaid
+~~~mermaid
 flowchart LR
     A["GIN Trigram Index"] --> B["title LIKE 후보 row 추출"]
     B --> C["Bitmap Index Scan"]
@@ -102,7 +102,7 @@ flowchart LR
     D --> E["member_id 필터"]
     E --> F["updated_at DESC 정렬"]
     F --> G["LIMIT 20 반환"]
-```
+~~~
 
 - `Seq Scan`이 사라지고 `Bitmap Index Scan`이 사용되었다.
 - Buffer hit가 `1914 -> 953`으로 감소하였다.
