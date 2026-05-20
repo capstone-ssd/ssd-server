@@ -6,6 +6,7 @@ import or.hyu.ssd.document.domain.model.DocumentParagraph;
 import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.document.repository.DocumentRepository;
+import or.hyu.ssd.document.repository.DocumentSearchRepository;
 import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.document.application.support.DocumentSort;
 import or.hyu.ssd.document.application.result.DocumentBlockResult;
@@ -30,6 +31,7 @@ public class DocumentQueryService {
     private static final double DEFAULT_SUGGESTION_THRESHOLD = 0.2;
 
     private final DocumentRepository documentRepository;
+    private final DocumentSearchRepository documentSearchRepository;
     private final DocumentParagraphRepository documentParagraphRepository;
     private final FolderRepository folderRepository;
 
@@ -63,7 +65,7 @@ public class DocumentQueryService {
         assertAuthenticatedMember(memberId);
         String normalizedKeyword = normalizeKeyword(keyword);
 
-        return documentRepository.findAllByMember_IdAndTitleContaining(memberId, normalizedKeyword, toSort(sortOption)).stream()
+        return documentSearchRepository.searchDocuments(memberId, normalizedKeyword, toSort(sortOption)).stream()
                 .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
     }
@@ -72,7 +74,7 @@ public class DocumentQueryService {
         assertAuthenticatedMember(memberId);
         String normalizedKeyword = normalizeKeyword(keyword);
 
-        return documentRepository.findAllByMember_IdAndTitleStartingWith(memberId, normalizedKeyword, toSort(sortOption)).stream()
+        return documentSearchRepository.searchDocumentsByTitlePrefix(memberId, normalizedKeyword, toSort(sortOption)).stream()
                 .map(DocumentListItemResult::of)
                 .collect(Collectors.toList());
     }
@@ -83,7 +85,7 @@ public class DocumentQueryService {
         if (normalizedKeyword.length() < MIN_SUGGESTION_KEYWORD_LENGTH) {
             return List.of();
         }
-        return documentRepository.findSearchSuggestions(
+        return documentSearchRepository.suggestSearchKeywords(
                 memberId,
                 normalizedKeyword,
                 normalizeSuggestionLimit(limit),

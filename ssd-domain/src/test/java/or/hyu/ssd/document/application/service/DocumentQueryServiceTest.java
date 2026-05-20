@@ -7,6 +7,7 @@ import or.hyu.ssd.document.domain.model.DocumentPurpose;
 import or.hyu.ssd.document.domain.model.Folder;
 import or.hyu.ssd.document.repository.DocumentParagraphRepository;
 import or.hyu.ssd.document.repository.DocumentRepository;
+import or.hyu.ssd.document.repository.DocumentSearchRepository;
 import or.hyu.ssd.document.repository.FolderRepository;
 import or.hyu.ssd.document.application.support.DocumentSort;
 import or.hyu.ssd.document.application.result.DocumentDetailResult;
@@ -37,6 +38,8 @@ class DocumentQueryServiceTest {
 
     @Mock
     private DocumentRepository documentRepository;
+    @Mock
+    private DocumentSearchRepository documentSearchRepository;
     @Mock
     private DocumentParagraphRepository documentParagraphRepository;
     @Mock
@@ -103,7 +106,7 @@ class DocumentQueryServiceTest {
         Long user = member.getId();
         Document document = document(200L, "AI 사업계획서", null, member, true);
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
-        when(documentRepository.findAllByMember_IdAndTitleContaining(1L, "사업", sort))
+        when(documentSearchRepository.searchDocuments(1L, "사업", sort))
                 .thenReturn(List.of(document));
 
         // when
@@ -114,7 +117,7 @@ class DocumentQueryServiceTest {
         assertThat(results.get(0).id()).isEqualTo(200L);
         assertThat(results.get(0).title()).isEqualTo("AI 사업계획서");
         assertThat(results.get(0).bookmark()).isTrue();
-        verify(documentRepository).findAllByMember_IdAndTitleContaining(1L, "사업", sort);
+        verify(documentSearchRepository).searchDocuments(1L, "사업", sort);
     }
 
     @Test
@@ -125,7 +128,7 @@ class DocumentQueryServiceTest {
         Long user = member.getId();
         Document document = document(201L, "사업계획서 AI", null, member, true);
         Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
-        when(documentRepository.findAllByMember_IdAndTitleStartingWith(1L, "사업", sort))
+        when(documentSearchRepository.searchDocumentsByTitlePrefix(1L, "사업", sort))
                 .thenReturn(List.of(document));
 
         // when
@@ -136,7 +139,7 @@ class DocumentQueryServiceTest {
         assertThat(results.get(0).id()).isEqualTo(201L);
         assertThat(results.get(0).title()).isEqualTo("사업계획서 AI");
         assertThat(results.get(0).bookmark()).isTrue();
-        verify(documentRepository).findAllByMember_IdAndTitleStartingWith(1L, "사업", sort);
+        verify(documentSearchRepository).searchDocumentsByTitlePrefix(1L, "사업", sort);
     }
 
     @Test
@@ -150,7 +153,7 @@ class DocumentQueryServiceTest {
                 .isInstanceOf(DocumentException.class);
 
         // then
-        verifyNoInteractions(documentRepository);
+        verifyNoInteractions(documentSearchRepository);
     }
 
     @Test
@@ -159,7 +162,7 @@ class DocumentQueryServiceTest {
         // given
         Member member = member(1L);
         Long user = member.getId();
-        when(documentRepository.findSearchSuggestions(1L, "사업", 5, 0.2))
+        when(documentSearchRepository.suggestSearchKeywords(1L, "사업", 5, 0.2))
                 .thenReturn(List.of(
                         DocumentSearchSuggestionResult.of("사업계획서", 0.72),
                         DocumentSearchSuggestionResult.of("사업 모델", 0.61)
@@ -172,7 +175,7 @@ class DocumentQueryServiceTest {
         assertThat(results)
                 .extracting(DocumentSearchSuggestionResult::keyword)
                 .containsExactly("사업계획서", "사업 모델");
-        verify(documentRepository).findSearchSuggestions(1L, "사업", 5, 0.2);
+        verify(documentSearchRepository).suggestSearchKeywords(1L, "사업", 5, 0.2);
     }
 
     @Test
@@ -186,7 +189,7 @@ class DocumentQueryServiceTest {
 
         // then
         assertThat(results).isEmpty();
-        verifyNoInteractions(documentRepository);
+        verifyNoInteractions(documentSearchRepository);
     }
 
     private Document document(Long id, String title, Folder folder, Member member) {
