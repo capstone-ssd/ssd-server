@@ -110,24 +110,39 @@ sequenceDiagram
 기본 설정은 Elasticsearch를 사용하지 않는다.
 
 ~~~yaml
+spring:
+  elasticsearch:
+    uris: ${ELASTICSEARCH_BASE_URL:http://localhost:9200}
+
 app:
   search:
     elasticsearch:
       enabled: false
-      base-url: ${ELASTICSEARCH_BASE_URL:http://localhost:9200}
       index-name: ${ELASTICSEARCH_INDEX_NAME:ssd-local-documents}
-      request-timeout: 3s
 ~~~
 
 Elasticsearch를 사용할 환경에서만 `enabled=true`로 전환한다.
 
-## 8. 검증
+## 8. Spring Data Elasticsearch 적용
+
+이번 구현은 직접 HTTP 요청을 조립하지 않고 Spring Data Elasticsearch를 사용한다.
+
+| 구성 | 역할 |
+| --- | --- |
+| `ElasticsearchDocument` | `@Document` 기반 ES index document |
+| `ElasticsearchDocumentRepository` | `ElasticsearchRepository` 기반 색인 저장/삭제 |
+| `ElasticsearchOperations` | `NativeQuery` 기반 검색 query 실행 |
+| `ElasticsearchIndexInitializer` | `IndexOperations.createWithMapping()`으로 index 생성 |
+
+검색 query는 문자열 JSON을 직접 조립하지 않고 `co.elastic.clients.elasticsearch._types.query_dsl.Query`와 `NativeQuery`로 구성한다.
+
+## 9. 검증
 
 | 검증 | 결과 |
 | --- | --- |
 | `:ssd-domain:test` | 검색 port 분리 후 통과 |
 | `:ssd-infra:test` | ES fallback 단위 테스트 통과 |
-| `:ssd-infra:compileJava` | ES adapter 컴파일 통과 |
+| `:ssd-infra:compileJava` | Spring Data Elasticsearch adapter 컴파일 통과 |
 | `promtool` 등 외부 검증 | 대상 아님 |
 
 현재 구현은 ES가 없어도 기존 검색 API가 동작하는 구조다. 다음 단계에서는 Testcontainers 기반으로 실제 ES index/search 통합 테스트와 PostgreSQL 대비 성능 비교를 추가한다.
