@@ -31,6 +31,11 @@
 - dev 애플리케이션 컨테이너는 기본적으로 아래 JVM 옵션으로 실행됩니다.
   - `-Xms256m`
   - `-Xmx256m`
+  - `-XX:+UseG1GC`
+  - `-XX:MaxGCPauseMillis=200`
+  - `-XX:MetaspaceSize=128m`
+  - `-XX:MaxMetaspaceSize=192m`
   - `-Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M`
+- 기동 직후 클래스 로딩/메타스페이스 확장 과정에서 발생하는 GC는 `HighGcPause` 알림 대상에서 제외합니다.
 - 호스트의 GC 로그 위치는 `/opt/ssd/logs/gc.log*`입니다.
 - 필요하면 CD 실행 환경에서 `APP_JAVA_TOOL_OPTIONS`와 `APP_LOG_DIR`로 값을 덮어쓸 수 있습니다.

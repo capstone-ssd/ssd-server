@@ -78,17 +78,20 @@ groups:
 
       - alert: HighGcPause
         expr: |
-          rate(jvm_gc_pause_seconds_sum{job="ssd-api"}[5m])
-          /
-          rate(jvm_gc_pause_seconds_count{job="ssd-api"}[5m])
-          > 0.3
+          (
+            sum by (instance) (rate(jvm_gc_pause_seconds_sum{job="ssd-api"}[5m]))
+            /
+            clamp_min(sum by (instance) (rate(jvm_gc_pause_seconds_count{job="ssd-api"}[5m])), 1e-9)
+          ) > 0.3
+          and on (instance)
+          process_uptime_seconds{job="ssd-api"} > 300
         for: 3m
         labels:
           severity: warning
           service: ssd-api
         annotations:
           summary: "GC Pause 증가"
-          description: "최근 5분 GC 평균 Pause가 300ms를 초과했습니다."
+          description: "애플리케이션 기동 5분 이후 최근 5분 GC 평균 Pause가 300ms를 초과했습니다."
           action: "Heap 사용률, Full GC 여부, 최근 대용량 요청을 확인하세요."
 
       - alert: HikariPendingConnection
