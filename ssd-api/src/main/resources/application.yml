@@ -85,6 +85,11 @@ app:
   search:
     pg-trgm:
       enabled: true
+    elasticsearch:
+      enabled: false
+      base-url: ${ELASTICSEARCH_BASE_URL:http://localhost:9200}
+      index-name: ${ELASTICSEARCH_INDEX_NAME:ssd-local-documents}
+      request-timeout: 3s
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
