@@ -1,11 +1,13 @@
 package or.hyu.ssd.infra.search.elasticsearch;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "app.search.elasticsearch", name = "enabled", havingValue = "true")
@@ -15,8 +17,12 @@ public class ElasticsearchIndexInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!elasticsearchHttpClient.existsIndex()) {
-            elasticsearchHttpClient.createIndex(indexMapping());
+        try {
+            if (!elasticsearchHttpClient.existsIndex()) {
+                elasticsearchHttpClient.createIndex(indexMapping());
+            }
+        } catch (RuntimeException e) {
+            log.warn("Elasticsearch index 초기화에 실패했습니다. 검색은 PostgreSQL fallback으로 동작합니다.", e);
         }
     }
 
