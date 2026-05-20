@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SSD Document Search Test View</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --panel: #fffaf0;
+      --ink: #1d2420;
+      --muted: #6c746f;
+      --line: #d8cfbf;
+      --accent: #1f6f5b;
+      --accent-strong: #14483b;
+      --danger: #a83c2f;
+      --shadow: 0 24px 80px rgba(38, 31, 20, 0.13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-serif, Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(31, 111, 91, 0.18), transparent 24rem),
+        linear-gradient(135deg, #f8f0dc 0%, var(--bg) 42%, #e8f1e8 100%);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 48px auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: rgba(255, 250, 240, 0.86);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .intro {
+      padding: 36px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(36px, 7vw, 76px);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+    }
+
+    .intro p {
+      max-width: 680px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.7;
+      word-break: keep-all;
+    }
+
+    .config {
+      padding: 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px 14px;
+      background: #fffdf8;
+      color: var(--ink);
+      font: 15px ui-sans-serif, system-ui, sans-serif;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(31, 111, 91, 0.13);
+    }
+
+    .searchbar {
+      margin-top: 24px;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 1fr 150px 140px;
+      gap: 12px;
+      align-items: end;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      color: #fff;
+      background: var(--accent);
+      font: 800 15px ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--accent-strong);
+      transform: translateY(-1px);
+    }
+
+    .status {
+      margin: 18px 0;
+      color: var(--muted);
+      font: 14px ui-sans-serif, system-ui, sans-serif;
+      min-height: 20px;
+    }
+
+    .status.error {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .suggestions,
+    .results {
+      padding: 22px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      letter-spacing: -0.04em;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid rgba(31, 111, 91, 0.18);
+      border-radius: 999px;
+      padding: 8px 11px;
+      background: rgba(31, 111, 91, 0.08);
+      color: var(--accent-strong);
+      font: 700 13px ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    .doc-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .doc {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fffdf8;
+    }
+
+    .doc-title {
+      margin: 0 0 8px;
+      font: 800 17px ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font: 12px ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .badge {
+      align-self: start;
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: #f0eadc;
+      color: var(--accent-strong);
+      font: 800 12px ui-sans-serif, system-ui, sans-serif;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        margin: 24px auto;
+      }
+
+      .hero,
+      .grid,
+      .searchbar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="card intro">
+      <h1>SSD Search Test</h1>
+      <p>개발 서버 또는 로컬 서버의 문서 검색 API를 직접 호출하는 최소 view입니다. ES 활성화 여부는 서버 설정을 따르며, 실패 시 서버의 fallback 로직까지 함께 확인할 수 있습니다.</p>
+    </div>
+
+    <section class="card config">
+      <label>
+        API Base URL
+        <input id="baseUrl" value="http://localhost:8080/api" placeholder="https://dev-api.simsaimdang.shop/api" />
+      </label>
+      <label>
+        Access Token
+        <input id="token" type="password" placeholder="Bearer 없이 access token만 입력" />
+      </label>
+    </section>
+  </section>
+
+  <section class="card searchbar">
+    <label>
+      Keyword
+      <input id="keyword" value="사업계획서" placeholder="검색어" />
+    </label>
+    <label>
+      Sort
+      <select id="sort">
+        <option value="LATEST">LATEST</option>
+        <option value="MODIFIED" selected>MODIFIED</option>
+        <option value="NAME">NAME</option>
+        <option value="OLDEST">OLDEST</option>
+      </select>
+    </label>
+    <button id="searchButton">검색</button>
+  </section>
+
+  <div id="status" class="status"></div>
+
+  <section class="grid">
+    <aside class="card suggestions">
+      <h2>관련 검색어</h2>
+      <div id="suggestions" class="chips"></div>
+    </aside>
+
+    <section class="card results">
+      <h2>검색 결과</h2>
+      <div id="results" class="doc-list"></div>
+    </section>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function endpoint(path, params) {
+    const baseUrl = $('baseUrl').value.replace(/\/$/, '');
+    const url = new URL(baseUrl + path);
+    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+    return url;
+  }
+
+  async function apiGet(path, params) {
+    const token = $('token').value.trim();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(endpoint(path, params), { headers });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(body.message || body.errorMessage || `HTTP ${response.status}`);
+    }
+    return body.data || [];
+  }
+
+  function setStatus(message, error = false) {
+    $('status').textContent = message;
+    $('status').className = error ? 'status error' : 'status';
+  }
+
+  function renderSuggestions(items) {
+    const target = $('suggestions');
+    target.innerHTML = '';
+    if (!items.length) {
+      target.innerHTML = '<span class="meta">추천 검색어가 없습니다.</span>';
+      return;
+    }
+    items.forEach((item) => {
+      const button = document.createElement('button');
+      button.className = 'chip';
+      button.type = 'button';
+      button.textContent = `${item.keyword} · ${Number(item.score || 0).toFixed(2)}`;
+      button.addEventListener('click', () => {
+        $('keyword').value = item.keyword;
+        search();
+      });
+      target.appendChild(button);
+    });
+  }
+
+  function renderResults(items) {
+    const target = $('results');
+    target.innerHTML = '';
+    if (!items.length) {
+      target.innerHTML = '<span class="meta">검색 결과가 없습니다.</span>';
+      return;
+    }
+    items.forEach((item) => {
+      const row = document.createElement('article');
+      row.className = 'doc';
+      row.innerHTML = `
+        <div>
+          <p class="doc-title">${escapeHtml(item.title || '(제목 없음)')}</p>
+          <div class="meta">
+            <span>ID ${item.id}</span>
+            <span>${item.purpose || '-'}</span>
+            <span>folder ${item.folderId ?? 'root'}</span>
+            <span>${item.updatedAt || '-'}</span>
+          </div>
+        </div>
+        <span class="badge">${item.bookmark ? 'bookmark' : 'normal'}</span>
+      `;
+      target.appendChild(row);
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  async function search() {
+    const keyword = $('keyword').value.trim();
+    const sort = $('sort').value;
+    if (!keyword) {
+      setStatus('검색어를 입력해야 합니다.', true);
+      return;
+    }
+
+    setStatus('검색 중입니다...');
+    const startedAt = performance.now();
+    try {
+      const [documents, suggestions] = await Promise.all([
+        apiGet('/v1/documents/search', { keyword, sort }),
+        apiGet('/v1/documents/search/suggestions', { keyword, limit: 5 })
+      ]);
+      renderResults(documents);
+      renderSuggestions(suggestions);
+      setStatus(`완료: 문서 ${documents.length}건 · 추천어 ${suggestions.length}건 · ${Math.round(performance.now() - startedAt)}ms`);
+    } catch (error) {
+      renderResults([]);
+      renderSuggestions([]);
+      setStatus(error.message, true);
+    }
+  }
+
+  $('searchButton').addEventListener('click', search);
+  $('keyword').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      search();
+    }
+  });
+</script>
+</body>
+</html>

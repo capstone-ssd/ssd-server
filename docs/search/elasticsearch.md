@@ -136,7 +136,7 @@ Elasticsearch 컨테이너는 `deploy/ec2/docker-compose.yml`에서 단일 노�
 
 | 설정 | 값 |
 | --- | --- |
-| image | `docker.elastic.co/elasticsearch/elasticsearch:8.15.3` |
+| image | `docker.elastic.co/elasticsearch/elasticsearch:9.2.1` |
 | network | `ssd-net` |
 | host port | `127.0.0.1:9200` |
 | internal uri | `http://ssd-elasticsearch:9200` |
@@ -154,8 +154,11 @@ Elasticsearch 컨테이너는 `deploy/ec2/docker-compose.yml`에서 단일 노�
 | `ElasticsearchDocumentRepository` | `ElasticsearchRepository` 기반 색인 저장/삭제 |
 | `ElasticsearchOperations` | `NativeQuery` 기반 검색 query 실행 |
 | `ElasticsearchIndexInitializer` | `IndexOperations.createWithMapping()`으로 index 생성 |
+| `ElasticsearchRepositoryConfig` | ES 활성화 시 repository scan 범위 지정 |
 
 검색 query는 문자열 JSON을 직접 조립하지 않고 `co.elastic.clients.elasticsearch._types.query_dsl.Query`와 `NativeQuery`로 구성한다.
+
+Spring Boot 4.0.0에서 사용하는 Elasticsearch Java Client는 `9.2.1`이다. 따라서 로컬/Testcontainers/배포 compose의 Elasticsearch image도 `9.2.1`로 맞춘다. 버전이 맞지 않으면 ES media type 호환 문제로 검색 호출이 실패할 수 있다.
 
 ## 9. 검증
 
@@ -164,6 +167,48 @@ Elasticsearch 컨테이너는 `deploy/ec2/docker-compose.yml`에서 단일 노�
 | `:ssd-domain:test` | 검색 port 분리 후 통과 |
 | `:ssd-infra:test` | ES fallback 단위 테스트 통과 |
 | `:ssd-infra:compileJava` | Spring Data Elasticsearch adapter 컴파일 통과 |
+| `:ssd-api:performanceIntegrationTest` | PostgreSQL/ES 검색 성능 비교 통과 |
 | `promtool` 등 외부 검증 | 대상 아님 |
 
-현재 구현은 ES가 없어도 기존 검색 API가 동작하는 구조다. 다음 단계에서는 Testcontainers 기반으로 실제 ES index/search 통합 테스트와 PostgreSQL 대비 성능 비교를 추가한다.
+현재 구현은 ES가 없어도 기존 검색 API가 동작하는 구조다.
+
+## 10. 로컬 성능 비교 결과
+
+Testcontainers 기반으로 PostgreSQL과 Elasticsearch를 함께 띄우고, 동일한 5만 건 데이터셋을 양쪽에 적재한 뒤 검색 성능을 비교하였다.
+
+| 항목 | 값 |
+| --- | --- |
+| 실행 일시 | 2026-05-20 |
+| 테스트 명령 | `./gradlew :ssd-api:performanceIntegrationTest -DsearchPerfDocs=50000 -DsearchPerfWarmups=10 -DsearchPerfIterations=50 --no-daemon` |
+| 문서 수 | 50,000건 |
+| 매칭 문서 수 | 50건 |
+| 검색어 | `사업계획서` |
+| warmup | 10회 |
+| 측정 반복 | 50회 |
+
+| 검색 방식 | 결과 수 | 평균 | p95 | p99 |
+| --- | ---: | ---: | ---: | ---: |
+| PostgreSQL contains | 50 | 13ms | 14ms | 16ms |
+| PostgreSQL prefix | 50 | 11ms | 11ms | 14ms |
+| Elasticsearch contains | 50 | 6ms | 7ms | 11ms |
+| Elasticsearch prefix | 50 | 4ms | 5ms | 6ms |
+
+| 비교 | 평균 개선율 | p95 개선율 | p99 개선율 |
+| --- | ---: | ---: | ---: |
+| PostgreSQL contains -> PostgreSQL prefix | 15.38% | 21.43% | 12.50% |
+| PostgreSQL contains -> Elasticsearch contains | 53.85% | 50.00% | 31.25% |
+| PostgreSQL prefix -> Elasticsearch prefix | 63.64% | 54.55% | 57.14% |
+
+~~~mermaid
+flowchart LR
+    A["동일 데이터셋 50,000건"] --> B["PostgreSQL contains"]
+    A --> C["PostgreSQL prefix"]
+    A --> D["Elasticsearch contains"]
+    A --> E["Elasticsearch prefix"]
+    B --> F["avg 13ms"]
+    C --> G["avg 11ms"]
+    D --> H["avg 6ms"]
+    E --> I["avg 4ms"]
+~~~
+
+이번 측정에서는 Elasticsearch가 PostgreSQL 검색보다 평균 기준으로 더 빠르게 동작하였다. 다만 이 결과는 로컬 Testcontainers 환경 기준이며, 실제 운영에서는 네트워크 지연, ES heap, index refresh 정책, 데이터 증가량에 따라 결과가 달라질 수 있다.

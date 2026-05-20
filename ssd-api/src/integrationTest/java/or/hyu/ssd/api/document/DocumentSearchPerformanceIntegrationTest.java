@@ -1,19 +1,23 @@
 package or.hyu.ssd.api.document;
 
 import or.hyu.ssd.api.bootstrap.SsdApplication;
-import or.hyu.ssd.application.document.DocumentQueryFacade;
-import or.hyu.ssd.document.application.result.DocumentListItemResult;
-import or.hyu.ssd.document.application.support.DocumentSort;
+import or.hyu.ssd.infra.persistence.document.repository.PostgresDocumentSearchRepository;
+import or.hyu.ssd.infra.search.elasticsearch.ElasticsearchDocument;
+import or.hyu.ssd.infra.search.elasticsearch.ElasticsearchDocumentRepository;
+import or.hyu.ssd.infra.search.elasticsearch.ElasticsearchDocumentSearchRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -25,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,10 +43,18 @@ class DocumentSearchPerformanceIntegrationTest {
     private static final int DEFAULT_WARMUPS = 10;
     private static final int DEFAULT_ITERATIONS = 50;
     private static final int BATCH_SIZE = 1_000;
+    private static final int MATCH_INTERVAL = 1_000;
     private static final String KEYWORD = "사업계획서";
 
     @Container
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+
+    @Container
+    static final ElasticsearchContainer elasticsearch = new ElasticsearchContainer(
+            "docker.elastic.co/elasticsearch/elasticsearch:9.2.1"
+    )
+            .withEnv("xpack.security.enabled", "false")
+            .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m");
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -69,6 +82,9 @@ class DocumentSearchPerformanceIntegrationTest {
         registry.add("app.storage.s3.access-key", () -> "test-access-key");
         registry.add("app.storage.s3.secret-key", () -> "test-secret-key");
         registry.add("app.search.pg-trgm.enabled", () -> "true");
+        registry.add("app.search.elasticsearch.enabled", () -> "true");
+        registry.add("app.search.elasticsearch.index-name", () -> "ssd-search-performance-documents");
+        registry.add("spring.elasticsearch.uris", elasticsearch::getHttpHostAddress);
         registry.add("sentry.dsn", () -> "");
 
         // then
@@ -78,65 +94,111 @@ class DocumentSearchPerformanceIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private DocumentQueryFacade documentQueryFacade;
+    private PostgresDocumentSearchRepository postgresDocumentSearchRepository;
+
+    @Autowired
+    private ElasticsearchDocumentSearchRepository elasticsearchDocumentSearchRepository;
+
+    @Autowired
+    private ElasticsearchDocumentRepository elasticsearchDocumentRepository;
+
+    @Autowired
+    private ElasticsearchOperations elasticsearchOperations;
 
     @Test
-    @DisplayName("searchDocuments()는 대량 문서에서 포함 검색과 Prefix 검색 성능을 비교한다")
-    void searchDocuments_comparesContainsAndPrefixPerformance() {
+    @DisplayName("searchDocuments()는 PostgreSQL 검색과 Elasticsearch 검색 성능을 비교한다")
+    void searchDocuments_comparesPostgresAndElasticsearchPerformance() {
         // given
         int documentCount = Integer.getInteger("searchPerfDocs", DEFAULT_DOCUMENT_COUNT);
         int warmups = Integer.getInteger("searchPerfWarmups", DEFAULT_WARMUPS);
         int iterations = Integer.getInteger("searchPerfIterations", DEFAULT_ITERATIONS);
         Long ownerId = prepareDataset(documentCount);
+        Sort sort = Sort.by(Sort.Order.desc("updatedAt"));
 
         // when
-        SearchPerformanceResult containsResult = measure(
-                () -> documentQueryFacade.searchDocuments(ownerId, KEYWORD, DocumentSort.MODIFIED),
+        SearchPerformanceResult postgresContainsResult = measure(
+                () -> postgresDocumentSearchRepository.searchDocuments(ownerId, KEYWORD, sort),
                 warmups,
                 iterations
         );
-        SearchPerformanceResult prefixResult = measure(
-                () -> documentQueryFacade.searchDocumentsByTitlePrefix(ownerId, KEYWORD, DocumentSort.MODIFIED),
+        SearchPerformanceResult postgresPrefixResult = measure(
+                () -> postgresDocumentSearchRepository.searchDocumentsByTitlePrefix(ownerId, KEYWORD, sort),
                 warmups,
                 iterations
         );
-        List<DocumentListItemResult> containsSearchResults = documentQueryFacade.searchDocuments(ownerId, KEYWORD, DocumentSort.MODIFIED);
-        List<DocumentListItemResult> prefixSearchResults = documentQueryFacade.searchDocumentsByTitlePrefix(ownerId, KEYWORD, DocumentSort.MODIFIED);
+        SearchPerformanceResult elasticsearchContainsResult = measure(
+                () -> elasticsearchDocumentSearchRepository.searchDocuments(ownerId, KEYWORD, sort),
+                warmups,
+                iterations
+        );
+        SearchPerformanceResult elasticsearchPrefixResult = measure(
+                () -> elasticsearchDocumentSearchRepository.searchDocumentsByTitlePrefix(ownerId, KEYWORD, sort),
+                warmups,
+                iterations
+        );
+        int postgresContainsCount = postgresDocumentSearchRepository.searchDocuments(ownerId, KEYWORD, sort).size();
+        int postgresPrefixCount = postgresDocumentSearchRepository.searchDocumentsByTitlePrefix(ownerId, KEYWORD, sort).size();
+        int elasticsearchContainsCount = elasticsearchDocumentSearchRepository.searchDocuments(ownerId, KEYWORD, sort).size();
+        int elasticsearchPrefixCount = elasticsearchDocumentSearchRepository.searchDocumentsByTitlePrefix(ownerId, KEYWORD, sort).size();
 
         // then
-        assertThat(containsSearchResults).isNotEmpty();
-        assertThat(prefixSearchResults).hasSameSizeAs(containsSearchResults);
-        assertThat(containsSearchResults).allMatch(document -> document.title().contains(KEYWORD));
-        assertThat(prefixSearchResults).allMatch(document -> document.title().startsWith(KEYWORD));
-        assertThat(containsSearchResults).allMatch(document -> document.id() <= documentCount);
-        assertThat(prefixSearchResults).allMatch(document -> document.id() <= documentCount);
-        System.out.printf(
-                "[DocumentSearchPerformance] mode=CONTAINS, docs=%d, warmups=%d, iterations=%d, keyword=%s, resultCount=%d, avg=%dms, p95=%dms, p99=%dms%n",
+        assertThat(postgresContainsCount).isPositive();
+        assertThat(postgresPrefixCount).isEqualTo(postgresContainsCount);
+        assertThat(elasticsearchContainsCount).isEqualTo(postgresContainsCount);
+        assertThat(elasticsearchPrefixCount).isEqualTo(postgresPrefixCount);
+        printResult(
+                "POSTGRES_CONTAINS",
                 documentCount,
                 warmups,
                 iterations,
                 KEYWORD,
-                containsSearchResults.size(),
-                containsResult.avgMillis(),
-                containsResult.p95Millis(),
-                containsResult.p99Millis()
+                postgresContainsCount,
+                postgresContainsResult
         );
-        System.out.printf(
-                "[DocumentSearchPerformance] mode=PREFIX, docs=%d, warmups=%d, iterations=%d, keyword=%s, resultCount=%d, avg=%dms, p95=%dms, p99=%dms%n",
+        printResult(
+                "POSTGRES_PREFIX",
                 documentCount,
                 warmups,
                 iterations,
                 KEYWORD,
-                prefixSearchResults.size(),
-                prefixResult.avgMillis(),
-                prefixResult.p95Millis(),
-                prefixResult.p99Millis()
+                postgresPrefixCount,
+                postgresPrefixResult
+        );
+        printResult(
+                "ELASTICSEARCH_CONTAINS",
+                documentCount,
+                warmups,
+                iterations,
+                KEYWORD,
+                elasticsearchContainsCount,
+                elasticsearchContainsResult
+        );
+        printResult(
+                "ELASTICSEARCH_PREFIX",
+                documentCount,
+                warmups,
+                iterations,
+                KEYWORD,
+                elasticsearchPrefixCount,
+                elasticsearchPrefixResult
         );
         System.out.printf(
-                "[DocumentSearchPerformance] prefixImprovement=avg %.2f%%, p95 %.2f%%, p99 %.2f%%%n",
-                improvementRate(containsResult.avgMillis(), prefixResult.avgMillis()),
-                improvementRate(containsResult.p95Millis(), prefixResult.p95Millis()),
-                improvementRate(containsResult.p99Millis(), prefixResult.p99Millis())
+                "[DocumentSearchPerformance] postgresPrefixImprovement=avg %.2f%%, p95 %.2f%%, p99 %.2f%%%n",
+                improvementRate(postgresContainsResult.avgMillis(), postgresPrefixResult.avgMillis()),
+                improvementRate(postgresContainsResult.p95Millis(), postgresPrefixResult.p95Millis()),
+                improvementRate(postgresContainsResult.p99Millis(), postgresPrefixResult.p99Millis())
+        );
+        System.out.printf(
+                "[DocumentSearchPerformance] elasticsearchContainsImprovement=avg %.2f%%, p95 %.2f%%, p99 %.2f%%%n",
+                improvementRate(postgresContainsResult.avgMillis(), elasticsearchContainsResult.avgMillis()),
+                improvementRate(postgresContainsResult.p95Millis(), elasticsearchContainsResult.p95Millis()),
+                improvementRate(postgresContainsResult.p99Millis(), elasticsearchContainsResult.p99Millis())
+        );
+        System.out.printf(
+                "[DocumentSearchPerformance] elasticsearchPrefixImprovement=avg %.2f%%, p95 %.2f%%, p99 %.2f%%%n",
+                improvementRate(postgresPrefixResult.avgMillis(), elasticsearchPrefixResult.avgMillis()),
+                improvementRate(postgresPrefixResult.p95Millis(), elasticsearchPrefixResult.p95Millis()),
+                improvementRate(postgresPrefixResult.p99Millis(), elasticsearchPrefixResult.p99Millis())
         );
     }
 
@@ -146,6 +208,7 @@ class DocumentSearchPerformanceIntegrationTest {
         Long otherMemberId = insertMember("other@example.com");
         insertDocuments(ownerId, documentCount);
         insertOtherMemberDocument(otherMemberId);
+        indexDocuments(ownerId, documentCount);
         return ownerId;
     }
 
@@ -172,7 +235,7 @@ class DocumentSearchPerformanceIntegrationTest {
                 @Override
                 public void setValues(PreparedStatement ps, int index) throws SQLException {
                     int sequence = from + index;
-                    boolean matched = sequence % 100 == 0;
+                    boolean matched = sequence % MATCH_INTERVAL == 0;
                     LocalDateTime timestamp = LocalDateTime.now().minusSeconds(documentCount - sequence);
                     ps.setString(1, matched ? KEYWORD + " AI " + sequence : "일반 문서 " + sequence);
                     ps.setString(2, "성능 테스트 본문 " + sequence);
@@ -206,6 +269,35 @@ class DocumentSearchPerformanceIntegrationTest {
                 false,
                 0L
         );
+    }
+
+    private void indexDocuments(Long memberId, int documentCount) {
+        elasticsearchDocumentRepository.deleteAll();
+        for (int start = 1; start <= documentCount; start += BATCH_SIZE) {
+            int from = start;
+            int size = Math.min(BATCH_SIZE, documentCount - start + 1);
+            List<ElasticsearchDocument> documents = IntStream.range(0, size)
+                    .mapToObj(index -> {
+                        int sequence = from + index;
+                        boolean matched = sequence % MATCH_INTERVAL == 0;
+                        LocalDateTime timestamp = LocalDateTime.now().minusSeconds(documentCount - sequence);
+                        return new ElasticsearchDocument(
+                                (long) sequence,
+                                memberId,
+                                null,
+                                matched ? KEYWORD + " AI " + sequence : "일반 문서 " + sequence,
+                                matched ? KEYWORD + ",AI" : "일반",
+                                "EVALUATION",
+                                false,
+                                false,
+                                timestamp,
+                                timestamp
+                        );
+                    })
+                    .toList();
+            elasticsearchDocumentRepository.saveAll(documents);
+        }
+        elasticsearchOperations.indexOps(ElasticsearchDocument.class).refresh();
     }
 
     private String documentInsertSql() {
@@ -271,6 +363,29 @@ class DocumentSearchPerformanceIntegrationTest {
             return 0.0;
         }
         return ((double) before - after) / before * 100.0;
+    }
+
+    private void printResult(
+            String mode,
+            int documentCount,
+            int warmups,
+            int iterations,
+            String keyword,
+            int resultCount,
+            SearchPerformanceResult result
+    ) {
+        System.out.printf(
+                "[DocumentSearchPerformance] mode=%s, docs=%d, warmups=%d, iterations=%d, keyword=%s, resultCount=%d, avg=%dms, p95=%dms, p99=%dms%n",
+                mode,
+                documentCount,
+                warmups,
+                iterations,
+                keyword,
+                resultCount,
+                result.avgMillis(),
+                result.p95Millis(),
+                result.p99Millis()
+        );
     }
 
     private record SearchPerformanceResult(
