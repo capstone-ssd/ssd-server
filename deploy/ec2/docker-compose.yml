@@ -12,6 +12,26 @@ services:
     networks:
       - ssd-net
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: ssd-elasticsearch
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - ssd-net
+
 networks:
   ssd-net:
     external: true
@@ -19,3 +39,4 @@ networks:
 
 volumes:
   redis-data:
+  elasticsearch-data:

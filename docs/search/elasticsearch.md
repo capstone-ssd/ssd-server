@@ -123,6 +123,27 @@ app:
 
 Elasticsearch를 사용할 환경에서만 `enabled=true`로 전환한다.
 
+dev 서버에서는 `develop-cd`가 아래 환경변수를 주입한다.
+
+| 환경변수 | 값 |
+| --- | --- |
+| `ELASTICSEARCH_ENABLED` | `true` |
+| `APP_SEARCH_ELASTICSEARCH_ENABLED` | `true` |
+| `SPRING_ELASTICSEARCH_URIS` | `http://ssd-elasticsearch:9200` |
+| `APP_SEARCH_ELASTICSEARCH_INDEX_NAME` | `ssd-dev-documents` |
+
+Elasticsearch 컨테이너는 `deploy/ec2/docker-compose.yml`에서 단일 노드로 실행한다.
+
+| 설정 | 값 |
+| --- | --- |
+| image | `docker.elastic.co/elasticsearch/elasticsearch:8.15.3` |
+| network | `ssd-net` |
+| host port | `127.0.0.1:9200` |
+| internal uri | `http://ssd-elasticsearch:9200` |
+| heap | `-Xms256m -Xmx256m` |
+| memory limit | `512m` |
+| host sysctl | `vm.max_map_count=262144` |
+
 ## 8. Spring Data Elasticsearch 적용
 
 이번 구현은 직접 HTTP 요청을 조립하지 않고 Spring Data Elasticsearch를 사용한다.

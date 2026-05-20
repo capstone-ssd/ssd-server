@@ -15,6 +15,7 @@ NGINX_TIMEOUT_FILE="${NGINX_TIMEOUT_FILE:-/etc/nginx/conf.d/zzz-ssd-timeout.conf
 NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
 NGINX_SITE_AVAILABLE="${NGINX_SITE_AVAILABLE:-/etc/nginx/sites-available/${NGINX_SERVER_NAME}}"
 NGINX_SITE_ENABLED="${NGINX_SITE_ENABLED:-/etc/nginx/sites-enabled/${NGINX_SERVER_NAME}}"
+ELASTICSEARCH_ENABLED="${ELASTICSEARCH_ENABLED:-false}"
 
 copy_if_changed() {
   local source_file="$1"
@@ -55,6 +56,42 @@ redis_running() {
   [[ -n "${container_id}" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "${container_id}" 2>/dev/null || true)" == "true" ]]
 }
 
+elasticsearch_running() {
+  local container_id
+  container_id="$(docker compose -f "${INFRA_DIR}/docker-compose.yml" ps -q elasticsearch 2>/dev/null || true)"
+  [[ -n "${container_id}" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "${container_id}" 2>/dev/null || true)" == "true" ]]
+}
+
+is_enabled() {
+  local normalized
+  normalized="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+
+  case "${normalized}" in
+    true|1|yes|y|on)
+      return 0
+      ;;
+    false|0|no|n|off)
+      return 1
+      ;;
+    *)
+      echo "[ERROR] ELASTICSEARCH_ENABLED must be true or false: ${1}" >&2
+      exit 1
+      ;;
+  esac
+}
+
+configure_elasticsearch_host() {
+  local sysctl_file="/etc/sysctl.d/99-ssd-elasticsearch.conf"
+
+  if [[ "$(sysctl -n vm.max_map_count 2>/dev/null || echo 0)" -lt 262144 ]]; then
+    sysctl -w vm.max_map_count=262144 >/dev/null
+  fi
+
+  if [[ ! -f "${sysctl_file}" ]] || ! grep -q '^vm.max_map_count=262144$' "${sysctl_file}"; then
+    printf '%s\n' 'vm.max_map_count=262144' > "${sysctl_file}"
+  fi
+}
+
 install -d -m 755 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${INFRA_DIR}"
 install -d -m 755 "${DEPLOY_ROOT}" "${RUNTIME_CONFIG_DIR}"
 
@@ -79,9 +116,18 @@ if command -v docker >/dev/null 2>&1; then
     network_created=1
   fi
 
-  if (( infra_changed == 1 || network_created == 1 )) || ! redis_running; then
+  if is_enabled "${ELASTICSEARCH_ENABLED}"; then
+    configure_elasticsearch_host
+    if (( infra_changed == 1 || network_created == 1 )) || ! redis_running || ! elasticsearch_running; then
+      docker compose -f "${INFRA_DIR}/docker-compose.yml" up -d redis elasticsearch
+    else
+      echo "[INFO] Redis/Elasticsearch infra unchanged, skip compose up"
+    fi
+  elif (( infra_changed == 1 || network_created == 1 )) || ! redis_running; then
     docker compose -f "${INFRA_DIR}/docker-compose.yml" up -d redis
+    docker compose -f "${INFRA_DIR}/docker-compose.yml" stop elasticsearch >/dev/null 2>&1 || true
   else
+    docker compose -f "${INFRA_DIR}/docker-compose.yml" stop elasticsearch >/dev/null 2>&1 || true
     echo "[INFO] Redis infra unchanged, skip compose up"
   fi
 else

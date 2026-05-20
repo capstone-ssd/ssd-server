@@ -27,6 +27,15 @@
 - 부하테스트용 모니터링은 평시 서버 RAM 절약을 위해 기본적으로 기동하지 않습니다.
 - 부하테스트 모니터링이 필요할 때만 `LOADTEST_MONITORING_ENABLED=true`로 `install_monitoring.sh`를 실행합니다.
 
+## Elasticsearch 설정
+- `docker-compose.yml`은 단일 노드 Elasticsearch를 포함합니다.
+- 기본적으로 `install_infra.sh`는 `ELASTICSEARCH_ENABLED=true`일 때만 Elasticsearch를 기동합니다.
+- `develop-cd`는 dev 검색 검증을 위해 Elasticsearch를 활성화합니다.
+- Elasticsearch는 `ssd-net` 내부에서 `http://ssd-elasticsearch:9200`으로 접근합니다.
+- 호스트 포트는 SSH 터널링/점검용으로만 `127.0.0.1:9200`에 바인딩합니다.
+- dev 서버 RAM 절약을 위해 Elasticsearch JVM heap은 `256MB`로 제한합니다.
+- Elasticsearch 기동에 필요한 `vm.max_map_count=262144`를 `install_infra.sh`에서 적용합니다.
+
 ## JVM/GC 설정
 - dev 애플리케이션 컨테이너는 기본적으로 아래 JVM 옵션으로 실행됩니다.
   - `-Xms256m`
