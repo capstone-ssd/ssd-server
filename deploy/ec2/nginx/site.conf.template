@@ -1,5 +1,5 @@
 map $http_x_request_id $ssd_request_id {
-    ~^(?:[A-Fa-f0-9]{32}|[A-Fa-f0-9-]{36})$ $http_x_request_id;
+    "~^(?:[A-Fa-f0-9]{32}|[A-Fa-f0-9-]{36})$" $http_x_request_id;
     default $request_id;
 }
 
