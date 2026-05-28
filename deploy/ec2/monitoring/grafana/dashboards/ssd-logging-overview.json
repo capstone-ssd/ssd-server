@@ -1,0 +1,235 @@
+{
+  "uid": "ssd-logging-overview",
+  "title": "운영 로그 추적",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "requestId",
+        "type": "textbox",
+        "label": "Request ID",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "서버 예외",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(count_over_time({env=\"prod\", service=\"ssd-api\"} | json | logType = \"server_exception\" [$__range]))",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "options": {
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""},
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}},
+        "overrides": []
+      },
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "외부 AI 실패",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(count_over_time({env=\"prod\", service=\"ssd-api\"} | json | logType = \"external_ai\" | result = \"실패\" [$__range]))",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}}, "overrides": []},
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "인증/권한 실패",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(count_over_time({env=\"prod\", service=\"ssd-api\"} | json | logType = \"auth\" [$__range]))",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "orange", "value": 10}]}}, "overrides": []},
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "문서/폴더 작업",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(count_over_time({env=\"prod\", service=\"ssd-api\"} | json | logType = \"document_crud\" [$__range]))",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Nginx 5xx",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(count_over_time({env=\"prod\", service=\"nginx\", log_file=\"access\"} | json | status >= 500 [$__range]))",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "느린 요청(1s+)",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(count_over_time({env=\"prod\", service=\"ssd-api\"} | json | logType = \"http_request\" | elapsedMs >= 1000 [$__range]))",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""}, "orientation": "auto", "textMode": "auto", "colorMode": "background"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}}, "overrides": []},
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "로그 발생 추이",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 4},
+      "targets": [
+        {"expr": "sum by (logType) (count_over_time({env=\"prod\", service=\"ssd-api\"} | json | logType != \"\" [$__interval]))", "refId": "A", "legendFormat": "{{logType}}", "datasource": {"type": "loki", "uid": "loki"}},
+        {"expr": "sum(count_over_time({env=\"prod\", service=\"nginx\", log_file=\"access\"} | json | status >= 400 [$__interval]))", "refId": "B", "legendFormat": "nginx_4xx_5xx", "datasource": {"type": "loki", "uid": "loki"}}
+      ],
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never"}}, "overrides": []},
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Request ID 추적 결과",
+      "description": "상단 Request ID 변수에 Discord 알림 또는 응답 헤더의 requestId를 입력하면 해당 요청과 연결된 전체 로그를 조회합니다.",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 11},
+      "options": {"showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": false, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"},
+      "targets": [
+        {
+          "expr": "{env=\"prod\"} | json | requestId = `$requestId` | line_format `{{if .logType}}{{.logType}}{{else}}nginx{{end}} | {{if .method}}{{.method}}{{end}} {{.uri}} | status={{if .responseStatus}}{{.responseStatus}}{{else}}{{.status}}{{end}} | result={{.result}} | action={{.action}} | ai={{.aiEndpoint}} | error={{.exceptionClass}} | msg={{.message}}`",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "서버 예외 로그",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 19},
+      "options": {"showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": false, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "targets": [
+        {
+          "expr": "{env=\"prod\", service=\"ssd-api\"} | json | logType = \"server_exception\" | line_format `{{.method}} {{.uri}} | {{.responseStatus}} | {{.exceptionClass}} | rid={{.requestId}} | {{.errorCode}}`",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 3,
+      "type": "logs",
+      "title": "외부 AI 호출 로그",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 26},
+      "options": {"showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": false, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "targets": [
+        {
+          "expr": "{env=\"prod\", service=\"ssd-api\"} | json | logType = \"external_ai\" | line_format `{{.aiEndpoint}} | {{.result}} | status={{.externalStatus}} | {{.elapsedMs}}ms | rid={{.requestId}} | member={{.memberId}}`",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "문서/폴더 작업 로그",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 33},
+      "options": {"showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": false, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "targets": [
+        {
+          "expr": "{env=\"prod\", service=\"ssd-api\"} | json | logType = \"document_crud\" | line_format `{{.action}} | {{.result}} | doc={{.documentId}} | folder={{.folderId}} | member={{.memberId}} | rid={{.requestId}}`",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "인증/권한 로그",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 40},
+      "options": {"showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": false, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "targets": [
+        {
+          "expr": "{env=\"prod\", service=\"ssd-api\"} | json | logType = \"auth\" | line_format `{{.method}} {{.uri}} | {{.responseStatus}} | {{.reason}} | rid={{.requestId}}`",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "datasource": {"type": "loki", "uid": "loki"}
+    },
+    {
+      "id": 6,
+      "type": "logs",
+      "title": "Nginx 4xx/5xx 로그",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 47},
+      "options": {"showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": false, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"},
+      "targets": [
+        {
+          "expr": "{env=\"prod\", service=\"nginx\", log_file=\"access\"} | json | status >= 400 | line_format `{{.method}} {{.uri}} | {{.status}} | upstream={{.upstreamStatus}} | {{.requestTime}}s | rid={{.requestId}} | ip={{.remoteAddr}}`",
+          "refId": "A",
+          "datasource": {"type": "loki", "uid": "loki"}
+        }
+      ],
+      "datasource": {"type": "loki", "uid": "loki"}
+    }
+  ]
+}

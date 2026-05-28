@@ -43,6 +43,7 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+      - loki
     env_file:
       - .env
     environment:
@@ -86,6 +87,39 @@ services:
     networks:
       - monitoring
 
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: ssd-prod-loki
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/loki.yml
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+
+  alloy:
+    image: grafana/alloy:v1.4.3
+    container_name: ssd-prod-alloy
+    restart: unless-stopped
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    depends_on:
+      - loki
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log/nginx:/var/log/nginx:ro
+      - alloy_data:/var/lib/alloy/data
+    networks:
+      - monitoring
+
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.25.0
     container_name: ssd-prod-blackbox-exporter
@@ -109,3 +143,5 @@ volumes:
   prometheus_data:
   alertmanager_data:
   grafana_data:
+  loki_data:
+  alloy_data:
