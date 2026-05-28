@@ -11,8 +11,14 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "discord")
 public class DiscordProperties {
     private String webhookUrl;
+    private String grafanaBaseUrl;
+    private String loggingDashboardUid = "ssd-logging-overview";
 
     public boolean hasWebhookUrl() {
         return webhookUrl != null && !webhookUrl.isBlank();
+    }
+
+    public boolean hasGrafanaBaseUrl() {
+        return grafanaBaseUrl != null && !grafanaBaseUrl.isBlank();
     }
 }

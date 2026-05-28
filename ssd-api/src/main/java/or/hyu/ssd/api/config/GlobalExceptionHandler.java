@@ -12,6 +12,8 @@ import or.hyu.ssd.common.alert.ErrorAlertNotifier;
 import or.hyu.ssd.common.api.ApiResponse;
 import or.hyu.ssd.common.exception.CustomException;
 import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.logging.LoggingMdcKey;
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -183,6 +185,8 @@ public class GlobalExceptionHandler {
     }
 
     private void captureAndNotify(Throwable throwable, ErrorCode errorCode, HttpServletRequest request) {
+        MDC.put(LoggingMdcKey.LOG_TYPE, resolveExceptionLogType(errorCode));
+        MDC.put(LoggingMdcKey.RESPONSE_STATUS, String.valueOf(errorCode.getStatus().value()));
         Sentry.captureException(throwable);
 
         if (!isServerError(errorCode)) {
@@ -190,6 +194,7 @@ public class GlobalExceptionHandler {
         }
 
         ErrorAlertContext context = ErrorAlertContext.of(
+                MDC.get(LoggingMdcKey.REQUEST_ID),
                 request.getMethod(),
                 request.getRequestURI(),
                 resolveClientIp(request),
@@ -201,6 +206,13 @@ public class GlobalExceptionHandler {
 
     private boolean isServerError(ErrorCode errorCode) {
         return errorCode.getStatus().is5xxServerError();
+    }
+
+    private String resolveExceptionLogType(ErrorCode errorCode) {
+        if (isServerError(errorCode)) {
+            return LoggingMdcKey.LOG_TYPE_SERVER_EXCEPTION;
+        }
+        return LoggingMdcKey.LOG_TYPE_CLIENT_EXCEPTION;
     }
 
     private Optional<String> resolveBindingMessage(List<FieldError> fieldErrors) {

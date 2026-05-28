@@ -9,6 +9,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -71,6 +72,8 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 [SSD 서버 예외 알림]
                 - 시간: %s
                 - 환경: %s
+                - Request ID: %s
+                - Grafana 로그: %s
                 - 코드: %s
                 - 상태: %d
                 - 메서드: %s
@@ -81,6 +84,8 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 """.formatted(
                 LocalDateTime.now().format(TIME_FORMATTER),
                 resolveEnvironment(),
+                context.requestId(),
+                buildGrafanaLogUrl(context.requestId()),
                 context.errorCode(),
                 context.status(),
                 context.method(),
@@ -89,6 +94,21 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 context.exceptionClass(),
                 context.message()
         );
+    }
+
+    private String buildGrafanaLogUrl(String requestId) {
+        if (!discordProperties.hasGrafanaBaseUrl() || requestId == null || requestId.isBlank() || "(omitted)".equals(requestId)) {
+            return "(not configured)";
+        }
+
+        String baseUrl = trimTrailingSlash(discordProperties.getGrafanaBaseUrl());
+        String dashboardUid = discordProperties.getLoggingDashboardUid();
+        String encodedRequestId = URLEncoder.encode(requestId, StandardCharsets.UTF_8);
+        return "%s/d/%s?orgId=1&var-requestId=%s".formatted(baseUrl, dashboardUid, encodedRequestId);
+    }
+
+    private String trimTrailingSlash(String value) {
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 
     private String resolveEnvironment() {

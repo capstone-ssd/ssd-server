@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.api.config.logging.DocumentAuditLogger;
 import or.hyu.ssd.api.document.request.CreateFolderRequest;
 import or.hyu.ssd.api.document.response.CreateFolderResponse;
 import or.hyu.ssd.api.document.response.FolderContentResponse;
@@ -32,6 +33,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 public class FolderController {
 
     private final FolderFacade folderFacade;
+    private final DocumentAuditLogger documentAuditLogger;
 
     @PostMapping("/v1/folders")
     @Operation(
@@ -58,6 +60,7 @@ public class FolderController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         CreateFolderResponse dto = CreateFolderResponse.from(folderFacade.create(user.getMember().getId(), request.toCommand()));
+        documentAuditLogger.logFolder("폴더 생성", user.getMember().getId(), dto.id());
         return ResponseEntity.ok(ApiResponse.ok(dto, "폴더가 생성되었습니다"));
     }
 
@@ -90,6 +93,7 @@ public class FolderController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateFolderResponse dto = UpdateFolderResponse.from(folderFacade.update(id, user.getMember().getId(), request.toCommand()));
+        documentAuditLogger.logFolder("폴더 수정", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok(dto, "폴더가 수정되었습니다"));
     }
 
@@ -117,6 +121,7 @@ public class FolderController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         folderFacade.delete(id, user.getMember().getId());
+        documentAuditLogger.logFolder("폴더 삭제", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok("폴더가 삭제되었습니다"));
     }
 
@@ -149,6 +154,7 @@ public class FolderController {
             @RequestParam(name = "parentId", required = false) @PositiveOrZero(message = "parentId는 0 이상이어야 합니다") Long parentId
     ) {
         FolderContentResponse data = FolderContentResponse.from(folderFacade.listContent(user.getMember().getId(), parentId));
+        documentAuditLogger.logFolder("폴더 내용 조회", user.getMember().getId(), parentId);
         return ResponseEntity.ok(ApiResponse.ok(data, "폴더 내용이 조회되었습니다"));
     }
 
@@ -177,6 +183,7 @@ public class FolderController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         FolderContentResponse data = FolderContentResponse.from(folderFacade.listAllContent(user.getMember().getId()));
+        documentAuditLogger.logFolder("파일 경로 전체 조회", user.getMember().getId(), null);
         return ResponseEntity.ok(ApiResponse.ok(data, "파일 경로 전체 조회에 성공했습니다"));
     }
 }

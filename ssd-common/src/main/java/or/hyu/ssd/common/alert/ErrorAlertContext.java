@@ -3,6 +3,7 @@ package or.hyu.ssd.common.alert;
 import or.hyu.ssd.common.exception.ErrorCode;
 
 public record ErrorAlertContext(
+        String requestId,
         String method,
         String uri,
         String clientIp,
@@ -12,6 +13,7 @@ public record ErrorAlertContext(
         String message
 ) {
     public static ErrorAlertContext of(
+            String requestId,
             String method,
             String uri,
             String clientIp,
@@ -19,6 +21,7 @@ public record ErrorAlertContext(
             Throwable throwable
     ) {
         return new ErrorAlertContext(
+                safeRequestId(requestId),
                 method,
                 uri,
                 clientIp,
@@ -27,6 +30,13 @@ public record ErrorAlertContext(
                 throwable == null ? "(unknown)" : throwable.getClass().getSimpleName(),
                 throwable == null ? "(omitted)" : safeMessage(throwable.getMessage())
         );
+    }
+
+    private static String safeRequestId(String requestId) {
+        if (requestId == null || requestId.isBlank()) {
+            return "(omitted)";
+        }
+        return requestId.replaceAll("[\\r\\n\\t]+", " ").trim();
     }
 
     private static String safeMessage(String message) {
