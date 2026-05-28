@@ -15,6 +15,7 @@ NGINX_TIMEOUT_FILE="${NGINX_TIMEOUT_FILE:-/etc/nginx/conf.d/zzz-ssd-timeout.conf
 NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
 NGINX_SITE_AVAILABLE="${NGINX_SITE_AVAILABLE:-/etc/nginx/sites-available/${NGINX_SERVER_NAME}}"
 NGINX_SITE_ENABLED="${NGINX_SITE_ENABLED:-/etc/nginx/sites-enabled/${NGINX_SERVER_NAME}}"
+LEGACY_MOCK_CONTAINER_NAME="${LEGACY_MOCK_CONTAINER_NAME:-external-ai-mock}"
 
 copy_if_changed() {
   local source_file="$1"
@@ -55,6 +56,13 @@ redis_running() {
   [[ -n "${container_id}" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "${container_id}" 2>/dev/null || true)" == "true" ]]
 }
 
+cleanup_legacy_mock_container() {
+  if docker ps -a --format '{{.Names}}' | grep -qx "${LEGACY_MOCK_CONTAINER_NAME}"; then
+    echo "[INFO] Stop legacy mock container: ${LEGACY_MOCK_CONTAINER_NAME}"
+    docker rm -f "${LEGACY_MOCK_CONTAINER_NAME}" >/dev/null 2>&1 || true
+  fi
+}
+
 install -d -m 755 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${INFRA_DIR}"
 install -d -m 755 "${DEPLOY_ROOT}" "${RUNTIME_CONFIG_DIR}"
 
@@ -84,6 +92,8 @@ if command -v docker >/dev/null 2>&1; then
   else
     echo "[INFO] Redis infra unchanged, skip compose up"
   fi
+
+  cleanup_legacy_mock_container
 else
   echo "[ERROR] docker is not installed" >&2
   exit 1
