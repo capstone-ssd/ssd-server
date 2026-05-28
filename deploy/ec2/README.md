@@ -19,7 +19,9 @@
 ## 모니터링 설정
 - 운영 모니터링 리소스는 `deploy/ec2/monitoring`에 형상관리합니다.
 - `develop-cd`는 서버 `/opt/ssd/monitoring-prod`에 해당 파일을 설치하고 docker compose로 Grafana/Prometheus/Alertmanager를 기동합니다.
-- 운영 모니터링은 SSH 터널링 기준으로 접근합니다.
+- 운영 Grafana는 Nginx를 통해 외부 접근 경로를 제공합니다.
+  - Grafana: `https://dev-api.simsaimdang.shop/grafana/`
+- 운영 모니터링 내부 포트는 SSH 터널링 기준으로도 접근할 수 있습니다.
   - Grafana: `3001`
   - Prometheus: `9091`
   - Alertmanager: `9093`

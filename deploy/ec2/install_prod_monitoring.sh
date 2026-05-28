@@ -24,6 +24,8 @@ cp -a "${MONITORING_SOURCE_DIR}/." "${tmp_dir}/"
 rm -f "${tmp_dir}/.env" "${tmp_dir}/alertmanager/secrets/discord_webhook_url"
 cp -a "${tmp_dir}/." "${MONITORING_DIR}/"
 chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "${MONITORING_DIR}"
+find "${MONITORING_DIR}/grafana/provisioning" "${MONITORING_DIR}/grafana/dashboards" -type d -exec chmod 755 {} \;
+find "${MONITORING_DIR}/grafana/provisioning" "${MONITORING_DIR}/grafana/dashboards" -type f -exec chmod 644 {} \;
 
 install -d -m 750 -o "${DEPLOY_USER}" -g 65534 "$(dirname "${DISCORD_WEBHOOK_FILE}")"
 if [[ ! -s "${DISCORD_WEBHOOK_FILE}" ]]; then
@@ -69,6 +71,6 @@ docker compose -f docker-compose.monitoring.yml config >/dev/null
 docker compose -f docker-compose.monitoring.yml up -d
 
 echo "[INFO] SSD production monitoring is running"
-echo "[INFO] Grafana: ssh -L 3001:127.0.0.1:3001 <server> then open http://localhost:3001"
+echo "[INFO] Grafana: https://dev-api.simsaimdang.shop/grafana/"
 echo "[INFO] Prometheus: ssh -L 9091:127.0.0.1:9091 <server> then open http://localhost:9091"
 echo "[INFO] Alertmanager: ssh -L 9093:127.0.0.1:9093 <server> then open http://localhost:9093"

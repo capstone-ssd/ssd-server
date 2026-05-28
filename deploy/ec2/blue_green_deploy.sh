@@ -19,7 +19,7 @@ SPRING_CONFIG_ADDITIONAL_LOCATION="${SPRING_CONFIG_ADDITIONAL_LOCATION:-optional
 TIME_ZONE="${APP_TIME_ZONE:-Asia/Seoul}"
 APP_LOG_DIR="${APP_LOG_DIR:-/opt/${APP_NAME}/logs}"
 APP_JAVA_TOOL_OPTIONS="${APP_JAVA_TOOL_OPTIONS:--Xms256m -Xmx256m -Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M}"
-APP_GRAFANA_BASE_URL="${APP_GRAFANA_BASE_URL:-http://localhost:3001}"
+APP_GRAFANA_BASE_URL="${APP_GRAFANA_BASE_URL:-https://dev-api.simsaimdang.shop/grafana}"
 APP_GRAFANA_LOGGING_DASHBOARD_UID="${APP_GRAFANA_LOGGING_DASHBOARD_UID:-ssd-logging-overview}"
 
 BLUE_PORT="${BLUE_PORT:-8080}"
