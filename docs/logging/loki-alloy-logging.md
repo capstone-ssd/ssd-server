@@ -47,6 +47,7 @@ flowchart LR
 | --- | --- |
 | `http_request` | 모든 HTTP 요청 완료 로그 |
 | `server_exception` | 서버 예외 로그 |
+| `client_exception` | 클라이언트 요청 오류 로그 |
 | `external_ai` | 외부 AI 호출 시작/성공/실패 로그 |
 | `document_crud` | 문서/폴더 생성, 조회, 수정, 삭제, 이동 로그 |
 | `auth` | 인증 실패, 인가 실패 로그 |
@@ -55,11 +56,11 @@ flowchart LR
 
 | 목적 | LogQL |
 | --- | --- |
-| requestId 기반 추적 | `{env="prod"} | json | requestId = "<requestId>"` |
-| 서버 예외만 조회 | `{env="prod", service="ssd-api"} | json | logType = "server_exception"` |
-| 외부 AI 실패 조회 | `{env="prod", service="ssd-api"} | json | logType = "external_ai" | result = "실패"` |
-| 인증/인가 실패 조회 | `{env="prod", service="ssd-api"} | json | logType = "auth"` |
-| Nginx 5xx 조회 | `{env="prod", service="nginx", log_file="access"} | json | status >= 500` |
+| requestId 기반 추적 | `{env="prod"} \| json \| requestId = "<requestId>"` |
+| 서버 예외만 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "server_exception"` |
+| 외부 AI 실패 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "external_ai" \| result = "실패"` |
+| 인증/인가 실패 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "auth"` |
+| Nginx 5xx 조회 | `{env="prod", service="nginx", log_file="access"} \| json \| status >= 500` |
 
 ## 6. 대시보드 지표
 

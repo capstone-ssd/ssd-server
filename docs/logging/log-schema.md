@@ -43,6 +43,16 @@
 | `message` | string | `처리되지 않은 예외가 발생했습니다.` | 예외 요약 메시지입니다. |
 | `requestId` | string | `018f2d3c-...` | Discord 알림과 Grafana 검색을 연결하는 키입니다. |
 
+## 4-1. 클라이언트 요청 오류 로그
+
+| 필드 | 타입 | 예시 | 설명 |
+| --- | --- | --- | --- |
+| `logType` | string | `client_exception` | 4xx 계열 요청 오류 분류값입니다. |
+| `errorCode` | string | `REQUEST40001` | SSD 공통 에러 코드입니다. |
+| `responseStatus` | number | `400`, `404` | HTTP 응답 상태입니다. |
+| `exceptionClass` | string | `MethodArgumentNotValidException` | 예외 클래스명입니다. |
+| `requestId` | string | `018f2d3c-...` | 요청 단위 추적 ID입니다. |
+
 ## 5. 외부 AI 호출 로그
 
 | 필드 | 타입 | 예시 | 설명 |
@@ -91,12 +101,12 @@
 
 | 목적 | LogQL |
 | --- | --- |
-| requestId 추적 | `{env="prod"} | json | requestId = "<requestId>"` |
-| 서버 예외 조회 | `{env="prod", service="ssd-api"} | json | logType = "server_exception"` |
-| 외부 AI 실패 조회 | `{env="prod", service="ssd-api"} | json | logType = "external_ai" | result = "실패"` |
-| 문서 작업 조회 | `{env="prod", service="ssd-api"} | json | logType = "document_crud"` |
-| 인증/권한 실패 조회 | `{env="prod", service="ssd-api"} | json | logType = "auth"` |
-| Nginx 5xx 조회 | `{env="prod", service="nginx", log_file="access"} | json | status >= 500` |
+| requestId 추적 | `{env="prod"} \| json \| requestId = "<requestId>"` |
+| 서버 예외 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "server_exception"` |
+| 외부 AI 실패 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "external_ai" \| result = "실패"` |
+| 문서 작업 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "document_crud"` |
+| 인증/권한 실패 조회 | `{env="prod", service="ssd-api"} \| json \| logType = "auth"` |
+| Nginx 5xx 조회 | `{env="prod", service="nginx", log_file="access"} \| json \| status >= 500` |
 
 ## 10. 변경 규칙
 

@@ -4,6 +4,7 @@ import org.slf4j.MDC;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class MdcScope implements AutoCloseable {
 
@@ -21,10 +22,14 @@ public final class MdcScope implements AutoCloseable {
     }
 
     public static MdcScope with(String key, String value) {
-        return new MdcScope(Map.of(key, value));
+        Objects.requireNonNull(key, "key must not be null");
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put(key, value);
+        return new MdcScope(values);
     }
 
     public static MdcScope with(Map<String, String> values) {
+        Objects.requireNonNull(values, "values must not be null");
         return new MdcScope(values);
     }
 

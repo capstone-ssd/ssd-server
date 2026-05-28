@@ -21,6 +21,7 @@ public final class LoggingMdcKey {
 
     public static final String LOG_TYPE_HTTP_REQUEST = "http_request";
     public static final String LOG_TYPE_SERVER_EXCEPTION = "server_exception";
+    public static final String LOG_TYPE_CLIENT_EXCEPTION = "client_exception";
     public static final String LOG_TYPE_AUTH = "auth";
     public static final String LOG_TYPE_DOCUMENT_CRUD = "document_crud";
     public static final String LOG_TYPE_EXTERNAL_AI = "external_ai";

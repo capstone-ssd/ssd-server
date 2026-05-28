@@ -185,7 +185,7 @@ public class GlobalExceptionHandler {
     }
 
     private void captureAndNotify(Throwable throwable, ErrorCode errorCode, HttpServletRequest request) {
-        MDC.put(LoggingMdcKey.LOG_TYPE, LoggingMdcKey.LOG_TYPE_SERVER_EXCEPTION);
+        MDC.put(LoggingMdcKey.LOG_TYPE, resolveExceptionLogType(errorCode));
         MDC.put(LoggingMdcKey.RESPONSE_STATUS, String.valueOf(errorCode.getStatus().value()));
         Sentry.captureException(throwable);
 
@@ -206,6 +206,13 @@ public class GlobalExceptionHandler {
 
     private boolean isServerError(ErrorCode errorCode) {
         return errorCode.getStatus().is5xxServerError();
+    }
+
+    private String resolveExceptionLogType(ErrorCode errorCode) {
+        if (isServerError(errorCode)) {
+            return LoggingMdcKey.LOG_TYPE_SERVER_EXCEPTION;
+        }
+        return LoggingMdcKey.LOG_TYPE_CLIENT_EXCEPTION;
     }
 
     private Optional<String> resolveBindingMessage(List<FieldError> fieldErrors) {

@@ -1,6 +1,7 @@
 package or.hyu.ssd.api.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +14,8 @@ import or.hyu.ssd.common.alert.ErrorAlertContext;
 import or.hyu.ssd.common.alert.ErrorAlertNotifier;
 import or.hyu.ssd.common.exception.DocumentException;
 import or.hyu.ssd.common.exception.ErrorCode;
+import or.hyu.ssd.common.logging.LoggingMdcKey;
+import org.slf4j.MDC;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -33,6 +36,11 @@ class GlobalExceptionHandlerTest {
 
     @Mock
     private ErrorAlertNotifier errorAlertNotifier;
+
+    @AfterEach
+    void tearDown() {
+        MDC.clear();
+    }
 
     @Test
     @DisplayName("handleGeneralException()는 5xx CustomException에서 Discord 알림을 보낸다")
@@ -128,6 +136,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(ErrorCode.REQUEST_BODY_INVALID_JSON.getStatus());
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().msg()).isEqualTo("요청 본문에는 JSON 객체 하나만 포함되어야 합니다");
+        assertThat(MDC.get(LoggingMdcKey.LOG_TYPE)).isEqualTo(LoggingMdcKey.LOG_TYPE_CLIENT_EXCEPTION);
     }
 
     private HttpServletRequest request(String method, String uri) {
