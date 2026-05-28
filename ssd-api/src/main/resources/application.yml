@@ -88,6 +88,8 @@ app:
 
 discord:
   webhook-url: ${DISCORD_WEBHOOK_URL:}
+  grafana-base-url: ${GRAFANA_BASE_URL:}
+  logging-dashboard-uid: ${GRAFANA_LOGGING_DASHBOARD_UID:ssd-logging-overview}
 
 
 sentry:
