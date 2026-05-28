@@ -71,6 +71,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 [SSD 서버 예외 알림]
                 - 시간: %s
                 - 환경: %s
+                - Request ID: %s
                 - 코드: %s
                 - 상태: %d
                 - 메서드: %s
@@ -81,6 +82,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 """.formatted(
                 LocalDateTime.now().format(TIME_FORMATTER),
                 resolveEnvironment(),
+                context.requestId(),
                 context.errorCode(),
                 context.status(),
                 context.method(),

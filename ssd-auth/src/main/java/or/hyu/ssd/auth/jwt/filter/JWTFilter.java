@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import or.hyu.ssd.auth.config.JWTConfig;
 import or.hyu.ssd.auth.jwt.repository.AccessTokenBlacklistRepository;
 import or.hyu.ssd.auth.jwt.support.BearerTokenExtractor;
@@ -19,6 +20,9 @@ import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.TokenHandler;
 import or.hyu.ssd.common.exception.UserExceptionHandler;
 import or.hyu.ssd.common.api.ApiErrorResponseWriter;
+import or.hyu.ssd.common.logging.LoggingMdcKey;
+import or.hyu.ssd.common.logging.MdcScope;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +30,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
 
 
 /**
@@ -37,6 +42,7 @@ import java.io.IOException;
  * */
 @RequiredArgsConstructor
 @Component
+@Slf4j
 public class JWTFilter extends OncePerRequestFilter{
 
     private final JWTUtil jwtUtil;
@@ -59,11 +65,13 @@ public class JWTFilter extends OncePerRequestFilter{
             jwtUtil.isExpired(accessToken);
             String category = jwtUtil.getCategory(accessToken);
             if (!"access".equals(category)) {
+                logAuthFailure(ErrorCode.ACCESS_INVALID_TYPE, "액세스 토큰 타입이 올바르지 않습니다.");
                 ApiErrorResponseWriter.write(response, ErrorCode.ACCESS_INVALID_TYPE);
                 return;
             }
             String jti = jwtUtil.getJti(accessToken);
             if (accessTokenBlacklistRepository.isBlacklisted(jti)) {
+                logAuthFailure(ErrorCode.ACCESS_TOKEN_BLACKLISTED, "블랙리스트에 등록된 액세스 토큰입니다.");
                 ApiErrorResponseWriter.write(response, ErrorCode.ACCESS_TOKEN_BLACKLISTED);
                 return;
             }
@@ -78,21 +86,28 @@ public class JWTFilter extends OncePerRequestFilter{
                     customUserDetails.getAuthorities()
             );
             SecurityContextHolder.getContext().setAuthentication(authToken);
+            MDC.put(LoggingMdcKey.MEMBER_ID, String.valueOf(id));
             filterChain.doFilter(request, response);
         } catch (TokenHandler e) {
+            logAuthFailure(e.getErrorCode(), "토큰 처리 중 인증 실패가 발생했습니다.");
             ApiErrorResponseWriter.write(response, e.getErrorCode());
         } catch (ExpiredJwtException e) {
+            logAuthFailure(ErrorCode.ACCESS_TOKEN_EXPIRED, "액세스 토큰이 만료되었습니다.");
             ApiErrorResponseWriter.write(response, ErrorCode.ACCESS_TOKEN_EXPIRED);
         } catch (IllegalArgumentException e) {
+            logAuthFailure(ErrorCode.ROLE_INVALID_TYPE, "토큰 역할 값이 올바르지 않습니다.");
             ApiErrorResponseWriter.write(response, ErrorCode.ROLE_INVALID_TYPE);
         } catch (UserExceptionHandler e) {
             if (e.getErrorCode() == ErrorCode.MEMBER_NOT_FOUND) {
+                logAuthFailure(ErrorCode.TOKEN_MEMBER_NOT_FOUND, "토큰의 회원을 찾을 수 없습니다.");
                 ApiErrorResponseWriter.write(response, ErrorCode.TOKEN_MEMBER_NOT_FOUND);
                 return;
             }
             throw e;
         } catch (JwtException e) {
-            ApiErrorResponseWriter.write(response, resolveJwtErrorCode(e));
+            ErrorCode errorCode = resolveJwtErrorCode(e);
+            logAuthFailure(errorCode, "JWT 검증에 실패했습니다.");
+            ApiErrorResponseWriter.write(response, errorCode);
         }
     }
 
@@ -102,6 +117,16 @@ public class JWTFilter extends OncePerRequestFilter{
             return ErrorCode.INVALID_SIGNATURE;
         }
         return ErrorCode.INVALID_TOKEN;
+    }
+
+    private void logAuthFailure(ErrorCode errorCode, String message) {
+        try (MdcScope ignored = MdcScope.with(Map.of(
+                LoggingMdcKey.LOG_TYPE, LoggingMdcKey.LOG_TYPE_AUTH,
+                LoggingMdcKey.REASON, errorCode.getCode(),
+                LoggingMdcKey.RESPONSE_STATUS, String.valueOf(errorCode.getStatus().value())
+        ))) {
+            log.warn("인증 실패: {}", message);
+        }
     }
 
 }

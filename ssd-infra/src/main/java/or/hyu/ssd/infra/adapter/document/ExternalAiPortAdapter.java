@@ -17,8 +17,12 @@ import or.hyu.ssd.document.port.dto.ExternalSummarizationKeywordResponse;
 import or.hyu.ssd.common.exception.ErrorCode;
 import or.hyu.ssd.common.exception.UserExceptionHandler;
 import or.hyu.ssd.external.ai.client.ExternalAiClient;
+import or.hyu.ssd.common.logging.LoggingMdcKey;
+import or.hyu.ssd.common.logging.MdcScope;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Component
@@ -32,11 +36,16 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
 
     @Override
     public ExternalAiHealthStatus health() {
+        long startedAt = System.nanoTime();
+        String endpoint = "GET /health";
+        logExternalAi("외부 AI 서버 헬스체크를 시작합니다.", endpoint, null, 0L, "시작");
         try {
             externalAiClient.health();
+            logExternalAi("외부 AI 서버 헬스체크가 완료되었습니다.", endpoint, "200", elapsedMs(startedAt), "성공");
             return ExternalAiHealthStatus.up("외부 AI 서버가 정상 응답했습니다.");
         } catch (FeignException e) {
             Throwable cause = e.getCause();
+            logExternalAi("외부 AI 서버 헬스체크에 실패했습니다.", endpoint, String.valueOf(e.status()), elapsedMs(startedAt), "실패");
             log.warn(
                     "[외부 AI 서버 헬스체크 실패] endpoint=GET /health, status={}, causeType={}, causeMessage={}",
                     e.status(),
@@ -45,6 +54,7 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
             );
             return ExternalAiHealthStatus.down(resolveHealthFailureMessage(e.status()));
         } catch (RuntimeException e) {
+            logExternalAi("외부 AI 서버 헬스체크 중 예외가 발생했습니다.", endpoint, null, elapsedMs(startedAt), "실패");
             log.warn(
                     "[외부 AI 서버 헬스체크 실패] endpoint=GET /health, causeType={}, causeMessage={}",
                     e.getClass().getSimpleName(),
@@ -87,13 +97,19 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
     }
 
     private <T> T callExternalApi(Supplier<T> supplier, String endpoint) {
+        long startedAt = System.nanoTime();
+        logExternalAi("외부 AI 서버 호출을 시작합니다.", endpoint, null, 0L, "시작");
         try {
-            return supplier.get();
+            T response = supplier.get();
+            logExternalAi("외부 AI 서버 호출이 완료되었습니다.", endpoint, null, elapsedMs(startedAt), "성공");
+            return response;
         } catch (DecodeException e) {
+            logExternalAi("외부 AI 응답 처리에 실패했습니다.", endpoint, null, elapsedMs(startedAt), "실패");
             log.error("[외부 AI 응답 처리 실패] endpoint={}, message={}", endpoint, sanitize(e.getMessage(), MAX_LOG_BODY_LENGTH));
             throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_RESPONSE_INVALID);
         } catch (FeignException e) {
             Throwable cause = e.getCause();
+            logExternalAi("외부 AI 서버 호출에 실패했습니다.", endpoint, String.valueOf(e.status()), elapsedMs(startedAt), "실패");
             log.warn(
                     "[외부 AI 서버 호출 실패] endpoint={}, status={}, causeType={}, causeMessage={}, responseSnippet={}",
                     endpoint,
@@ -104,9 +120,27 @@ public class ExternalAiPortAdapter implements ExternalAiPort {
             );
             throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_CALL_FAILED);
         } catch (Exception e) {
+            logExternalAi("외부 AI 응답 처리 중 예외가 발생했습니다.", endpoint, null, elapsedMs(startedAt), "실패");
             log.error("[외부 AI 응답 처리 실패] endpoint={}", endpoint, e);
             throw new UserExceptionHandler(ErrorCode.EXTERNAL_AI_RESPONSE_INVALID);
         }
+    }
+
+    private void logExternalAi(String message, String endpoint, String status, long elapsedMs, String result) {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put(LoggingMdcKey.LOG_TYPE, LoggingMdcKey.LOG_TYPE_EXTERNAL_AI);
+        values.put(LoggingMdcKey.AI_ENDPOINT, endpoint);
+        values.put(LoggingMdcKey.EXTERNAL_STATUS, status);
+        values.put(LoggingMdcKey.ELAPSED_MS, elapsedMs == 0L ? null : String.valueOf(elapsedMs));
+        values.put(LoggingMdcKey.RESULT, result);
+
+        try (MdcScope ignored = MdcScope.with(values)) {
+            log.info(message);
+        }
+    }
+
+    private long elapsedMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 
     private String resolveHealthFailureMessage(int status) {

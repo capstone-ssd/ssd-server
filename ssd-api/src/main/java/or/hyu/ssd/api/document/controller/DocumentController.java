@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import or.hyu.ssd.api.config.logging.DocumentAuditLogger;
 import or.hyu.ssd.api.document.response.DocumentBookmarkResponse;
 import or.hyu.ssd.api.document.request.CreateDocumentRequest;
 import or.hyu.ssd.api.document.response.CreateDocumentResponse;
@@ -52,6 +53,7 @@ public class DocumentController {
 
     private final DocumentCommandFacade documentCommandFacade;
     private final DocumentQueryFacade documentQueryFacade;
+    private final DocumentAuditLogger documentAuditLogger;
 
     @PostMapping(value = "/v1/documents", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
@@ -90,6 +92,7 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         CreateDocumentResponse dto = CreateDocumentResponse.from(documentCommandFacade.createDocument(user.getMember().getId(), request.toCommand()));
+        documentAuditLogger.logDocument("문서 생성", user.getMember().getId(), dto.id(), request.folderId());
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
@@ -116,6 +119,7 @@ public class DocumentController {
         CreateDocumentResponse dto = CreateDocumentResponse.from(
                 documentCommandFacade.createDocument(user.getMember().getId(), request.toCommand(), toImageUploadParts(imageMetas, files))
         );
+        documentAuditLogger.logDocument("이미지 포함 문서 생성", user.getMember().getId(), dto.id(), request.folderId());
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 저장되었습니다"));
     }
 
@@ -162,6 +166,7 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UpdateDocumentResponse dto = UpdateDocumentResponse.from(documentCommandFacade.updateDocument(id, user.getMember().getId(), request.toCommand()));
+        documentAuditLogger.logDocument("문서 수정", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
@@ -185,6 +190,7 @@ public class DocumentController {
         UpdateDocumentResponse dto = UpdateDocumentResponse.from(
                 documentCommandFacade.updateDocument(id, user.getMember().getId(), request.toCommand(), toImageUploadParts(imageMetas, files))
         );
+        documentAuditLogger.logDocument("이미지 포함 문서 수정", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 수정되었습니다"));
     }
 
@@ -227,6 +233,7 @@ public class DocumentController {
         MoveDocumentFolderResponse dto = MoveDocumentFolderResponse.from(
                 documentCommandFacade.moveDocumentFolder(id, user.getMember().getId(), request.toCommand())
         );
+        documentAuditLogger.logDocument("문서 폴더 이동", user.getMember().getId(), id, dto.folderId());
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서 폴더가 이동되었습니다"));
     }
 
@@ -260,6 +267,7 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         documentCommandFacade.deleteDocument(id, user.getMember().getId());
+        documentAuditLogger.logDocument("문서 삭제", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok("문서가 삭제되었습니다"));
     }
 
@@ -297,6 +305,7 @@ public class DocumentController {
     ) {
         DocumentDetailResult result = documentQueryFacade.getDocument(id, user.getMember().getId());
         GetDocumentResponse dto = GetDocumentResponse.from(result);
+        documentAuditLogger.logDocument("문서 단일 조회", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 조회되었습니다"));
     }
 
@@ -346,6 +355,7 @@ public class DocumentController {
         List<DocumentListItemResponse> list = documentQueryFacade.listDocuments(user.getMember().getId(), sort, folderId).stream()
                 .map(DocumentListItemResponse::from)
                 .toList();
+        documentAuditLogger.logDocument("문서 목록 조회", user.getMember().getId(), null, folderId);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 목록이 조회되었습니다"));
     }
 
@@ -394,6 +404,7 @@ public class DocumentController {
         List<DocumentListItemResponse> list = documentQueryFacade.searchDocuments(user.getMember().getId(), keyword, sort).stream()
                 .map(DocumentListItemResponse::from)
                 .toList();
+        documentAuditLogger.logDocument("문서 검색", user.getMember().getId(), null);
         return ResponseEntity.ok(ApiResponse.ok(list, "문서 검색 결과가 조회되었습니다"));
     }
 
@@ -469,6 +480,7 @@ public class DocumentController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         DocumentBookmarkResponse dto = DocumentBookmarkResponse.from(documentCommandFacade.toggleBookmark(id, user.getMember().getId()));
+        documentAuditLogger.logDocument("문서 즐겨찾기 변경", user.getMember().getId(), id);
         return ResponseEntity.ok(ApiResponse.ok(dto, "즐겨찾기 상태가 토글되었습니다"));
     }
 
