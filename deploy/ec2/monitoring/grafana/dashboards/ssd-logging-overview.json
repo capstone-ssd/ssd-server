@@ -528,7 +528,7 @@
       },
       "targets": [
         {
-          "expr": "quantile_over_time(0.95, {env=\"prod\", service=\"ssd-api\"} | json | logType = \"http_request\" | unwrap elapsedMs [$__range])",
+          "expr": "max(quantile_over_time(0.95, {env=\"prod\", service=\"ssd-api\"} | json | logType = \"http_request\" | unwrap elapsedMs [$__range]))",
           "refId": "A",
           "datasource": {
             "type": "loki",
@@ -590,7 +590,7 @@
       },
       "targets": [
         {
-          "expr": "quantile_over_time(0.95, {env=\"prod\", service=\"ssd-api\"} | json | logType = \"external_ai\" | result =~ \"성공|실패\" | unwrap elapsedMs [$__range])",
+          "expr": "max(quantile_over_time(0.95, {env=\"prod\", service=\"ssd-api\"} | json | logType = \"external_ai\" | result =~ \"성공|실패\" | unwrap elapsedMs [$__range]))",
           "refId": "A",
           "datasource": {
             "type": "loki",
