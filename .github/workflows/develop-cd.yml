@@ -143,7 +143,6 @@ jobs:
             export NGINX_SERVER_NAME="dev-api.simsaimdang.shop"
             export NGINX_UPSTREAM_FILE="/etc/nginx/conf.d/ssd-upstream.conf"
             export APP_LOG_DIR="/opt/ssd/logs"
-            export APP_JAVA_TOOL_OPTIONS="-Xms256m -Xmx256m -Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh"
             sudo -E "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"

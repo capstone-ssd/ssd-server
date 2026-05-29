@@ -6,7 +6,7 @@
 - `docker-compose.yml`: 공용 인프라(redis, network) 정의
 - `nginx/site.conf.template`: dev 도메인 프록시 설정 템플릿
 - `nginx/zzz-ssd-timeout.conf`: 장시간 AI 요청용 timeout 설정
-- `install_infra.sh`: 서버에 정적 인프라 파일을 설치하고 redis를 기동
+- `install_infra.sh`: 서버에 정적 인프라 파일을 설치하고 redis를 기동하며 legacy mock 컨테이너를 정리
 - `install_prod_monitoring.sh`: 운영용 Grafana/Prometheus/Alertmanager 모니터링 스택 설치
 - `install_monitoring.sh`: 부하테스트용 Grafana/Prometheus/k6 모니터링 스택 설치
 - `blue_green_deploy.sh`: blue/green 무중단 배포 스크립트
@@ -31,8 +31,14 @@
 
 ## JVM/GC 설정
 - dev 애플리케이션 컨테이너는 기본적으로 아래 JVM 옵션으로 실행됩니다.
-  - `-Xms256m`
+  - `-Xms128m`
   - `-Xmx256m`
+  - `-XX:+UseG1GC`
+  - `-XX:MaxGCPauseMillis=200`
   - `-Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M`
 - 호스트의 GC 로그 위치는 `/opt/ssd/logs/gc.log*`입니다.
 - 필요하면 CD 실행 환경에서 `APP_JAVA_TOOL_OPTIONS`와 `APP_LOG_DIR`로 값을 덮어쓸 수 있습니다.
+
+## 운영 정리 정책
+- 배포 완료 후 `blue_green_deploy.sh`는 실행 중이지 않은 Docker 이미지를 정리합니다.
+- `install_infra.sh`는 사용하지 않는 `external-ai-mock` 컨테이너를 자동으로 종료/삭제합니다.
