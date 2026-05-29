@@ -1,0 +1,86 @@
+filebeat.inputs:
+  - type: filestream
+    id: ssd-app-container-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    parsers:
+      - container:
+          stream: all
+          format: docker
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+          match_source: true
+      - drop_event:
+          when:
+            not:
+              or:
+                - equals:
+                    container.name: "ssd-blue"
+                - equals:
+                    container.name: "ssd-green"
+                - equals:
+                    container.name: "infra-app-1"
+      - decode_json_fields:
+          fields: ["message"]
+          process_array: false
+          max_depth: 5
+          target: ""
+          overwrite_keys: true
+          add_error_key: true
+      - add_fields:
+          target: ''
+          fields:
+            service: ssd-api
+            env: prod
+            collector: filebeat
+            logType: app
+
+  - type: filestream
+    id: ssd-nginx-access-logs
+    enabled: true
+    paths:
+      - /var/log/nginx/ssd-access.log
+      - /var/log/nginx/access.log
+    parsers:
+      - ndjson:
+          target: ""
+          add_error_key: true
+    processors:
+      - add_fields:
+          target: ''
+          fields:
+            service: nginx
+            env: prod
+            collector: filebeat
+            logType: nginx_access
+
+  - type: filestream
+    id: ssd-nginx-error-logs
+    enabled: true
+    paths:
+      - /var/log/nginx/ssd-error.log
+      - /var/log/nginx/error.log
+    processors:
+      - add_fields:
+          target: ''
+          fields:
+            service: nginx
+            env: prod
+            collector: filebeat
+            logType: nginx_error
+
+processors:
+  - add_host_metadata: ~
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  index: "ssd-logs-%{+yyyy.MM.dd}"
+  pipeline: "ssd-logs-ingest"
+
+setup.template.enabled: false
+setup.ilm.enabled: false
+
+logging.level: info
+logging.to_files: false

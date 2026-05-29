@@ -1,0 +1,47 @@
+{
+  "index_patterns": ["ssd-logs-*"] ,
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "ssd-logs-ilm",
+      "index.refresh_interval": "10s",
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "timestamp": { "type": "date" },
+        "requestId": { "type": "keyword", "ignore_above": 256 },
+        "service": { "type": "keyword", "ignore_above": 128 },
+        "env": { "type": "keyword", "ignore_above": 32 },
+        "collector": { "type": "keyword", "ignore_above": 32 },
+        "logType": { "type": "keyword", "ignore_above": 64 },
+        "status": { "type": "integer" },
+        "method": { "type": "keyword", "ignore_above": 16 },
+        "path": { "type": "keyword", "ignore_above": 1024 },
+        "uri": { "type": "keyword", "ignore_above": 1024 },
+        "memberId": { "type": "keyword", "ignore_above": 64 },
+        "durationMs": { "type": "long" },
+        "requestTime": { "type": "float" },
+        "message": { "type": "text" },
+        "level": { "type": "keyword", "ignore_above": 32 },
+        "container": {
+          "properties": {
+            "name": { "type": "keyword", "ignore_above": 256 },
+            "id": { "type": "keyword", "ignore_above": 256 },
+            "image": {
+              "properties": {
+                "name": { "type": "keyword", "ignore_above": 512 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "priority": 200,
+  "_meta": {
+    "description": "SSD Filebeat 로그 템플릿"
+  }
+}

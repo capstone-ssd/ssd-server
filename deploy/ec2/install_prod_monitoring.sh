@@ -72,5 +72,6 @@ docker compose -f docker-compose.monitoring.yml up -d
 
 echo "[INFO] SSD production monitoring is running"
 echo "[INFO] Grafana: https://dev-api.simsaimdang.shop/grafana/"
+echo "[INFO] Kibana: https://dev-api.simsaimdang.shop/kibana/"
 echo "[INFO] Prometheus: ssh -L 9091:127.0.0.1:9091 <server> then open http://localhost:9091"
 echo "[INFO] Alertmanager: ssh -L 9093:127.0.0.1:9093 <server> then open http://localhost:9093"

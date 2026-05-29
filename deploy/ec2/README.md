@@ -18,13 +18,22 @@
 
 ## 모니터링 설정
 - 운영 모니터링 리소스는 `deploy/ec2/monitoring`에 형상관리합니다.
-- `develop-cd`는 서버 `/opt/ssd/monitoring-prod`에 해당 파일을 설치하고 docker compose로 Grafana/Prometheus/Alertmanager를 기동합니다.
+- `develop-cd`는 서버 `/opt/ssd/monitoring-prod`에 해당 파일을 설치하고 docker compose로 Grafana/Prometheus/Alertmanager/Loki/Alloy/ELK(Filebeat+Elasticsearch+Kibana)를 기동합니다.
 - 운영 Grafana는 Nginx를 통해 외부 접근 경로를 제공합니다.
   - Grafana: `https://dev-api.simsaimdang.shop/grafana/`
+  - Kibana: `https://dev-api.simsaimdang.shop/kibana/`
 - 운영 모니터링 내부 포트는 SSH 터널링 기준으로도 접근할 수 있습니다.
   - Grafana: `3001`
+  - Kibana: `5601`
+  - Elasticsearch: `9200`
   - Prometheus: `9091`
   - Alertmanager: `9093`
+- 로그는 Loki와 Elasticsearch로 병행 수집합니다.
+  - Loki 경로: `Alloy -> Loki -> Grafana(LogQL)`
+  - ELK 경로: `Filebeat -> Elasticsearch -> Kibana/KQL`
+- Elasticsearch 인덱스 정책은 `deploy/ec2/monitoring/elasticsearch`에서 관리합니다.
+  - 보관 정책: 기본 2일(`ssd-logs-ilm`)
+  - 인덱스 템플릿: `ssd-logs-*`, 샤드 1 / 레플리카 0
 - 부하테스트용 모니터링 리소스는 `k6/monitoring`에 형상관리합니다.
 - 부하테스트용 모니터링은 평시 서버 RAM 절약을 위해 기본적으로 기동하지 않습니다.
 - 부하테스트 모니터링이 필요할 때만 `LOADTEST_MONITORING_ENABLED=true`로 `install_monitoring.sh`를 실행합니다.

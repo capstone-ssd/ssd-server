@@ -1,0 +1,32 @@
+{
+  "description": "SSD 공통 로그 정규화 파이프라인",
+  "processors": [
+    {
+      "rename": {
+        "field": "uri",
+        "target_field": "path",
+        "ignore_missing": true
+      }
+    },
+    {
+      "rename": {
+        "field": "member_id",
+        "target_field": "memberId",
+        "ignore_missing": true
+      }
+    },
+    {
+      "rename": {
+        "field": "duration_ms",
+        "target_field": "durationMs",
+        "ignore_missing": true
+      }
+    },
+    {
+      "set": {
+        "field": "event.dataset",
+        "value": "ssd.logs"
+      }
+    }
+  ]
+}

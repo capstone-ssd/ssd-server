@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: SSD Production Elasticsearch
+    uid: elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    editable: false
+    jsonData:
+      index: 'ssd-logs-*'
+      interval: Daily
+      timeField: '@timestamp'
+      logMessageField: message
+      logLevelField: level
