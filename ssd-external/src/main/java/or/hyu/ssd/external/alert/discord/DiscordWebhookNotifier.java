@@ -134,7 +134,10 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
     }
 
     private String truncateForDiscord(String content) {
-        if (content == null || content.length() <= DISCORD_CONTENT_LIMIT) {
+        if (content == null) {
+            return "";
+        }
+        if (content.length() <= DISCORD_CONTENT_LIMIT) {
             return content;
         }
 

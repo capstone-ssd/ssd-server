@@ -26,6 +26,7 @@ class DiscordWebhookNotifierTest {
         // then
         assertThat(truncated.length()).isLessThanOrEqualTo(2000);
         assertThat(truncated).endsWith("\n...(truncated)");
+        assertThat(truncated).startsWith(longMessage.substring(0, 1985));
     }
 
     @Test
@@ -42,5 +43,20 @@ class DiscordWebhookNotifierTest {
 
         // then
         assertThat(truncated).isEqualTo(message);
+    }
+
+    @Test
+    @DisplayName("디스코드 본문이 null이면 빈 문자열을 반환한다")
+    void returnEmptyStringWhenContentIsNull() throws Exception {
+        // given
+        DiscordWebhookNotifier notifier = new DiscordWebhookNotifier(new DiscordProperties(), new MockEnvironment());
+        Method truncateMethod = DiscordWebhookNotifier.class.getDeclaredMethod("truncateForDiscord", String.class);
+        truncateMethod.setAccessible(true);
+
+        // when
+        String truncated = (String) truncateMethod.invoke(notifier, (String) null);
+
+        // then
+        assertThat(truncated).isEqualTo("");
     }
 }

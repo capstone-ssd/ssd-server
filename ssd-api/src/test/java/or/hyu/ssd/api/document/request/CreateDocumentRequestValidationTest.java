@@ -87,6 +87,25 @@ class CreateDocumentRequestValidationTest {
         assertThat(command.blocks().getFirst().role()).isEqualTo("##");
     }
 
+    @Test
+    @DisplayName("검증 단계에서도 NUL 문자가 포함된 role을 허용한다")
+    void validationAllowsRoleContainingNullChar() {
+        // given
+        CreateDocumentRequest request = new CreateDocumentRequest(
+                "제목",
+                "본문",
+                Arrays.asList(new CreateDocumentBlockRequest(null, "문단", "\u0000##", 1, null, null)),
+                0L,
+                DocumentPurpose.WRITING
+        );
+
+        // when
+        Set<ConstraintViolation<CreateDocumentRequest>> violations = VALIDATOR.validate(request);
+
+        // then
+        assertThat(violations).isEmpty();
+    }
+
     private static Set<String> extractMessages(Set<? extends ConstraintViolation<?>> violations) {
         return violations.stream()
                 .map(ConstraintViolation::getMessage)
