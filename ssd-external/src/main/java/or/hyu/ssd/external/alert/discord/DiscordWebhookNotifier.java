@@ -26,6 +26,8 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final int DISCORD_CONTENT_LIMIT = 2000;
+    private static final String TRUNCATION_SUFFIX = "\n...(truncated)";
 
     private final DiscordProperties discordProperties;
     private final Environment environment;
@@ -120,7 +122,7 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
     }
 
     private String buildPayload(String content) {
-        return "{\"content\":\"" + escapeJson(content) + "\"}";
+        return "{\"content\":\"" + escapeJson(truncateForDiscord(content)) + "\"}";
     }
 
     private String escapeJson(String value) {
@@ -129,5 +131,20 @@ public class DiscordWebhookNotifier implements ErrorAlertNotifier {
                 .replace("\"", "\\\"")
                 .replace("\r", "\\r")
                 .replace("\n", "\\n");
+    }
+
+    private String truncateForDiscord(String content) {
+        if (content == null) {
+            return "";
+        }
+        if (content.length() <= DISCORD_CONTENT_LIMIT) {
+            return content;
+        }
+
+        int maxPrefixLength = DISCORD_CONTENT_LIMIT - TRUNCATION_SUFFIX.length();
+        if (maxPrefixLength <= 0) {
+            return content.substring(0, DISCORD_CONTENT_LIMIT);
+        }
+        return content.substring(0, maxPrefixLength) + TRUNCATION_SUFFIX;
     }
 }

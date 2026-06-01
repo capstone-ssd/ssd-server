@@ -21,8 +21,8 @@ public record CreateDocumentRequest(
 ) {
     public CreateDocumentCommand toCommand() {
         return new CreateDocumentCommand(
-                title,
-                text,
+                RequestStringSanitizer.stripNullChar(title),
+                RequestStringSanitizer.stripNullChar(text),
                 paragraphs == null ? null : paragraphs.stream().map(CreateDocumentBlockRequest::toCommand).toList(),
                 folderId,
                 purpose

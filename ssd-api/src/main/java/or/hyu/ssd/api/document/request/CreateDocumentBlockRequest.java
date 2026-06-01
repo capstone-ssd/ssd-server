@@ -23,20 +23,29 @@ public record CreateDocumentBlockRequest(
 
     @AssertTrue(message = "문단 블록은 content와 role이 필요하고, 이미지 블록은 blobKey 또는 url이 필요합니다")
     public boolean isValidBlockStructure() {
+        String sanitizedRole = RequestStringSanitizer.stripNullChar(role);
+
         if (resolvedType().isParagraph()) {
             return StringUtils.hasText(content)
-                    && role != null
-                    && ROLE_PATTERN.matcher(role).matches()
+                    && sanitizedRole != null
+                    && ROLE_PATTERN.matcher(sanitizedRole).matches()
                     && !StringUtils.hasText(blobKey)
                     && !StringUtils.hasText(url);
         }
 
         return !StringUtils.hasText(content)
-                && !StringUtils.hasText(role)
+                && !StringUtils.hasText(sanitizedRole)
                 && (StringUtils.hasText(blobKey) || StringUtils.hasText(url));
     }
 
     public DocumentBlockCommand toCommand() {
-        return new DocumentBlockCommand(resolvedType(), content, role, blockId, blobKey, url);
+        return new DocumentBlockCommand(
+                resolvedType(),
+                RequestStringSanitizer.stripNullChar(content),
+                RequestStringSanitizer.stripNullChar(role),
+                blockId,
+                RequestStringSanitizer.stripNullChar(blobKey),
+                RequestStringSanitizer.stripNullChar(url)
+        );
     }
 }

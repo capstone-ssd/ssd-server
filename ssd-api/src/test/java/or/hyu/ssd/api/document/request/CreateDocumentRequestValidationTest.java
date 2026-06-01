@@ -64,6 +64,48 @@ class CreateDocumentRequestValidationTest {
                 .contains("문서 목적은 필수입니다");
     }
 
+    @Test
+    @DisplayName("toCommand는 문자열의 NUL 문자(\\u0000)를 제거한다")
+    void toCommandStripsNullCharacter() {
+        // given
+        CreateDocumentRequest request = new CreateDocumentRequest(
+                "제목\u0000",
+                "본문\u0000텍스트",
+                Arrays.asList(new CreateDocumentBlockRequest(null, "문단\u0000내용", "\u0000##", 1, null, null)),
+                0L,
+                DocumentPurpose.WRITING
+        );
+
+        // when
+        var command = request.toCommand();
+
+        // then
+        assertThat(command.title()).isEqualTo("제목");
+        assertThat(command.text()).isEqualTo("본문텍스트");
+        assertThat(command.blocks()).hasSize(1);
+        assertThat(command.blocks().getFirst().content()).isEqualTo("문단내용");
+        assertThat(command.blocks().getFirst().role()).isEqualTo("##");
+    }
+
+    @Test
+    @DisplayName("검증 단계에서도 NUL 문자가 포함된 role을 허용한다")
+    void validationAllowsRoleContainingNullChar() {
+        // given
+        CreateDocumentRequest request = new CreateDocumentRequest(
+                "제목",
+                "본문",
+                Arrays.asList(new CreateDocumentBlockRequest(null, "문단", "\u0000##", 1, null, null)),
+                0L,
+                DocumentPurpose.WRITING
+        );
+
+        // when
+        Set<ConstraintViolation<CreateDocumentRequest>> violations = VALIDATOR.validate(request);
+
+        // then
+        assertThat(violations).isEmpty();
+    }
+
     private static Set<String> extractMessages(Set<? extends ConstraintViolation<?>> violations) {
         return violations.stream()
                 .map(ConstraintViolation::getMessage)

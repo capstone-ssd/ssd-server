@@ -14,8 +14,8 @@ public record UpdateDocumentRequest(
 ) {
     public UpdateDocumentCommand toCommand() {
         return new UpdateDocumentCommand(
-                title,
-                text,
+                RequestStringSanitizer.stripNullChar(title),
+                RequestStringSanitizer.stripNullChar(text),
                 paragraphs == null ? null : paragraphs.stream().map(CreateDocumentBlockRequest::toCommand).toList()
         );
     }
