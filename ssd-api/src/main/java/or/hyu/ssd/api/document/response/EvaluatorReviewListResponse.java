@@ -6,16 +6,20 @@ import java.util.List;
 
 public record EvaluatorReviewListResponse(
         Long documentId,
-        double averageTotalScore,
+        int averageTotalScore,
         int reviewCount,
         List<EvaluatorReviewListItemResponse> reviews
 ) {
     public static EvaluatorReviewListResponse from(EvaluatorReviewListResult result) {
         return new EvaluatorReviewListResponse(
                 result.documentId(),
-                result.averageTotalScore(),
+                roundScore(result.averageTotalScore()),
                 result.reviewCount(),
                 result.reviews().stream().map(EvaluatorReviewListItemResponse::from).toList()
         );
+    }
+
+    private static int roundScore(double score) {
+        return (int) Math.round(score);
     }
 }

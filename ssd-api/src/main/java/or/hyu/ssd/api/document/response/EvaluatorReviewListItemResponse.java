@@ -12,7 +12,7 @@ public record EvaluatorReviewListItemResponse(
         int feasibility,
         int differentiation,
         int financial,
-        double totalScore,
+        int totalScore,
         String comment
 ) {
     public static EvaluatorReviewListItemResponse from(EvaluatorReviewListItemResult result) {
@@ -24,8 +24,12 @@ public record EvaluatorReviewListItemResponse(
                 result.feasibility(),
                 result.differentiation(),
                 result.financial(),
-                result.totalScore(),
+                roundScore(result.totalScore()),
                 result.comment()
         );
+    }
+
+    private static int roundScore(double score) {
+        return (int) Math.round(score);
     }
 }
