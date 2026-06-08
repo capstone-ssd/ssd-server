@@ -45,3 +45,17 @@ k6/secrets/*.txt
 !k6/secrets/.gitkeep
 deploy/ec2/monitoring/.env
 deploy/ec2/monitoring/alertmanager/secrets/discord_webhook_url
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+crash.log
+tfplan
+tfplan-*
+*.tfplan
+deploy/ec2/monitoring-lite/alertmanager/secrets/discord_webhook_url

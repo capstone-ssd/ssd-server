@@ -1,0 +1,12 @@
+aws_region          = "ap-northeast-2"
+project             = "ssd"
+environment         = "dev"
+ssh_allowed_cidrs   = ["118.221.254.20/32"]
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+instance_type       = "t3.micro"
+db_instance_class   = "db.t3.micro"
+db_name             = "ssd"
+db_username         = "ssd_admin"
+db_password         = ""
+ecr_repository_name = "ssd-api"
+external_ai_base_url = "http://166.104.223.33:8080"
