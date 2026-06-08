@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euxo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update
+apt-get install -y docker.io docker-compose-v2 nginx jq unzip curl ca-certificates
+
+systemctl enable --now docker
+systemctl enable --now nginx
+
+usermod -aG docker ubuntu
+
+cd /tmp
+curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
+./aws/install --update
+rm -rf /tmp/aws /tmp/awscliv2.zip
+
+mkdir -p /opt/${app_name}/config
+mkdir -p /opt/${app_name}/logs
+mkdir -p /home/ubuntu/infra
+
+chown -R ubuntu:ubuntu /home/ubuntu/infra
+chmod 755 /opt/${app_name} /opt/${app_name}/config /opt/${app_name}/logs
+
+if ! swapon --show | grep -q '/swapfile'; then
+  fallocate -l 10G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=10240
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi

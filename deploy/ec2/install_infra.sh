@@ -11,6 +11,8 @@ APP_CONFIG_FILE="${APP_CONFIG_FILE:-${RUNTIME_CONFIG_DIR}/application-dev.yml}"
 APP_CONFIG_SOURCE="${APP_CONFIG_SOURCE:-}"
 NETWORK_NAME="${NETWORK_NAME:-ssd-net}"
 NGINX_SERVER_NAME="${NGINX_SERVER_NAME:-dev-api.simsaimdang.shop}"
+NGINX_ENABLE_SSL="${NGINX_ENABLE_SSL:-true}"
+NGINX_INTERNAL_ONLY="${NGINX_INTERNAL_ONLY:-false}"
 NGINX_TIMEOUT_FILE="${NGINX_TIMEOUT_FILE:-/etc/nginx/conf.d/zzz-ssd-timeout.conf}"
 NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
 NGINX_SITE_AVAILABLE="${NGINX_SITE_AVAILABLE:-/etc/nginx/sites-available/${NGINX_SERVER_NAME}}"
@@ -101,6 +103,7 @@ fi
 
 if command -v nginx >/dev/null 2>&1; then
   install -d -m 755 /etc/nginx/conf.d /etc/nginx/sites-available /etc/nginx/sites-enabled
+  rm -f /etc/nginx/sites-enabled/default
 
   if copy_if_changed "${SCRIPT_DIR}/nginx/zzz-ssd-timeout.conf" "${NGINX_TIMEOUT_FILE}" 644; then
     nginx_changed=1
@@ -108,7 +111,13 @@ if command -v nginx >/dev/null 2>&1; then
 
   rendered_site_file="$(mktemp)"
   trap 'rm -f "${rendered_site_file}"' EXIT
-  sed "s#__SERVER_NAME__#${NGINX_SERVER_NAME}#g" "${SCRIPT_DIR}/nginx/site.conf.template" > "${rendered_site_file}"
+  nginx_template="${SCRIPT_DIR}/nginx/site.https.conf.template"
+  if [[ "${NGINX_INTERNAL_ONLY}" == "true" ]]; then
+    nginx_template="${SCRIPT_DIR}/nginx/site.internal.conf.template"
+  elif [[ "${NGINX_ENABLE_SSL}" != "true" ]]; then
+    nginx_template="${SCRIPT_DIR}/nginx/site.http.conf.template"
+  fi
+  sed "s#__SERVER_NAME__#${NGINX_SERVER_NAME}#g" "${nginx_template}" > "${rendered_site_file}"
   if install_rendered_if_changed "${rendered_site_file}" "${NGINX_SITE_AVAILABLE}" 644; then
     nginx_changed=1
   fi

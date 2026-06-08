@@ -14,7 +14,7 @@ rule_files:
 scrape_configs:
   - job_name: ssd-api
     metrics_path: /actuator/prometheus
-    scheme: http
+    scheme: https
     static_configs:
       - targets:
           - dev-api.simsaimdang.shop
@@ -35,7 +35,7 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - http://dev-api.simsaimdang.shop/actuator/health
+          - https://dev-api.simsaimdang.shop/actuator/health
           - http://166.104.223.33:8080/docs
     relabel_configs:
       - source_labels: [__address__]
