@@ -18,6 +18,8 @@ NGINX_COMMON_FILE="${NGINX_COMMON_FILE:-/etc/nginx/conf.d/ssd-common.conf}"
 NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
 NGINX_SITE_AVAILABLE="${NGINX_SITE_AVAILABLE:-/etc/nginx/sites-available/${NGINX_SERVER_NAME}}"
 NGINX_SITE_ENABLED="${NGINX_SITE_ENABLED:-/etc/nginx/sites-enabled/${NGINX_SERVER_NAME}}"
+NGINX_INTERNAL_SITE_AVAILABLE="${NGINX_INTERNAL_SITE_AVAILABLE:-/etc/nginx/sites-available/_}"
+NGINX_INTERNAL_SITE_ENABLED="${NGINX_INTERNAL_SITE_ENABLED:-/etc/nginx/sites-enabled/_}"
 LEGACY_MOCK_CONTAINER_NAME="${LEGACY_MOCK_CONTAINER_NAME:-external-ai-mock}"
 
 copy_if_changed() {
@@ -105,6 +107,13 @@ fi
 if command -v nginx >/dev/null 2>&1; then
   install -d -m 755 /etc/nginx/conf.d /etc/nginx/sites-available /etc/nginx/sites-enabled
   rm -f /etc/nginx/sites-enabled/default
+
+  if [[ "${NGINX_INTERNAL_ONLY}" != "true" ]]; then
+    rm -f "${NGINX_INTERNAL_SITE_ENABLED}"
+    if [[ "${NGINX_SITE_AVAILABLE}" != "${NGINX_INTERNAL_SITE_AVAILABLE}" ]]; then
+      rm -f "${NGINX_INTERNAL_SITE_AVAILABLE}"
+    fi
+  fi
 
   if copy_if_changed "${SCRIPT_DIR}/nginx/zzz-ssd-timeout.conf" "${NGINX_TIMEOUT_FILE}" 644; then
     nginx_changed=1
