@@ -1,0 +1,67 @@
+map $http_x_request_id $ssd_request_id {
+    "~^(?:[A-Fa-f0-9]{32}|[A-Fa-f0-9-]{36})$" $http_x_request_id;
+    default $request_id;
+}
+
+log_format ssd_json escape=json
+    '{"timestamp":"$time_iso8601",'
+    '"requestId":"$ssd_request_id",'
+    '"remoteAddr":"$remote_addr",'
+    '"method":"$request_method",'
+    '"uri":"$request_uri",'
+    '"status":$status,'
+    '"bodyBytesSent":$body_bytes_sent,'
+    '"requestTime":$request_time,'
+    '"upstreamStatus":"$upstream_status",'
+    '"upstreamResponseTime":"$upstream_response_time",'
+    '"httpReferer":"$http_referer",'
+    '"userAgent":"$http_user_agent"}';
+
+server {
+    server_name __SERVER_NAME__;
+
+    access_log /var/log/nginx/ssd-access.log ssd_json;
+    error_log /var/log/nginx/ssd-error.log warn;
+
+    location = /grafana {
+        return 301 /grafana/;
+    }
+
+    location /grafana/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Request-Id $ssd_request_id;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /grafana;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location / {
+        proxy_pass http://ssd_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Request-Id $ssd_request_id;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/__SERVER_NAME__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__SERVER_NAME__/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    listen 80;
+    server_name __SERVER_NAME__;
+    return 301 https://$host$request_uri;
+}
