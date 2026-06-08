@@ -53,9 +53,9 @@ services:
     ports:
       - "127.0.0.1:3001:3000"
     volumes:
-      - ./grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
-      - ./grafana/provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro
-      - ./grafana/dashboards/ssd-production-overview.json:/var/lib/grafana/dashboards/ssd-production-overview.json:ro
+      - ../monitoring/grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ../monitoring/grafana/provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro
+      - ../monitoring/grafana/dashboards/ssd-production-overview.json:/var/lib/grafana/dashboards/ssd-production-overview.json:ro
       - grafana_data:/var/lib/grafana
     networks:
       - monitoring
