@@ -14,6 +14,7 @@ NGINX_SERVER_NAME="${NGINX_SERVER_NAME:-dev-api.simsaimdang.shop}"
 NGINX_ENABLE_SSL="${NGINX_ENABLE_SSL:-true}"
 NGINX_INTERNAL_ONLY="${NGINX_INTERNAL_ONLY:-false}"
 NGINX_TIMEOUT_FILE="${NGINX_TIMEOUT_FILE:-/etc/nginx/conf.d/zzz-ssd-timeout.conf}"
+NGINX_COMMON_FILE="${NGINX_COMMON_FILE:-/etc/nginx/conf.d/ssd-common.conf}"
 NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ssd-upstream.conf}"
 NGINX_SITE_AVAILABLE="${NGINX_SITE_AVAILABLE:-/etc/nginx/sites-available/${NGINX_SERVER_NAME}}"
 NGINX_SITE_ENABLED="${NGINX_SITE_ENABLED:-/etc/nginx/sites-enabled/${NGINX_SERVER_NAME}}"
@@ -106,6 +107,10 @@ if command -v nginx >/dev/null 2>&1; then
   rm -f /etc/nginx/sites-enabled/default
 
   if copy_if_changed "${SCRIPT_DIR}/nginx/zzz-ssd-timeout.conf" "${NGINX_TIMEOUT_FILE}" 644; then
+    nginx_changed=1
+  fi
+
+  if copy_if_changed "${SCRIPT_DIR}/nginx/ssd-common.conf" "${NGINX_COMMON_FILE}" 644; then
     nginx_changed=1
   fi
 
