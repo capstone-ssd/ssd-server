@@ -1,0 +1,85 @@
+name: ssd-prod-monitoring-lite
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ssd-prod-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=1GB
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:9091:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+      - ssd-net
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: ssd-prod-alertmanager
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - ./alertmanager/secrets:/etc/alertmanager/secrets:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    container_name: ssd-prod-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    env_file:
+      - .env
+    environment:
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: "https://dev-api.simsaimdang.shop/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./grafana/provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro
+      - ./grafana/dashboards/ssd-production-overview.json:/var/lib/grafana/dashboards/ssd-production-overview.json:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: ssd-prod-node-exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    name: ssd-prod-monitoring
+  ssd-net:
+    external: true
+    name: ssd-net
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
