@@ -140,6 +140,7 @@ jobs:
               "export HEALTH_PATH=/swagger-ui/index.html",
               "export NETWORK_NAME=ssd-net",
               "export NGINX_SERVER_NAME=dev-api.simsaimdang.shop",
+              "export NGINX_ENABLE_SSL=false",
               "export NGINX_UPSTREAM_FILE=/etc/nginx/conf.d/ssd-upstream.conf",
               "export APP_LOG_DIR=/opt/ssd/logs",
               "sudo -E /home/ubuntu/ssd-deploy/deploy/ec2/install_infra.sh",
