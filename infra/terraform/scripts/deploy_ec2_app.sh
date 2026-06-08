@@ -69,7 +69,16 @@ ssh "${SSH_OPTS[@]}" "${SSH_USER}@${APP_IP}" "echo connected" >/dev/null
 scp "${SSH_OPTS[@]}" -r "${REPO_ROOT}/deploy/ec2" "${SSH_USER}@${APP_IP}:/home/${SSH_USER}/"
 scp "${SSH_OPTS[@]}" "${APP_CONFIG_SOURCE}" "${SSH_USER}@${APP_IP}:/home/${SSH_USER}/application-${SPRING_PROFILE}.yml"
 
-ssh "${SSH_OPTS[@]}" "${SSH_USER}@${APP_IP}" bash <<EOF
+ssh "${SSH_OPTS[@]}" "${SSH_USER}@${APP_IP}" \
+  env \
+  AWS_REGION="${AWS_REGION}" \
+  NGINX_SERVER_NAME="${NGINX_SERVER_NAME}" \
+  ECR_URL="${ECR_URL}" \
+  IMAGE_TAG="${IMAGE_TAG}" \
+  SPRING_PROFILE="${SPRING_PROFILE}" \
+  APP_IP="${APP_IP}" \
+  SSH_USER="${SSH_USER}" \
+  bash <<'EOF'
 set -euo pipefail
 sudo APP_CONFIG_SOURCE="/home/${SSH_USER}/application-${SPRING_PROFILE}.yml" \
   NGINX_ENABLE_SSL=false \

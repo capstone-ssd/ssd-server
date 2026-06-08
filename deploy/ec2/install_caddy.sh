@@ -16,6 +16,12 @@ if ! command -v caddy >/dev/null 2>&1; then
 fi
 
 if [[ "${NGINX_INTERNAL_ONLY}" == "true" ]]; then
+  config_file="/opt/ssd/config/application-dev.yml"
+  if [[ ! -f "${config_file}" ]]; then
+    echo "[ERROR] Config file not found: ${config_file}" >&2
+    echo "[ERROR] Please run the main deployment flow or provide APP_CONFIG_SOURCE manually." >&2
+    exit 1
+  fi
   sudo APP_CONFIG_SOURCE="/opt/ssd/config/application-dev.yml" \
     NGINX_ENABLE_SSL=false \
     NGINX_INTERNAL_ONLY=true \

@@ -87,21 +87,18 @@ variable "jwt_secret" {
   description = "JWT signing secret"
   type        = string
   sensitive   = true
-  default     = "sdvjnfdjnkdvsfjvnjvdksfdljnkvfljovnkf"
 }
 
 variable "discord_webhook_url" {
   description = "Discord webhook URL"
   type        = string
   sensitive   = true
-  default     = "https://discord.com/api/webhooks/1481239816069971988/qgcacvS-zm6gdbwCbK4aLpt_hsm34UEnL_pQZQrwa-Vd4Bez3JLpeg1dmFytO4MH5P51"
 }
 
 variable "sentry_dsn" {
   description = "Sentry DSN"
   type        = string
   sensitive   = true
-  default     = "https://46b8f558adc9be8be498848c3ca1cf7b@o4508596177076224.ingest.de.sentry.io/4511025301684304"
 }
 
 variable "app_allowed_origins" {

@@ -77,6 +77,26 @@ resource "aws_subnet" "public_c" {
   }
 }
 
+resource "aws_subnet" "private_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, 11)
+  availability_zone = data.aws_availability_zones.available.names[0]
+
+  tags = {
+    Name = "${local.name_prefix}-private-a"
+  }
+}
+
+resource "aws_subnet" "private_c" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, 12)
+  availability_zone = data.aws_availability_zones.available.names[1]
+
+  tags = {
+    Name = "${local.name_prefix}-private-c"
+  }
+}
+
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -98,6 +118,24 @@ resource "aws_route_table_association" "public_a" {
 resource "aws_route_table_association" "public_c" {
   subnet_id      = aws_subnet.public_c.id
   route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${local.name_prefix}-private-rt"
+  }
+}
+
+resource "aws_route_table_association" "private_a" {
+  subnet_id      = aws_subnet.private_a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_c" {
+  subnet_id      = aws_subnet.private_c.id
+  route_table_id = aws_route_table.private.id
 }
 
 resource "aws_security_group" "app" {
@@ -231,7 +269,7 @@ resource "aws_iam_instance_profile" "ec2" {
 
 resource "aws_ecr_repository" "app" {
   name                 = var.ecr_repository_name
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true
@@ -256,7 +294,7 @@ resource "aws_s3_bucket_public_access_block" "assets" {
 
 resource "aws_db_subnet_group" "main" {
   name       = "${local.name_prefix}-db-subnets"
-  subnet_ids = [aws_subnet.public_a.id, aws_subnet.public_c.id]
+  subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_c.id]
 
   tags = {
     Name = "${local.name_prefix}-db-subnets"
@@ -300,9 +338,14 @@ resource "aws_instance" "app" {
     app_name = var.project
   })
 
+  metadata_options {
+    http_tokens = "required"
+  }
+
   root_block_device {
     volume_size           = 20
     volume_type           = "gp3"
+    encrypted             = true
     delete_on_termination = true
   }
 

@@ -38,12 +38,6 @@ output "db_username" {
   value       = aws_db_instance.postgres.username
 }
 
-output "db_password" {
-  description = "RDS PostgreSQL password"
-  value       = local.resolved_db_password
-  sensitive   = true
-}
-
 output "aws_region" {
   description = "AWS region used by Terraform"
   value       = var.aws_region
