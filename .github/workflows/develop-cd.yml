@@ -124,7 +124,7 @@ jobs:
           cat > .runtime/ssm-deploy-commands.json <<JSON
           {
             "commands": [
-              "set -euo pipefail",
+              "set -eu",
               "rm -rf /home/ubuntu/ssd-deploy",
               "mkdir -p /home/ubuntu/ssd-deploy/.runtime",
               "aws s3 cp s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/application-dev.yml /home/ubuntu/ssd-deploy/.runtime/application-dev.yml",
