@@ -15,7 +15,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      SSH_PORT: 2222
+      SSH_PORT: 22
 
     steps:
       - name: 코드 가져오기
