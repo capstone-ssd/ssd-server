@@ -121,7 +121,11 @@ upstream ssd_backend {
 EOF_UPSTREAM
 
 nginx -t
-systemctl reload nginx
+if systemctl is-active --quiet nginx; then
+  systemctl reload nginx
+else
+  echo "[INFO] nginx.service is inactive, skip reload"
+fi
 
 echo "${NEXT_COLOR}" > "${STATE_FILE}"
 
