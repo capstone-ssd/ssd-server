@@ -120,6 +120,12 @@ upstream ssd_backend {
 }
 EOF_UPSTREAM
 
+if [[ -f /etc/caddy/Caddyfile ]]; then
+  sed -i -E "s#reverse_proxy 127\.0\.0\.1:[0-9]+#reverse_proxy 127.0.0.1:${NEXT_PORT}#" /etc/caddy/Caddyfile
+  caddy validate --config /etc/caddy/Caddyfile
+  systemctl reload caddy
+fi
+
 nginx -t
 if systemctl is-active --quiet nginx; then
   systemctl reload nginx
