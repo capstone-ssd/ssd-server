@@ -22,7 +22,7 @@ APP_CONFIG_FILE="${APP_CONFIG_FILE:-/opt/${APP_NAME}/config/application-dev.yml}
 SPRING_CONFIG_ADDITIONAL_LOCATION="${SPRING_CONFIG_ADDITIONAL_LOCATION:-optional:file:/config/}"
 TIME_ZONE="${APP_TIME_ZONE:-Asia/Seoul}"
 APP_LOG_DIR="${APP_LOG_DIR:-/opt/${APP_NAME}/logs}"
-APP_JAVA_TOOL_OPTIONS="${APP_JAVA_TOOL_OPTIONS:--Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M -Dserver.tomcat.max-part-count=200}"
+APP_JAVA_TOOL_OPTIONS="${APP_JAVA_TOOL_OPTIONS:--Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Xlog:gc*,safepoint:file=/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M -Dserver.tomcat.max-part-count=-1}"
 APP_GRAFANA_BASE_URL="${APP_GRAFANA_BASE_URL:-https://dev-api.simsaimdang.shop/grafana}"
 APP_GRAFANA_LOGGING_DASHBOARD_UID="${APP_GRAFANA_LOGGING_DASHBOARD_UID:-ssd-logging-overview}"
 
