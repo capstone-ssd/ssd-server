@@ -15,10 +15,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      SSH_PORT: 22
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      DEPLOY_BUCKET: ssd-dev-assets-7bb4e2
-      DEPLOY_PREFIX: cd/${{ github.sha }}
-      INSTANCE_NAME: ssd-dev-app
       DB_INSTANCE_IDENTIFIER: ssd-dev-postgres
 
     steps:
@@ -108,88 +106,62 @@ jobs:
           cache-from: type=gha,scope=develop-cd-docker
           cache-to: type=gha,mode=max,scope=develop-cd-docker
 
-      - name: 배포 아카이브 생성
-        run: |
-          tar czf .runtime/deploy-ec2.tar.gz deploy/ec2
+      - name: 원격 배포 임시 경로 정리
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          port: ${{ env.SSH_PORT }}
+          username: ubuntu
+          key: ${{ secrets.KEY }}
+          script_stop: true
+          script: |
+            export DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
+            sudo docker system prune -af || true
+            rm -rf "${DEPLOY_ROOT}"
+            mkdir -p "${DEPLOY_ROOT}"
 
-      - name: 배포 리소스 S3 업로드
+      - name: SSH 키 준비
+        env:
+          SSH_KEY: ${{ secrets.KEY }}
         run: |
-          aws s3 cp .runtime/application-dev.yml "s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/application-dev.yml"
-          aws s3 cp .runtime/deploy-ec2.tar.gz "s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/deploy-ec2.tar.gz"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy_key
+          chmod 600 ~/.ssh/id_deploy_key
 
-      - name: 대상 인스턴스 조회
+      - name: 배포 리소스 전송
+        env:
+          HOST: ${{ secrets.HOST }}
         run: |
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=${INSTANCE_NAME}" "Name=instance-state-name,Values=running" \
-            --query 'Reservations[0].Instances[0].InstanceId' \
-            --output text)
-          if [[ -z "${INSTANCE_ID}" || "${INSTANCE_ID}" == "None" ]]; then
-            echo "[ERROR] running instance not found for ${INSTANCE_NAME}" >&2
-            exit 1
-          fi
-          echo "INSTANCE_ID=${INSTANCE_ID}" >> "$GITHUB_ENV"
+          SSH_OPTS="-i ~/.ssh/id_deploy_key -p ${SSH_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
 
-      - name: SSM 배포 실행
-        run: |
-          cat > .runtime/ssm-deploy-commands.json <<JSON
-          {
-            "commands": [
-              "set -eu",
-              "rm -rf /home/ubuntu/ssd-deploy",
-              "mkdir -p /home/ubuntu/ssd-deploy/.runtime",
-              "aws s3 cp s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/application-dev.yml /home/ubuntu/ssd-deploy/.runtime/application-dev.yml",
-              "aws s3 cp s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/deploy-ec2.tar.gz /tmp/deploy-ec2.tar.gz",
-              "tar xzf /tmp/deploy-ec2.tar.gz -C /home/ubuntu/ssd-deploy",
-              "chmod +x /home/ubuntu/ssd-deploy/deploy/ec2/install_infra.sh /home/ubuntu/ssd-deploy/deploy/ec2/install_prod_monitoring.sh /home/ubuntu/ssd-deploy/deploy/ec2/blue_green_deploy.sh",
-              "export APP_NAME=ssd",
-              "export DOCKER_REPO=${DOCKER_REPO}",
-              "export IMAGE_TAG=${{ github.sha }}",
-              "export SPRING_PROFILES_ACTIVE=dev",
-              "export APP_CONFIG_SOURCE=/home/ubuntu/ssd-deploy/.runtime/application-dev.yml",
-              "export APP_CONFIG_FILE=/opt/ssd/config/application-dev.yml",
-              "export HEALTH_PATH=/swagger-ui/index.html",
-              "export NETWORK_NAME=ssd-net",
-              "export NGINX_SERVER_NAME=dev-api.simsaimdang.shop",
-              "export NGINX_ENABLE_SSL=false",
-              "export NGINX_UPSTREAM_FILE=/etc/nginx/conf.d/ssd-upstream.conf",
-              "export APP_LOG_DIR=/opt/ssd/logs",
-              "sudo -E /home/ubuntu/ssd-deploy/deploy/ec2/install_infra.sh",
-              "sudo -E /home/ubuntu/ssd-deploy/deploy/ec2/install_prod_monitoring.sh",
-              "sudo -E /home/ubuntu/ssd-deploy/deploy/ec2/blue_green_deploy.sh"
-            ]
-          }
-          JSON
-          COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "${INSTANCE_ID}" \
-            --document-name AWS-RunShellScript \
-            --comment "develop-cd-${{ github.sha }}" \
-            --parameters file://.runtime/ssm-deploy-commands.json \
-            --query 'Command.CommandId' \
-            --output text)
-          echo "COMMAND_ID=${COMMAND_ID}" >> "$GITHUB_ENV"
+          ssh ${SSH_OPTS} ubuntu@"${HOST}" "mkdir -p ${DEPLOY_ROOT}/.runtime"
+          cat .runtime/application-dev.yml | ssh ${SSH_OPTS} ubuntu@"${HOST}" "cat > ${DEPLOY_ROOT}/.runtime/application-dev.yml"
+          tar czf - deploy/ec2 | ssh ${SSH_OPTS} ubuntu@"${HOST}" "tar xzf - -C ${DEPLOY_ROOT}"
 
-      - name: SSM 배포 결과 대기
-        run: |
-          for _ in $(seq 1 120); do
-            STATUS=$(aws ssm get-command-invocation --command-id "${COMMAND_ID}" --instance-id "${INSTANCE_ID}" --query 'Status' --output text)
-            case "$STATUS" in
-              Success)
-                aws ssm get-command-invocation --command-id "${COMMAND_ID}" --instance-id "${INSTANCE_ID}" --query 'StandardOutputContent' --output text
-                exit 0
-                ;;
-              Failed|Cancelled|TimedOut|Cancelling)
-                aws ssm get-command-invocation --command-id "${COMMAND_ID}" --instance-id "${INSTANCE_ID}" --output json
-                exit 1
-                ;;
-            esac
-            sleep 10
-          done
-          echo "[ERROR] SSM deploy timed out" >&2
-          aws ssm get-command-invocation --command-id "${COMMAND_ID}" --instance-id "${INSTANCE_ID}" --output json || true
-          exit 1
-
-      - name: 임시 배포 파일 정리
-        if: always()
-        run: |
-          aws s3 rm "s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/application-dev.yml" || true
-          aws s3 rm "s3://${DEPLOY_BUCKET}/${DEPLOY_PREFIX}/deploy-ec2.tar.gz" || true
+      - name: EC2 Blue/Green 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          port: ${{ env.SSH_PORT }}
+          username: ubuntu
+          key: ${{ secrets.KEY }}
+          script_stop: true
+          script: |
+            export DEPLOY_ROOT="/home/ubuntu/ssd-deploy"
+            chmod +x "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh" "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh" "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
+            export APP_NAME="ssd"
+            export DOCKER_REPO="${{ env.DOCKER_REPO }}"
+            export IMAGE_TAG="${{ github.sha }}"
+            export SPRING_PROFILES_ACTIVE="dev"
+            export APP_CONFIG_SOURCE="${DEPLOY_ROOT}/.runtime/application-dev.yml"
+            export APP_CONFIG_FILE="/opt/ssd/config/application-dev.yml"
+            export HEALTH_PATH="/swagger-ui/index.html"
+            export NETWORK_NAME="ssd-net"
+            export NGINX_SERVER_NAME="dev-api.simsaimdang.shop"
+            export NGINX_ENABLE_SSL="false"
+            export NGINX_UPSTREAM_FILE="/etc/nginx/conf.d/ssd-upstream.conf"
+            export APP_LOG_DIR="/opt/ssd/logs"
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_infra.sh"
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/install_prod_monitoring.sh"
+            sudo -E "${DEPLOY_ROOT}/deploy/ec2/blue_green_deploy.sh"
