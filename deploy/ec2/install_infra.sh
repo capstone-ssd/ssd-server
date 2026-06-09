@@ -149,7 +149,11 @@ EOF_UPSTREAM
 
   if (( nginx_changed == 1 )); then
     nginx -t
-    systemctl reload nginx
+    if systemctl is-active --quiet nginx; then
+      systemctl reload nginx
+    else
+      echo "[INFO] nginx.service is inactive, skip reload"
+    fi
   else
     echo "[INFO] Nginx infra unchanged, skip reload"
   fi
