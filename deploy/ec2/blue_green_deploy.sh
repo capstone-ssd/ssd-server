@@ -7,9 +7,13 @@ IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG is required}"
 IMAGE="${DOCKER_REPO}:${IMAGE_TAG}"
 
 LOCK_FILE="${LOCK_FILE:-/var/lock/${APP_NAME}-deploy.lock}"
+LOCK_WAIT_SECONDS="${LOCK_WAIT_SECONDS:-300}"
 mkdir -p "$(dirname "${LOCK_FILE}")"
 exec 200>"${LOCK_FILE}"
-flock -n 200 || { echo "[ERROR] Another deployment is running"; exit 1; }
+flock -w "${LOCK_WAIT_SECONDS}" 200 || {
+  echo "[ERROR] Another deployment is running after waiting ${LOCK_WAIT_SECONDS}s"
+  exit 1
+}
 
 SPRING_PROFILE="${SPRING_PROFILES_ACTIVE:-dev}"
 STATE_FILE="${STATE_FILE:-/opt/${APP_NAME}/active_color}"
