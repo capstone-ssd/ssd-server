@@ -35,7 +35,6 @@ public class DocumentQueryService {
 
     public DocumentDetailResult getDocument(Long documentId, Long memberId) {
         Document document = loadDocument(documentId);
-        assertDocumentOwner(document, memberId);
         return DocumentDetailResult.of(document, fetchBlocks(document));
     }
 
@@ -122,15 +121,6 @@ public class DocumentQueryService {
     private void assertAuthenticatedMember(Long memberId) {
         if (memberId == null) {
             throw new DocumentException(ErrorCode.MEMBER_NOT_FOUND);
-        }
-    }
-
-    private void assertDocumentOwner(Document document, Long memberId) {
-        if (document.getMember() == null || memberId == null) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
-        }
-        if (!document.getMember().getId().equals(memberId)) {
-            throw new DocumentException(ErrorCode.DOCUMENT_FORBIDDEN);
         }
     }
 

@@ -74,6 +74,28 @@ class DocumentQueryServiceTest {
     }
 
     @Test
+    @DisplayName("getDocument()는 비로그인 사용자도 문서를 조회할 수 있다")
+    void getDocument_allowsAnonymousAccess() {
+        // given
+        Member owner = member(1L);
+        Document document = document(42L, "공개 문서", null, owner);
+
+        when(documentRepository.findById(42L)).thenReturn(Optional.of(document));
+        when(documentParagraphRepository.findBlocks(document)).thenReturn(List.of(
+                DocumentParagraph.of(DocumentBlockType.PARAGRAPH, "공개 본문", "", 1, 1, document)
+        ));
+
+        // when
+        DocumentDetailResult result = documentQueryService.getDocument(42L, null);
+
+        // then
+        assertThat(result.id()).isEqualTo(42L);
+        assertThat(result.authorId()).isEqualTo(1L);
+        assertThat(result.blocks()).hasSize(1);
+        assertThat(result.blocks().get(0).content()).isEqualTo("공개 본문");
+    }
+
+    @Test
     @DisplayName("listDocuments()는 루트 폴더 문서만 조회할 수 있다")
     void listDocuments_returnsRootDocuments() {
         // given

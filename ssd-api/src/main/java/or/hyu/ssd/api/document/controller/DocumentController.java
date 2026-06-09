@@ -277,10 +277,11 @@ public class DocumentController {
             summary = "문서 단일 조회",
             description = """
                     ### 개요
-                    - 문서 ID로 단일 문서를 조회합니다. 작성자만 접근 가능합니다.
+                    - 문서 ID로 단일 문서를 조회합니다.
+                    - 인증 없이도 조회할 수 있습니다.
 
                     ### 인증
-                    - Authorization: Bearer {accessToken}
+                    - 선택 사항: Authorization: Bearer {accessToken}
 
                     ### 요청
                     - Path: /api/v1/documents/{id}
@@ -294,8 +295,6 @@ public class DocumentController {
 
                     ### 오류
                     - DOC40401: 문서를 찾을 수 없음
-                    - DOC40301: 문서 소유자가 아님
-                    - TOKEN4030x: 토큰 누락/만료/위조
                     """
     )
     public ResponseEntity<ApiResponse<GetDocumentResponse>> getDocument(
@@ -303,9 +302,10 @@ public class DocumentController {
             @PathVariable("id") @Positive(message = "문서 ID는 1 이상이어야 합니다") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        DocumentDetailResult result = documentQueryFacade.getDocument(id, user.getMember().getId());
+        Long memberId = user == null ? null : user.getMember().getId();
+        DocumentDetailResult result = documentQueryFacade.getDocument(id, memberId);
         GetDocumentResponse dto = GetDocumentResponse.from(result);
-        documentAuditLogger.logDocument("문서 단일 조회", user.getMember().getId(), id);
+        documentAuditLogger.logDocument("문서 단일 조회", memberId, id);
         return ResponseEntity.ok(ApiResponse.ok(dto, "문서가 조회되었습니다"));
     }
 

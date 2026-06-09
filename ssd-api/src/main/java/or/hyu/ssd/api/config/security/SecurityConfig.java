@@ -6,6 +6,7 @@ import or.hyu.ssd.api.config.WhiteListConfig;
 import or.hyu.ssd.auth.jwt.filter.JWTFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -88,6 +89,7 @@ public class SecurityConfig {
                 .requestMatchers(WhiteListConfig.swaggerWhitelist().toArray(new String[0])).permitAll()
                 .requestMatchers(WhiteListConfig.actuatorWhitelist().toArray(new String[0])).permitAll()
                 .requestMatchers(WhiteListConfig.oauthWhitelist().toArray(new String[0])).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/documents/{id}").permitAll()
                 .anyRequest().authenticated());
 
 
