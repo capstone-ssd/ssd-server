@@ -53,7 +53,51 @@ jobs:
             --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
             --query 'DBInstances[0].Endpoint.Address' \
             --output text)
-          DB_ENDPOINT="${DB_ENDPOINT}" python3 -c 'from pathlib import Path; import os, re; path = Path(".runtime/application-dev.yml"); text = path.read_text(); endpoint = os.environ["DB_ENDPOINT"]; pattern = r"(url:\\s*jdbc:postgresql://)([^:/]+)(:\\d+/[^\\s]+)"; updated, count = re.subn(pattern, r"\\1" + endpoint + r"\\3", text, count=1); assert count == 1, "datasource url replacement failed"; path.write_text(updated)'
+          DB_ENDPOINT="${DB_ENDPOINT}" python3 <<'PY'
+          from pathlib import Path
+          import os
+
+          path = Path(".runtime/application-dev.yml")
+          lines = path.read_text().splitlines()
+          endpoint = os.environ["DB_ENDPOINT"]
+          new_url = f"    url: jdbc:postgresql://{endpoint}:5432/ssd"
+
+          updated_lines = []
+          in_datasource = False
+          replaced = False
+
+          for line in lines:
+              stripped = line.lstrip()
+              indent = len(line) - len(stripped)
+
+              if stripped == "datasource:" and indent >= 2:
+                  in_datasource = True
+                  updated_lines.append(line)
+                  continue
+
+              if in_datasource:
+                  if stripped.startswith("url:"):
+                      updated_lines.append(new_url)
+                      replaced = True
+                      continue
+
+                  if indent <= 2 and stripped:
+                      if not replaced:
+                          updated_lines.append(new_url)
+                          replaced = True
+                      in_datasource = False
+
+              updated_lines.append(line)
+
+          if in_datasource and not replaced:
+              updated_lines.append(new_url)
+              replaced = True
+
+          if not replaced:
+              raise SystemExit("datasource url replacement failed")
+
+          path.write_text("\n".join(updated_lines) + "\n")
+          PY
 
       - name: dev 설정 필수값 검증
         run: |
