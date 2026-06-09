@@ -19,6 +19,7 @@ jobs:
       DEPLOY_BUCKET: ssd-dev-assets-7bb4e2
       DEPLOY_PREFIX: cd/${{ github.sha }}
       INSTANCE_NAME: ssd-dev-app
+      DB_INSTANCE_IDENTIFIER: ssd-dev-postgres
 
     steps:
       - name: 코드 가져오기
@@ -46,6 +47,26 @@ jobs:
             echo "[WARN] application-dev.yml의 on-profile: local 을 dev로 보정합니다."
             perl -0pi -e 's/on-profile:\s*local/on-profile: dev/g' "$FILE"
           fi
+
+      - name: RDS 엔드포인트 동기화
+        run: |
+          FILE=.runtime/application-dev.yml
+          DB_ENDPOINT=$(aws rds describe-db-instances \
+            --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
+            --query 'DBInstances[0].Endpoint.Address' \
+            --output text)
+          python3 - <<'PY'
+from pathlib import Path
+import os, re
+path = Path(".runtime/application-dev.yml")
+text = path.read_text()
+endpoint = os.environ["DB_ENDPOINT"]
+pattern = r'(url:\s*jdbc:postgresql://)([^:/]+)(:\d+/[^\s]+)'
+updated, count = re.subn(pattern, r'\1' + endpoint + r'\3', text, count=1)
+if count != 1:
+    raise SystemExit("datasource url replacement failed")
+path.write_text(updated)
+PY
 
       - name: dev 설정 필수값 검증
         run: |
